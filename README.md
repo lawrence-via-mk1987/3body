@@ -31,6 +31,9 @@ npm run preview # preview production build
 
 ## Status
 
-**Milestone 1 complete** — Vite + Three.js scaffold, first-person pointer-lock movement, procedural Trisolarian terrain, sky dome, placeholder landmarks, disclaimer screen, and minimal HUD.
+**Milestone 2 complete** — three orbiting suns with chaotic phase state machine, dynamic sky/fog/lighting, surface temperature field, and forecast HUD.
 
-Next: Milestone 2 — celestial system (three suns, dynamic sky, temperature field).
+- Milestone 1: FPS scaffold, terrain, disclaimer overlay
+- Milestone 2: `OrbitalDirector`, `EraStateMachine`, three suns, temperature + forecast
+
+Next: Milestone 3 — survival systems (hydration, heat/cold damage, dehydration).

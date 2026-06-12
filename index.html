@@ -9,7 +9,7 @@
   <body>
     <div id="overlay">
       <div class="panel">
-        <p class="eyebrow">Web demo · Milestone 1</p>
+        <p class="eyebrow">Web demo · Milestone 2</p>
         <h1>Trisolarian Survival</h1>
         <p class="tagline">
           Three suns. Chaotic skies. Endure until the next Stable Era.
@@ -27,11 +27,23 @@
       </div>
     </div>
     <div id="hud" class="hidden">
-      <div class="hud-block">
+      <div class="hud-block hud-era">
         <span class="hud-label">Era</span>
         <span id="hud-era">Chaotic</span>
       </div>
-      <div class="hud-block">
+      <div class="hud-block hud-phase">
+        <span class="hud-label">Phase</span>
+        <span id="hud-phase">Deep Cold</span>
+      </div>
+      <div class="hud-block hud-temperature">
+        <span class="hud-label">Temperature</span>
+        <span id="hud-temperature" data-status="cold">Bitter Cold (-1.0)</span>
+      </div>
+      <div class="hud-block hud-forecast">
+        <span class="hud-label">Forecast</span>
+        <span id="hud-forecast">Conditions uncertain</span>
+      </div>
+      <div class="hud-block hud-position">
         <span class="hud-label">Position</span>
         <span id="hud-position">0, 0</span>
       </div>

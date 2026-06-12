@@ -107,17 +107,18 @@ h1 {
 
 .hud-block {
   position: absolute;
-  top: 1rem;
   left: 1rem;
   padding: 0.65rem 0.8rem;
   background: rgba(10, 8, 6, 0.55);
   border: 1px solid rgba(242, 230, 216, 0.12);
-  min-width: 140px;
+  min-width: 168px;
 }
 
-.hud-block + .hud-block {
-  top: 4.5rem;
-}
+.hud-era { top: 1rem; }
+.hud-phase { top: 4.5rem; }
+.hud-temperature { top: 8rem; }
+.hud-forecast { top: 11.5rem; max-width: 220px; }
+.hud-position { top: 15rem; }
 
 .hud-label {
   display: block;
@@ -129,8 +130,23 @@ h1 {
 }
 
 #hud-era,
+#hud-phase,
+#hud-temperature,
+#hud-forecast,
 #hud-position {
   font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+#hud-temperature[data-status='freezing'] { color: #8ec8ff; }
+#hud-temperature[data-status='cold'] { color: #a8c4e8; }
+#hud-temperature[data-status='safe'] { color: #d8e8c8; }
+#hud-temperature[data-status='warm'] { color: #f0c890; }
+#hud-temperature[data-status='heat'] { color: #ff9a5c; }
+#hud-temperature[data-status='lethal'] { color: #ff5a40; }
+
+#hud-forecast {
+  color: #c9b59d;
 }
 
 .hud-crosshair {

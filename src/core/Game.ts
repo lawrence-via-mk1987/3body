@@ -1,7 +1,16 @@
 import * as THREE from 'three';
+import { OrbitalDirector } from '../orbital/OrbitalDirector';
 import { FirstPersonController } from '../player/FirstPersonController';
 import { Sky } from '../world/Sky';
 import { Terrain } from '../world/Terrain';
+
+interface HudElements {
+  era: HTMLElement;
+  phase: HTMLElement;
+  temperature: HTMLElement;
+  forecast: HTMLElement;
+  position: HTMLElement;
+}
 
 export class Game {
   private readonly renderer: THREE.WebGLRenderer;
@@ -9,19 +18,16 @@ export class Game {
   private readonly clock = new THREE.Clock();
   private readonly terrain: Terrain;
   private readonly sky: Sky;
+  private readonly fog: THREE.FogExp2;
   private readonly player: FirstPersonController;
-  private readonly hudEra: HTMLElement;
-  private readonly hudPosition: HTMLElement;
+  private readonly orbital: OrbitalDirector;
+  private readonly hud: HudElements;
+  private readonly anchor = new THREE.Vector3();
   private animationId = 0;
   private running = false;
 
-  constructor(
-    canvas: HTMLCanvasElement,
-    hudEra: HTMLElement,
-    hudPosition: HTMLElement,
-  ) {
-    this.hudEra = hudEra;
-    this.hudPosition = hudPosition;
+  constructor(canvas: HTMLCanvasElement, hud: HudElements) {
+    this.hud = hud;
 
     this.renderer = new THREE.WebGLRenderer({
       canvas,
@@ -36,39 +42,19 @@ export class Game {
     this.renderer.toneMappingExposure = 1.05;
 
     this.scene.background = new THREE.Color('#120d0a');
-    this.scene.fog = new THREE.FogExp2('#2a1810', 0.0022);
+    this.fog = new THREE.FogExp2('#2a1810', 0.0022);
+    this.scene.fog = this.fog;
 
     this.terrain = new Terrain();
     this.sky = new Sky();
     this.player = new FirstPersonController(canvas, this.terrain, window.innerWidth / window.innerHeight);
+    this.orbital = new OrbitalDirector(this.scene, this.sky, this.fog);
 
     this.scene.add(this.sky.mesh);
     this.scene.add(this.terrain.mesh);
-    this.addLighting();
     this.addLandmarks();
 
     window.addEventListener('resize', this.onResize);
-  }
-
-  private addLighting(): void {
-    const ambient = new THREE.HemisphereLight('#7a4d35', '#1a120d', 0.55);
-    this.scene.add(ambient);
-
-    const sun = new THREE.DirectionalLight('#ffb27a', 1.35);
-    sun.position.set(80, 120, 40);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    sun.shadow.camera.near = 1;
-    sun.shadow.camera.far = 320;
-    sun.shadow.camera.left = -120;
-    sun.shadow.camera.right = 120;
-    sun.shadow.camera.top = 120;
-    sun.shadow.camera.bottom = -120;
-    this.scene.add(sun);
-
-    const fill = new THREE.DirectionalLight('#4a5f8c', 0.25);
-    fill.position.set(-60, 40, -80);
-    this.scene.add(fill);
   }
 
   private addLandmarks(): void {
@@ -139,12 +125,28 @@ export class Game {
 
     const delta = Math.min(this.clock.getDelta(), 0.05);
     this.player.update(delta);
-    this.hudEra.textContent = 'Chaotic';
-    this.hudPosition.textContent = this.player.getPositionText();
+
+    this.anchor.copy(this.player.camera.position);
+    this.sky.mesh.position.copy(this.anchor);
+    this.orbital.update(delta, this.anchor);
+    this.sky.update();
+
+    this.updateHud();
 
     this.renderer.render(this.scene, this.player.camera);
     this.animationId = requestAnimationFrame(this.animate);
   };
+
+  private updateHud(): void {
+    const temperature = this.orbital.getTemperature();
+
+    this.hud.era.textContent = this.orbital.getEraLabel();
+    this.hud.phase.textContent = this.orbital.getPhaseLabel();
+    this.hud.temperature.textContent = `${temperature.label} (${temperature.value.toFixed(1)})`;
+    this.hud.temperature.dataset.status = temperature.status;
+    this.hud.forecast.textContent = this.orbital.getForecastSummary();
+    this.hud.position.textContent = this.player.getPositionText();
+  }
 
   private onResize = (): void => {
     const width = window.innerWidth;
@@ -156,6 +158,7 @@ export class Game {
   dispose(): void {
     this.stop();
     window.removeEventListener('resize', this.onResize);
+    this.orbital.dispose();
     this.terrain.dispose();
     this.sky.dispose();
     this.renderer.dispose();
