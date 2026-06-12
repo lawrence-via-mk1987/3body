@@ -7,18 +7,19 @@ import {
   computeSurfaceTemperature,
   describeTemperature,
 } from './TemperatureField';
+import { ORBITAL_CONFIG } from './config';
 import { PHASE_LABELS } from './types';
 import type { ForecastEntry, TemperatureSample } from './types';
 import type { Sky } from '../world/Sky';
 
 const SKY_PALETTES = {
   deep_cold: {
-    top: '#0d1528',
-    horizon: '#2a3d5c',
-    bottom: '#121820',
-    fog: '#1a2430',
-    fogDensity: 0.003,
-    ambient: 0.35,
+    top: '#142038',
+    horizon: '#3a4a68',
+    bottom: '#1a2030',
+    fog: '#243040',
+    fogDensity: 0.0024,
+    ambient: 0.4,
   },
   thaw: {
     top: '#1a2238',
@@ -173,6 +174,12 @@ export class OrbitalDirector {
     return this.forecast;
   }
 
+  reset(): void {
+    this.eraState.reset();
+    this.forecastTimer = 0;
+    this.refreshForecast();
+  }
+
   private refreshForecast(): void {
     this.forecast = buildForecast(
       this.eraState.phase,
@@ -193,7 +200,10 @@ export class OrbitalDirector {
     );
 
     const tempBias = THREE.MathUtils.clamp(this.temperature.value / 3, -1, 1);
-    this.ambient.intensity = palette.ambient + tempBias * 0.08;
+    this.ambient.intensity = Math.max(
+      ORBITAL_CONFIG.minAmbientIntensity,
+      palette.ambient + tempBias * 0.08,
+    );
     this.ambient.color.set(this.eraState.era === 'stable' ? '#9ab07a' : '#7a4d35');
     this.ambient.groundColor.set(this.temperature.value < 0 ? '#141c28' : '#1a120d');
     this.fill.intensity = 0.12 + Math.max(this.temperature.value, 0) * 0.08;

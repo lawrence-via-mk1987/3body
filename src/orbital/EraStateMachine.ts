@@ -46,13 +46,14 @@ function pickWeighted(options: Array<{ phase: EraPhase; weight: number }>): EraP
 
 export class EraStateMachine {
   era: EraKind = 'chaotic';
-  phase: EraPhase = 'deep_cold';
+  phase: EraPhase = ORBITAL_CONFIG.startPhase;
   elapsedInPhase = 0;
   phaseDuration = 45;
   private dangerousCooldown = 0;
 
   constructor() {
-    this.phaseDuration = this.rollDuration('deep_cold');
+    this.phaseDuration = this.rollDuration(ORBITAL_CONFIG.startPhase);
+    this.elapsedInPhase = this.phaseDuration * ORBITAL_CONFIG.startPhaseProgress;
   }
 
   update(delta: number): boolean {
@@ -125,5 +126,13 @@ export class EraStateMachine {
   private rollDuration(phase: EraPhase): number {
     const [min, max] = PHASE_DURATIONS[phase];
     return randomBetween(min, max);
+  }
+
+  reset(): void {
+    this.era = 'chaotic';
+    this.phase = ORBITAL_CONFIG.startPhase;
+    this.phaseDuration = this.rollDuration(ORBITAL_CONFIG.startPhase);
+    this.elapsedInPhase = this.phaseDuration * ORBITAL_CONFIG.startPhaseProgress;
+    this.dangerousCooldown = 0;
   }
 }

@@ -1,3 +1,5 @@
+import type { EraPhase } from './types';
+
 export const ORBITAL_CONFIG = {
   chaoticPhaseMinSec: 20,
   chaoticPhaseMaxSec: 90,
@@ -8,4 +10,8 @@ export const ORBITAL_CONFIG = {
   forecastBaseConfidence: 0.6,
   celestialRadius: 360,
   sunBaseScale: 18,
+  /** First session phase — visible sun so players can orient immediately. */
+  startPhase: 'thaw' as EraPhase,
+  startPhaseProgress: 0.55,
+  minAmbientIntensity: 0.42,
 } as const;

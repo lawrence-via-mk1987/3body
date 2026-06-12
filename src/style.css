@@ -117,8 +117,69 @@ h1 {
 .hud-era { top: 1rem; }
 .hud-phase { top: 4.5rem; }
 .hud-temperature { top: 8rem; }
-.hud-forecast { top: 11.5rem; max-width: 220px; }
-.hud-position { top: 15rem; }
+.hud-vitals { top: 11.5rem; }
+.hud-hydration { top: 15rem; }
+.hud-forecast { top: 18.5rem; max-width: 220px; }
+.hud-status { top: 22rem; max-width: 260px; }
+.hud-position { top: 26.5rem; }
+
+.meter {
+  width: 100%;
+  height: 8px;
+  margin: 0.35rem 0;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(242, 230, 216, 0.1);
+}
+
+.meter-fill {
+  height: 100%;
+  width: 100%;
+  transform-origin: left center;
+  transition: width 0.2s ease;
+}
+
+.meter-fill.health { background: linear-gradient(90deg, #8f3a2c, #d86a4d); }
+.meter-fill.hydration { background: linear-gradient(90deg, #2f5f8c, #6aa8d8); }
+.meter.critical .meter-fill.health { background: linear-gradient(90deg, #601808, #ff4020); }
+.meter.critical .meter-fill.hydration { background: linear-gradient(90deg, #183850, #4a88b8); }
+
+.meter-value {
+  font-size: 0.85rem;
+  color: #c9b59d;
+}
+
+#death-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 6, 5, 0.88);
+  z-index: 30;
+}
+
+#death-overlay.hidden {
+  display: none;
+}
+
+.death-panel h2 {
+  font-size: 2rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+
+#death-message {
+  line-height: 1.6;
+  color: #d8c7b2;
+  margin-bottom: 1.5rem;
+}
+
+body[data-survival='dehydrated'] #game-canvas {
+  filter: saturate(0.45) contrast(0.95);
+}
+
+body[data-survival='dehydrated'] .hud-crosshair {
+  opacity: 0.25;
+}
 
 .hud-label {
   display: block;
@@ -133,9 +194,14 @@ h1 {
 #hud-phase,
 #hud-temperature,
 #hud-forecast,
+#hud-status,
 #hud-position {
   font-size: 0.95rem;
   line-height: 1.35;
+}
+
+#hud-status {
+  color: #d8c7b2;
 }
 
 #hud-temperature[data-status='freezing'] { color: #8ec8ff; }

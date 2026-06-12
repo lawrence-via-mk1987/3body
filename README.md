@@ -31,9 +31,12 @@ npm run preview # preview production build
 
 ## Status
 
-**Milestone 2 complete** — three orbiting suns with chaotic phase state machine, dynamic sky/fog/lighting, surface temperature field, and forecast HUD.
+**Milestone 3 complete** — survival loop with hydration, heat/cold damage, dehydration at the pit, shelter zones, and death/restart.
 
 - Milestone 1: FPS scaffold, terrain, disclaimer overlay
-- Milestone 2: `OrbitalDirector`, `EraStateMachine`, three suns, temperature + forecast
+- Milestone 2: three suns, orbital phases, temperature + forecast
+- Milestone 3: `SurvivalSystem`, shelters, dehydration (E at pit), vitals HUD
 
-Next: Milestone 3 — survival systems (hydration, heat/cold damage, dehydration).
+Game now starts in **Thaw** with a visible rising sun. Seek the underground shelter (east of spawn) or dehydration pit (northwest) when phases turn lethal.
+
+Next: Milestone 4 — ruins, era-dependent terrain, environmental storytelling.

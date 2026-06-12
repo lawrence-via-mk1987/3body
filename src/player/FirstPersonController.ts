@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+import type { ShelterZones } from '../survival/ShelterZones';
 import type { Terrain } from '../world/Terrain';
 
 const MOVE_SPEED = 14;
@@ -13,15 +14,18 @@ export class FirstPersonController {
   readonly controls: PointerLockControls;
 
   private readonly keys = new Set<string>();
+  private readonly pressedKeys = new Set<string>();
   private readonly velocity = new THREE.Vector3();
   private readonly moveDirection = new THREE.Vector3();
   private readonly forward = new THREE.Vector3();
   private readonly right = new THREE.Vector3();
   private isGrounded = false;
+  private movementEnabled = true;
 
   constructor(
     domElement: HTMLElement,
     private readonly terrain: Terrain,
+    private readonly shelterZones: ShelterZones | null,
     aspect: number,
   ) {
     this.camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 800);
@@ -33,6 +37,9 @@ export class FirstPersonController {
 
   private bindInput(): void {
     window.addEventListener('keydown', (event) => {
+      if (!this.keys.has(event.code)) {
+        this.pressedKeys.add(event.code);
+      }
       this.keys.add(event.code);
     });
 
@@ -53,13 +60,48 @@ export class FirstPersonController {
     return this.controls.isLocked;
   }
 
+  setMovementEnabled(enabled: boolean): void {
+    this.movementEnabled = enabled;
+    if (!enabled) {
+      this.velocity.set(0, 0, 0);
+    }
+  }
+
+  consumePressedKey(code: string): boolean {
+    if (!this.pressedKeys.has(code)) {
+      return false;
+    }
+    this.pressedKeys.delete(code);
+    return true;
+  }
+
+  isSprinting(): boolean {
+    return this.movementEnabled && (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight'));
+  }
+
+  getPosition(): THREE.Vector3 {
+    return this.camera.position;
+  }
+
+  resetToSpawn(): void {
+    this.camera.position.set(0, 12, 24);
+    this.velocity.set(0, 0, 0);
+    this.movementEnabled = true;
+  }
+
   resize(aspect: number): void {
     this.camera.aspect = aspect;
     this.camera.updateProjectionMatrix();
   }
 
   update(delta: number): void {
-    const sprinting = this.keys.has('ShiftLeft') || this.keys.has('ShiftRight');
+    if (!this.movementEnabled) {
+      this.velocity.x = THREE.MathUtils.damp(this.velocity.x, 0, 12, delta);
+      this.velocity.z = THREE.MathUtils.damp(this.velocity.z, 0, 12, delta);
+      return;
+    }
+
+    const sprinting = this.isSprinting();
     const speed = MOVE_SPEED * (sprinting ? SPRINT_MULTIPLIER : 1);
 
     this.controls.getDirection(this.forward);
@@ -110,7 +152,7 @@ export class FirstPersonController {
     position.x = THREE.MathUtils.clamp(position.x, -bounds, bounds);
     position.z = THREE.MathUtils.clamp(position.z, -bounds, bounds);
 
-    const groundHeight = this.terrain.getHeightAt(position.x, position.z) + PLAYER_HEIGHT;
+    const groundHeight = this.getFloorHeight(position.x, position.z, position.y) + PLAYER_HEIGHT;
     if (position.y <= groundHeight) {
       position.y = groundHeight;
       this.velocity.y = 0;
@@ -142,6 +184,28 @@ export class FirstPersonController {
         position.z += dz * push;
       }
     }
+  }
+
+  private getFloorHeight(x: number, z: number, currentY: number): number {
+    const surface = this.terrain.getHeightAt(x, z);
+    if (!this.shelterZones) {
+      return surface;
+    }
+
+    const bounds = this.shelterZones.getCaveBounds();
+    if (
+      x >= bounds.minX
+      && x <= bounds.maxX
+      && z >= bounds.minZ
+      && z <= bounds.maxZ
+    ) {
+      const caveFloor = surface - bounds.depthBelowSurface;
+      if (currentY < surface + 1.5) {
+        return caveFloor;
+      }
+    }
+
+    return surface;
   }
 
   getPositionText(): string {
