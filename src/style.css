@@ -120,8 +120,48 @@ h1 {
 .hud-vitals { top: 11.5rem; }
 .hud-hydration { top: 15rem; }
 .hud-forecast { top: 18.5rem; max-width: 220px; }
-.hud-status { top: 22rem; max-width: 260px; }
-.hud-position { top: 26.5rem; }
+.hud-logs { top: 22rem; }
+.hud-status { top: 25.5rem; max-width: 260px; }
+.hud-position { top: 30rem; }
+
+#log-reader {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 6, 5, 0.82);
+  z-index: 25;
+  pointer-events: auto;
+}
+
+#log-reader.hidden {
+  display: none;
+}
+
+.log-panel h2 {
+  font-size: 1.6rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+
+#log-body {
+  line-height: 1.7;
+  color: #d8c7b2;
+  margin-bottom: 1.5rem;
+  max-height: 42vh;
+  overflow-y: auto;
+}
+
+#log-close {
+  width: 100%;
+  border: 0;
+  padding: 0.85rem 1rem;
+  font: inherit;
+  font-size: 1rem;
+  color: #1a120d;
+  background: linear-gradient(180deg, #e2b07f, #c07a45);
+  cursor: pointer;
+}
 
 .meter {
   width: 100%;

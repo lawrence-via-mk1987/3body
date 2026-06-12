@@ -9,7 +9,7 @@ import {
 } from './TemperatureField';
 import { ORBITAL_CONFIG } from './config';
 import { PHASE_LABELS } from './types';
-import type { ForecastEntry, TemperatureSample } from './types';
+import type { EraKind, EraPhase, ForecastEntry, TemperatureSample } from './types';
 import type { Sky } from '../world/Sky';
 
 const SKY_PALETTES = {
@@ -152,6 +152,14 @@ export class OrbitalDirector {
     this.temperature = { value, ...description };
 
     this.applyAtmosphere();
+  }
+
+  getEraKind(): EraKind {
+    return this.eraState.era;
+  }
+
+  getPhase(): EraPhase {
+    return this.eraState.phase;
   }
 
   getEraLabel(): string {

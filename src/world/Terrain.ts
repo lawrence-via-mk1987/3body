@@ -1,8 +1,11 @@
 import * as THREE from 'three';
+import type { EraKind, EraPhase } from '../orbital/types';
 
 const TERRAIN_SIZE = 512;
 const TERRAIN_SEGMENTS = 128;
 const HEIGHT_SCALE = 18;
+const GROVE_CENTER = new THREE.Vector2(28, -32);
+const GROVE_RADIUS = 14;
 
 function hash(x: number, z: number): number {
   const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453;
@@ -55,6 +58,17 @@ function sampleHeight(worldX: number, worldZ: number): number {
 export class Terrain {
   readonly mesh: THREE.Mesh;
   private readonly geometry: THREE.PlaneGeometry;
+  private readonly material: THREE.MeshStandardMaterial;
+  private readonly uniforms = {
+    uColdBlend: { value: 0 },
+    uHeatBlend: { value: 0 },
+    uStableBlend: { value: 0 },
+    uGroveCenter: { value: new THREE.Vector2(GROVE_CENTER.x, GROVE_CENTER.y) },
+    uGroveRadius: { value: GROVE_RADIUS },
+  };
+  private targetCold = 0;
+  private targetHeat = 0;
+  private targetStable = 0;
 
   constructor() {
     this.geometry = new THREE.PlaneGeometry(
@@ -90,15 +104,83 @@ export class Terrain {
     this.geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
     this.geometry.computeVertexNormals();
 
-    const material = new THREE.MeshStandardMaterial({
+    this.material = new THREE.MeshStandardMaterial({
       vertexColors: true,
       roughness: 0.92,
       metalness: 0.04,
-      flatShading: false,
     });
 
-    this.mesh = new THREE.Mesh(this.geometry, material);
+    this.material.onBeforeCompile = (shader) => {
+      shader.uniforms.uColdBlend = this.uniforms.uColdBlend;
+      shader.uniforms.uHeatBlend = this.uniforms.uHeatBlend;
+      shader.uniforms.uStableBlend = this.uniforms.uStableBlend;
+      shader.uniforms.uGroveCenter = this.uniforms.uGroveCenter;
+      shader.uniforms.uGroveRadius = this.uniforms.uGroveRadius;
+
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <color_pars_vertex>',
+        `#include <color_pars_vertex>
+        varying vec3 vWorldPosition;`,
+      );
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <worldpos_vertex>',
+        `#include <worldpos_vertex>
+        vWorldPosition = worldPosition.xyz;`,
+      );
+
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <color_pars_fragment>',
+        `#include <color_pars_fragment>
+        uniform float uColdBlend;
+        uniform float uHeatBlend;
+        uniform float uStableBlend;
+        uniform vec2 uGroveCenter;
+        uniform float uGroveRadius;
+        varying vec3 vWorldPosition;`,
+      );
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <color_fragment>',
+        `#include <color_fragment>
+        vec3 iceTint = vec3(0.62, 0.74, 0.86);
+        vec3 scorchTint = vec3(0.62, 0.28, 0.14);
+        vec3 groveTint = vec3(0.28, 0.52, 0.24);
+        float lowland = smoothstep(10.0, 2.0, vWorldPosition.y);
+        diffuseColor.rgb = mix(diffuseColor.rgb, iceTint, uColdBlend * (0.35 + lowland * 0.45));
+        diffuseColor.rgb = mix(diffuseColor.rgb, scorchTint, uHeatBlend * 0.42);
+        float groveDist = distance(vWorldPosition.xz, uGroveCenter);
+        float groveMask = 1.0 - smoothstep(uGroveRadius * 0.35, uGroveRadius, groveDist);
+        diffuseColor.rgb = mix(diffuseColor.rgb, groveTint, uStableBlend * groveMask * 0.8);`,
+      );
+    };
+    this.material.customProgramCacheKey = () => 'terrain-era-blend';
+
+    this.mesh = new THREE.Mesh(this.geometry, this.material);
     this.mesh.receiveShadow = true;
+  }
+
+  setEraVisuals(era: EraKind, phase: EraPhase): void {
+    this.targetCold = phase === 'deep_cold' || phase === 'eclipse_relief' ? 1 : 0;
+    this.targetHeat = phase === 'scorch' || phase === 'tri_solar' || phase === 'flying_star' ? 1 : 0;
+    this.targetStable = era === 'stable' ? 1 : 0;
+  }
+
+  updateVisuals(delta: number): void {
+    const lerpSpeed = Math.min(delta * 1.8, 1);
+    this.uniforms.uColdBlend.value = THREE.MathUtils.lerp(
+      this.uniforms.uColdBlend.value,
+      this.targetCold,
+      lerpSpeed,
+    );
+    this.uniforms.uHeatBlend.value = THREE.MathUtils.lerp(
+      this.uniforms.uHeatBlend.value,
+      this.targetHeat,
+      lerpSpeed,
+    );
+    this.uniforms.uStableBlend.value = THREE.MathUtils.lerp(
+      this.uniforms.uStableBlend.value,
+      this.targetStable,
+      lerpSpeed,
+    );
   }
 
   getHeightAt(worldX: number, worldZ: number): number {
@@ -114,6 +196,6 @@ export class Terrain {
 
   dispose(): void {
     this.geometry.dispose();
-    (this.mesh.material as THREE.Material).dispose();
+    this.material.dispose();
   }
 }

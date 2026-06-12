@@ -9,7 +9,7 @@
   <body>
     <div id="overlay">
       <div class="panel">
-        <p class="eyebrow">Web demo · Milestone 3</p>
+        <p class="eyebrow">Web demo · Milestone 4</p>
         <h1>Trisolarian Survival</h1>
         <p class="tagline">
           Three suns. Chaotic skies. Endure until the next Stable Era.
@@ -22,8 +22,17 @@
         </p>
         <button id="start-btn" type="button">Enter the wasteland</button>
         <p class="controls">
-          WASD move · Shift sprint · Space jump · E dehydrate at the pit · Esc release mouse
+          WASD move · Shift sprint · F read logs · E dehydrate at pit · Esc release mouse
         </p>
+      </div>
+    </div>
+
+    <div id="log-reader" class="hidden">
+      <div class="panel log-panel">
+        <p class="eyebrow">Recovered text</p>
+        <h2 id="log-title"></h2>
+        <p id="log-body"></p>
+        <button id="log-close" type="button">Close</button>
       </div>
     </div>
 
@@ -66,6 +75,10 @@
       <div class="hud-block hud-forecast">
         <span class="hud-label">Forecast</span>
         <span id="hud-forecast">Conditions uncertain</span>
+      </div>
+      <div class="hud-block hud-logs">
+        <span class="hud-label">Logs found</span>
+        <span id="hud-logs">0 / 8</span>
       </div>
       <div class="hud-block hud-status">
         <span class="hud-label">Status</span>

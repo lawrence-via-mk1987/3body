@@ -31,12 +31,13 @@ npm run preview # preview production build
 
 ## Status
 
-**Milestone 3 complete** — survival loop with hydration, heat/cold damage, dehydration at the pit, shelter zones, and death/restart.
+**Milestone 4 complete** — ruin landmarks, 8 discoverable text logs (F to read), era-dependent terrain tinting, and Stable Era grove.
 
 - Milestone 1: FPS scaffold, terrain, disclaimer overlay
 - Milestone 2: three suns, orbital phases, temperature + forecast
-- Milestone 3: `SurvivalSystem`, shelters, dehydration (E at pit), vitals HUD
+- Milestone 3: survival, shelters, dehydration, vitals HUD
+- Milestone 4: ruins, text logs (persist in localStorage), terrain reacts to cold/heat/stable eras
 
-Game now starts in **Thaw** with a visible rising sun. Seek the underground shelter (east of spawn) or dehydration pit (northwest) when phases turn lethal.
+Explore the observatory (southeast), shelter ruins, dehydration rows, and grove (southwest — green during Stable Eras).
 
-Next: Milestone 4 — ruins, era-dependent terrain, environmental storytelling.
+Next: Milestone 5 — Stable Era polish, audio, deploy.

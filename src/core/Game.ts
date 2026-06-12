@@ -1,9 +1,14 @@
 import * as THREE from 'three';
+import { canReadLog } from '../narrative/logs';
+import { LogDiscovery } from '../narrative/LogDiscovery';
+import { LogMarkers } from '../narrative/LogMarkers';
 import { OrbitalDirector } from '../orbital/OrbitalDirector';
 import { FirstPersonController } from '../player/FirstPersonController';
 import { ShelterZones } from '../survival/ShelterZones';
 import { SurvivalSystem } from '../survival/SurvivalSystem';
+import { LogReader } from '../ui/LogReader';
 import { CaveShelter } from '../world/CaveShelter';
+import { Ruins } from '../world/Ruins';
 import { Sky } from '../world/Sky';
 import { Terrain } from '../world/Terrain';
 
@@ -18,6 +23,7 @@ interface HudElements {
   hydration: HTMLElement;
   hydrationBar: HTMLElement;
   status: HTMLElement;
+  logs: HTMLElement;
 }
 
 interface OverlayElements {
@@ -37,6 +43,10 @@ export class Game {
   private readonly orbital: OrbitalDirector;
   private readonly shelterZones: ShelterZones;
   private readonly survival = new SurvivalSystem();
+  private readonly logDiscovery = new LogDiscovery();
+  private readonly logMarkers: LogMarkers;
+  private readonly ruins: Ruins;
+  private readonly logReader: LogReader;
   private readonly hud: HudElements;
   private readonly overlays: OverlayElements;
   private readonly anchor = new THREE.Vector3();
@@ -47,9 +57,11 @@ export class Game {
     canvas: HTMLCanvasElement,
     hud: HudElements,
     overlays: OverlayElements,
+    logReader: LogReader,
   ) {
     this.hud = hud;
     this.overlays = overlays;
+    this.logReader = logReader;
 
     this.renderer = new THREE.WebGLRenderer({
       canvas,
@@ -77,11 +89,19 @@ export class Game {
       window.innerWidth / window.innerHeight,
     );
     this.orbital = new OrbitalDirector(this.scene, this.sky, this.fog);
+    this.logMarkers = new LogMarkers(this.terrain, this.logDiscovery);
+    this.ruins = new Ruins(this.terrain);
 
     this.scene.add(this.sky.mesh);
     this.scene.add(this.terrain.mesh);
+    this.scene.add(this.ruins.group);
+    this.scene.add(this.logMarkers.group);
     this.addLandmarks();
     this.scene.add(new CaveShelter(this.terrain, this.shelterZones).group);
+
+    this.logReader.onClose(() => {
+      this.syncMovementState();
+    });
 
     this.overlays.restartButton.addEventListener('click', () => {
       this.restart();
@@ -169,6 +189,7 @@ export class Game {
     this.survival.reset();
     this.orbital.reset();
     this.player.resetToSpawn();
+    this.logReader.close();
     this.overlays.death.classList.add('hidden');
     this.player.lock();
     this.running = true;
@@ -182,16 +203,20 @@ export class Game {
     }
 
     const delta = Math.min(this.clock.getDelta(), 0.05);
+    const stableEra = this.orbital.getEraKind() === 'stable';
 
-    if (this.player.consumePressedKey('KeyE')) {
+    if (!this.logReader.isOpen() && this.player.consumePressedKey('KeyE')) {
       const nearPit = this.shelterZones.isNearDehydrationPit(this.player.getPosition());
       this.survival.toggleDehydration(nearPit);
     }
 
-    const isDehydrated = this.survival.status === 'dehydrated';
-    this.player.setMovementEnabled(!isDehydrated && this.survival.status !== 'dead');
+    if (!this.logReader.isOpen() && this.player.consumePressedKey('KeyF')) {
+      this.tryReadNearbyLog(stableEra);
+    }
 
-    if (this.survival.status !== 'dead') {
+    this.syncMovementState();
+
+    if (this.survival.status !== 'dead' && !this.logReader.isOpen()) {
       this.player.update(delta);
     }
 
@@ -200,7 +225,13 @@ export class Game {
     this.orbital.update(delta, this.anchor);
     this.sky.update();
 
-    if (this.survival.status !== 'dead') {
+    this.terrain.setEraVisuals(this.orbital.getEraKind(), this.orbital.getPhase());
+    this.terrain.updateVisuals(delta);
+    this.ruins.setStableEraActive(stableEra);
+
+    const nearbyLog = this.logMarkers.update(this.anchor, stableEra);
+
+    if (this.survival.status !== 'dead' && !this.logReader.isOpen()) {
       const shelter = this.shelterZones.sample(this.anchor);
       const nearPit = this.shelterZones.isNearDehydrationPit(this.anchor);
       this.survival.update(
@@ -212,7 +243,7 @@ export class Game {
       );
     }
 
-    this.updateHud();
+    this.updateHud(nearbyLog, stableEra);
 
     if (this.survival.status === 'dead') {
       this.handleDeath();
@@ -223,6 +254,28 @@ export class Game {
     this.animationId = requestAnimationFrame(this.animate);
   };
 
+  private tryReadNearbyLog(stableEra: boolean): void {
+    const nearbyLog = this.logMarkers.update(this.anchor, stableEra);
+    if (!nearbyLog) {
+      return;
+    }
+
+    if (!canReadLog(nearbyLog.log, this.orbital.getEraKind())) {
+      return;
+    }
+
+    this.logDiscovery.discover(nearbyLog.log.id);
+    this.logReader.open(nearbyLog.log);
+    this.syncMovementState();
+  }
+
+  private syncMovementState(): void {
+    const canMove = !this.logReader.isOpen()
+      && this.survival.status !== 'dehydrated'
+      && this.survival.status !== 'dead';
+    this.player.setMovementEnabled(canMove);
+  }
+
   private handleDeath(): void {
     this.running = false;
     this.player.unlock();
@@ -230,7 +283,10 @@ export class Game {
     this.overlays.death.classList.remove('hidden');
   }
 
-  private updateHud(): void {
+  private updateHud(
+    nearbyLog: ReturnType<LogMarkers['update']>,
+    stableEra: boolean,
+  ): void {
     const temperature = this.orbital.getTemperature();
     const position = this.player.getPosition();
     const shelter = this.shelterZones.sample(position);
@@ -243,12 +299,31 @@ export class Game {
     this.hud.temperature.dataset.status = temperature.status;
     this.hud.forecast.textContent = this.orbital.getForecastSummary();
     this.hud.position.textContent = this.player.getPositionText();
+    this.hud.logs.textContent = `${this.logDiscovery.getDiscoveredCount()} / ${this.logDiscovery.getAllLogs().length}`;
 
     this.hud.health.textContent = `${Math.ceil(snapshot.health)}`;
     this.hud.healthBar.style.width = `${snapshot.health}%`;
     this.hud.hydration.textContent = `${Math.ceil(snapshot.hydration)}`;
     this.hud.hydrationBar.style.width = `${snapshot.hydration}%`;
-    this.hud.status.textContent = snapshot.statusMessage;
+
+    let statusMessage = snapshot.statusMessage;
+    if (this.logReader.isOpen()) {
+      statusMessage = 'Reading recovered text.';
+    } else if (nearbyLog) {
+      statusMessage = nearbyLog.discovered
+        ? `Press F to re-read ${nearbyLog.log.title.toLowerCase()}.`
+        : `Press F to read ${nearbyLog.log.title.toLowerCase()}.`;
+    } else if (!stableEra) {
+      const stableLogsRemaining = this.logDiscovery.getAllLogs().filter((log) => log.requiresStableEra).length;
+      const foundStableLogs = this.logDiscovery.getAllLogs().filter(
+        (log) => log.requiresStableEra && this.logDiscovery.isDiscovered(log.id),
+      ).length;
+      if (foundStableLogs < stableLogsRemaining) {
+        statusMessage = `${statusMessage} Grove logs await a Stable Era.`;
+      }
+    }
+
+    this.hud.status.textContent = statusMessage;
 
     this.hud.healthBar.parentElement?.classList.toggle('critical', snapshot.health < 30);
     this.hud.hydrationBar.parentElement?.classList.toggle('critical', snapshot.hydration < 25);
