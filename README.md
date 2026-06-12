@@ -15,6 +15,22 @@ This project is an unofficial, non-commercial fan work. It is not affiliated wit
 - [Game Design Document](./docs/GDD.md)
 - [Orbital System Specification](./docs/ORBITAL_SIM.md)
 
+## Development
+
+```bash
+npm install
+npm run dev
+```
+
+Open the local URL shown in the terminal. Click **Enter the wasteland** to start first-person exploration.
+
+```bash
+npm run build   # production build to dist/
+npm run preview # preview production build
+```
+
 ## Status
 
-Pre-production — design docs only. Implementation has not started.
+**Milestone 1 complete** — Vite + Three.js scaffold, first-person pointer-lock movement, procedural Trisolarian terrain, sky dome, placeholder landmarks, disclaimer screen, and minimal HUD.
+
+Next: Milestone 2 — celestial system (three suns, dynamic sky, temperature field).

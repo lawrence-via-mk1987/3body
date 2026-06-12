@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3body — Trisolarian Survival</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="overlay">
+      <div class="panel">
+        <p class="eyebrow">Web demo · Milestone 1</p>
+        <h1>Trisolarian Survival</h1>
+        <p class="tagline">
+          Three suns. Chaotic skies. Endure until the next Stable Era.
+        </p>
+        <p class="disclaimer">
+          <strong>Disclaimer:</strong> This is a fan-inspired game inspired by the
+          original <em>Three Body Problem</em> by Liu Cixin. Unofficial,
+          non-commercial fan work — not affiliated with Liu Cixin, the
+          <em>Remembrance of Earth's Past</em> series, or any rights holders.
+        </p>
+        <button id="start-btn" type="button">Enter the wasteland</button>
+        <p class="controls">
+          Click to capture the mouse · WASD to move · Shift to sprint · Esc to release
+        </p>
+      </div>
+    </div>
+    <div id="hud" class="hidden">
+      <div class="hud-block">
+        <span class="hud-label">Era</span>
+        <span id="hud-era">Chaotic</span>
+      </div>
+      <div class="hud-block">
+        <span class="hud-label">Position</span>
+        <span id="hud-position">0, 0</span>
+      </div>
+      <div class="hud-crosshair" aria-hidden="true"></div>
+    </div>
+    <canvas id="game-canvas"></canvas>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

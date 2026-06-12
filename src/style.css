@@ -1,0 +1,166 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0b0907;
+  color: #f2e6d8;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+#game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(196, 92, 38, 0.18), transparent 45%),
+    linear-gradient(180deg, rgba(8, 6, 5, 0.92), rgba(8, 6, 5, 0.98));
+  z-index: 20;
+}
+
+#overlay.hidden {
+  display: none;
+}
+
+.panel {
+  width: min(92vw, 560px);
+  padding: 2rem;
+  border: 1px solid rgba(242, 230, 216, 0.18);
+  background: rgba(18, 14, 11, 0.88);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #c28a5a;
+  margin-bottom: 0.75rem;
+}
+
+h1 {
+  font-size: clamp(2rem, 5vw, 2.8rem);
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+}
+
+.tagline {
+  color: #d8c7b2;
+  line-height: 1.6;
+  margin-bottom: 1.25rem;
+}
+
+.disclaimer {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #b9a996;
+  border-left: 3px solid #8f4f2c;
+  padding-left: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+#start-btn {
+  width: 100%;
+  border: 0;
+  padding: 0.95rem 1rem;
+  font: inherit;
+  font-size: 1rem;
+  color: #1a120d;
+  background: linear-gradient(180deg, #e2b07f, #c07a45);
+  cursor: pointer;
+}
+
+#start-btn:hover {
+  filter: brightness(1.05);
+}
+
+.controls {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: #9f8d7b;
+  text-align: center;
+}
+
+#hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+#hud.hidden {
+  display: none;
+}
+
+.hud-block {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  padding: 0.65rem 0.8rem;
+  background: rgba(10, 8, 6, 0.55);
+  border: 1px solid rgba(242, 230, 216, 0.12);
+  min-width: 140px;
+}
+
+.hud-block + .hud-block {
+  top: 4.5rem;
+}
+
+.hud-label {
+  display: block;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #b79a7d;
+  margin-bottom: 0.2rem;
+}
+
+#hud-era,
+#hud-position {
+  font-size: 0.95rem;
+}
+
+.hud-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 1px solid rgba(242, 230, 216, 0.35);
+  border-radius: 50%;
+}
+
+.hud-crosshair::before,
+.hud-crosshair::after {
+  content: '';
+  position: absolute;
+  background: rgba(242, 230, 216, 0.35);
+}
+
+.hud-crosshair::before {
+  top: 6px;
+  left: -4px;
+  width: 22px;
+  height: 1px;
+}
+
+.hud-crosshair::after {
+  top: -4px;
+  left: 6px;
+  width: 1px;
+  height: 22px;
+}
