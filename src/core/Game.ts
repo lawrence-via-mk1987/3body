@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { AudioDirector } from '../audio/AudioDirector';
 import { canReadLog } from '../narrative/logs';
 import { LogDiscovery } from '../narrative/LogDiscovery';
 import { LogMarkers } from '../narrative/LogMarkers';
@@ -7,9 +8,11 @@ import { FirstPersonController } from '../player/FirstPersonController';
 import { ShelterZones } from '../survival/ShelterZones';
 import { SurvivalSystem } from '../survival/SurvivalSystem';
 import { LogReader } from '../ui/LogReader';
+import { StableEraBanner } from '../ui/StableEraBanner';
 import { CaveShelter } from '../world/CaveShelter';
 import { Ruins } from '../world/Ruins';
 import { Sky } from '../world/Sky';
+import { StableEraParticles } from '../world/StableEraParticles';
 import { Terrain } from '../world/Terrain';
 
 interface HudElements {
@@ -46,22 +49,28 @@ export class Game {
   private readonly logDiscovery = new LogDiscovery();
   private readonly logMarkers: LogMarkers;
   private readonly ruins: Ruins;
+  private readonly stableParticles: StableEraParticles;
+  private readonly audio = new AudioDirector();
+  private readonly stableBanner: StableEraBanner;
   private readonly logReader: LogReader;
   private readonly hud: HudElements;
   private readonly overlays: OverlayElements;
   private readonly anchor = new THREE.Vector3();
   private animationId = 0;
   private running = false;
+  private exposureTarget = 1.12;
 
   constructor(
     canvas: HTMLCanvasElement,
     hud: HudElements,
     overlays: OverlayElements,
     logReader: LogReader,
+    stableBanner: StableEraBanner,
   ) {
     this.hud = hud;
     this.overlays = overlays;
     this.logReader = logReader;
+    this.stableBanner = stableBanner;
 
     this.renderer = new THREE.WebGLRenderer({
       canvas,
@@ -91,11 +100,13 @@ export class Game {
     this.orbital = new OrbitalDirector(this.scene, this.sky, this.fog);
     this.logMarkers = new LogMarkers(this.terrain, this.logDiscovery);
     this.ruins = new Ruins(this.terrain);
+    this.stableParticles = new StableEraParticles(this.terrain);
 
     this.scene.add(this.sky.mesh);
     this.scene.add(this.terrain.mesh);
     this.scene.add(this.ruins.group);
     this.scene.add(this.logMarkers.group);
+    this.scene.add(this.stableParticles.points);
     this.addLandmarks();
     this.scene.add(new CaveShelter(this.terrain, this.shelterZones).group);
 
@@ -167,11 +178,12 @@ export class Game {
     this.scene.add(pitMarker);
   }
 
-  start(): void {
+  async start(): Promise<void> {
     if (this.running) {
       return;
     }
 
+    await this.audio.start();
     this.running = true;
     this.overlays.death.classList.add('hidden');
     this.player.lock();
@@ -182,6 +194,7 @@ export class Game {
   stop(): void {
     this.running = false;
     cancelAnimationFrame(this.animationId);
+    this.audio.stop();
     this.player.unlock();
   }
 
@@ -190,7 +203,9 @@ export class Game {
     this.orbital.reset();
     this.player.resetToSpawn();
     this.logReader.close();
+    this.stableBanner.hide();
     this.overlays.death.classList.add('hidden');
+    this.audio.resume();
     this.player.lock();
     this.running = true;
     this.clock.start();
@@ -224,10 +239,20 @@ export class Game {
     this.sky.mesh.position.copy(this.anchor);
     this.orbital.update(delta, this.anchor);
     this.sky.update();
+    this.handleEraTransitions();
 
     this.terrain.setEraVisuals(this.orbital.getEraKind(), this.orbital.getPhase());
     this.terrain.updateVisuals(delta);
     this.ruins.setStableEraActive(stableEra);
+    this.stableParticles.setActive(stableEra, delta);
+    this.stableBanner.update(delta);
+
+    this.exposureTarget = stableEra ? 1.28 : 1.12;
+    this.renderer.toneMappingExposure = THREE.MathUtils.lerp(
+      this.renderer.toneMappingExposure,
+      this.exposureTarget,
+      Math.min(delta * 2, 1),
+    );
 
     const nearbyLog = this.logMarkers.update(this.anchor, stableEra);
 
@@ -240,8 +265,15 @@ export class Game {
         shelter,
         nearPit,
         this.player.isSprinting(),
+        stableEra,
       );
     }
+
+    this.audio.update(
+      this.orbital.getEraKind(),
+      this.orbital.getPhase(),
+      this.orbital.getTemperature().value,
+    );
 
     this.updateHud(nearbyLog, stableEra);
 
@@ -254,6 +286,22 @@ export class Game {
     this.animationId = requestAnimationFrame(this.animate);
   };
 
+  private handleEraTransitions(): void {
+    const transition = this.orbital.consumeTransition();
+    if (!transition) {
+      return;
+    }
+
+    if (transition.enteredStable) {
+      this.stableBanner.show();
+      this.audio.playStableEraChime();
+    }
+
+    if (transition.leftStable) {
+      this.stableBanner.hide();
+    }
+  }
+
   private tryReadNearbyLog(stableEra: boolean): void {
     const nearbyLog = this.logMarkers.update(this.anchor, stableEra);
     if (!nearbyLog) {
@@ -264,7 +312,10 @@ export class Game {
       return;
     }
 
-    this.logDiscovery.discover(nearbyLog.log.id);
+    const isNew = this.logDiscovery.discover(nearbyLog.log.id);
+    if (isNew) {
+      this.audio.playLogDiscover();
+    }
     this.logReader.open(nearbyLog.log);
     this.syncMovementState();
   }
@@ -278,6 +329,7 @@ export class Game {
 
   private handleDeath(): void {
     this.running = false;
+    this.audio.stop();
     this.player.unlock();
     this.overlays.deathMessage.textContent = this.survival.getDeathMessage();
     this.overlays.death.classList.remove('hidden');
@@ -307,7 +359,9 @@ export class Game {
     this.hud.hydrationBar.style.width = `${snapshot.hydration}%`;
 
     let statusMessage = snapshot.statusMessage;
-    if (this.logReader.isOpen()) {
+    if (stableEra) {
+      statusMessage = 'Stable Era — the grove lives. Hydration slowly returns.';
+    } else if (this.logReader.isOpen()) {
       statusMessage = 'Reading recovered text.';
     } else if (nearbyLog) {
       statusMessage = nearbyLog.discovered
@@ -328,6 +382,8 @@ export class Game {
     this.hud.healthBar.parentElement?.classList.toggle('critical', snapshot.health < 30);
     this.hud.hydrationBar.parentElement?.classList.toggle('critical', snapshot.hydration < 25);
     document.body.dataset.survival = snapshot.status;
+    document.body.dataset.era = stableEra ? 'stable' : 'chaotic';
+    this.hud.era.parentElement?.classList.toggle('stable-era', stableEra);
   }
 
   private onResize = (): void => {
@@ -340,6 +396,8 @@ export class Game {
   dispose(): void {
     this.stop();
     window.removeEventListener('resize', this.onResize);
+    this.audio.dispose();
+    this.stableParticles.dispose();
     this.orbital.dispose();
     this.terrain.dispose();
     this.sky.dispose();

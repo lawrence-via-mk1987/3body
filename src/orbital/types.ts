@@ -45,6 +45,12 @@ export const PHASE_LABELS: Record<EraPhase, string> = {
   stable_golden: 'Stable Era',
 };
 
+export interface EraTransition {
+  enteredStable: boolean;
+  leftStable: boolean;
+  phaseChanged: boolean;
+}
+
 export const CHAOTIC_PHASES: EraPhase[] = [
   'deep_cold',
   'thaw',

@@ -2,7 +2,9 @@
 
 A first-person browser survival demo set on a Trisolarian world: three chaotically orbiting suns, brutal Chaotic Eras, and brief hopeful Stable Eras. Explore ruins, discover text logs from prior civilizations, and try to endure.
 
-**Stack (planned):** Three.js · Vite · TypeScript · Rapier3D
+**Stack:** Three.js · Vite · TypeScript · Web Audio API
+
+**Play online:** [https://lawrence-via-mk1987.github.io/3body/](https://lawrence-via-mk1987.github.io/3body/) *(after GitHub Pages is enabled — see Deploy below)*
 
 ## Disclaimer
 
@@ -25,19 +27,30 @@ npm run dev
 Open the local URL shown in the terminal. Click **Enter the wasteland** to start first-person exploration.
 
 ```bash
-npm run build   # production build to dist/
-npm run preview # preview production build
+npm run build        # production build to dist/ (relative paths)
+npm run build:pages  # build for GitHub Pages (/3body/ base)
+npm run preview      # preview production build
 ```
+
+## Deploy to GitHub Pages
+
+1. In the repository **Settings → Pages**, set **Source** to **GitHub Actions**.
+2. Merge to `main`. The workflow in `.github/workflows/deploy.yml` builds and deploys automatically.
+3. The demo will be available at `https://<username>.github.io/3body/`.
 
 ## Status
 
-**Milestone 4 complete** — ruin landmarks, 8 discoverable text logs (F to read), era-dependent terrain tinting, and Stable Era grove.
+**Milestone 5 complete** — procedural ambience (wind, solar drone, stable pad), Stable Era banner/chime/particles/golden vignette, hydration recovery during Stable Eras, and GitHub Pages CI deploy.
 
-- Milestone 1: FPS scaffold, terrain, disclaimer overlay
-- Milestone 2: three suns, orbital phases, temperature + forecast
-- Milestone 3: survival, shelters, dehydration, vitals HUD
-- Milestone 4: ruins, text logs (persist in localStorage), terrain reacts to cold/heat/stable eras
+| Milestone | Features |
+|---|---|
+| 1 | FPS scaffold, terrain, disclaimer |
+| 2 | Three suns, orbital phases, temperature |
+| 3 | Survival, shelters, dehydration |
+| 4 | Ruins, text logs, era terrain |
+| 5 | Audio, Stable Era polish, GitHub Pages deploy |
 
-Explore the observatory (southeast), shelter ruins, dehydration rows, and grove (southwest — green during Stable Eras).
+### Controls
 
-Next: Milestone 5 — Stable Era polish, audio, deploy.
+- **WASD** — move · **Shift** — sprint · **Space** — jump
+- **F** — read nearby log · **E** — dehydrate at pit · **Esc** — release mouse

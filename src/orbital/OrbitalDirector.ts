@@ -9,7 +9,7 @@ import {
 } from './TemperatureField';
 import { ORBITAL_CONFIG } from './config';
 import { PHASE_LABELS } from './types';
-import type { EraKind, EraPhase, ForecastEntry, TemperatureSample } from './types';
+import type { EraKind, EraPhase, EraTransition, ForecastEntry, TemperatureSample } from './types';
 import type { Sky } from '../world/Sky';
 
 const SKY_PALETTES = {
@@ -70,12 +70,12 @@ const SKY_PALETTES = {
     ambient: 0.3,
   },
   stable_golden: {
-    top: '#4a6848',
-    horizon: '#c8a060',
-    bottom: '#5a4830',
-    fog: '#6a5838',
-    fogDensity: 0.0018,
-    ambient: 0.62,
+    top: '#5a8060',
+    horizon: '#e0b878',
+    bottom: '#6a5840',
+    fog: '#8a7850',
+    fogDensity: 0.0014,
+    ambient: 0.72,
   },
 } as const;
 
@@ -97,6 +97,7 @@ export class OrbitalDirector {
     label: 'Bitter Cold',
     status: 'cold',
   };
+  private pendingTransition: EraTransition | null = null;
 
   constructor(
     private readonly scene: THREE.Scene,
@@ -117,9 +118,16 @@ export class OrbitalDirector {
   }
 
   update(delta: number, anchor: THREE.Vector3): void {
+    const eraBefore = this.eraState.era;
     const phaseChanged = this.eraState.update(delta);
+
     if (phaseChanged) {
       this.refreshForecast();
+      this.pendingTransition = {
+        enteredStable: eraBefore !== 'stable' && this.eraState.era === 'stable',
+        leftStable: eraBefore === 'stable' && this.eraState.era === 'chaotic',
+        phaseChanged: true,
+      };
     }
 
     this.forecastTimer += delta;
@@ -185,6 +193,7 @@ export class OrbitalDirector {
   reset(): void {
     this.eraState.reset();
     this.forecastTimer = 0;
+    this.pendingTransition = null;
     this.refreshForecast();
   }
 
@@ -214,7 +223,15 @@ export class OrbitalDirector {
     );
     this.ambient.color.set(this.eraState.era === 'stable' ? '#9ab07a' : '#7a4d35');
     this.ambient.groundColor.set(this.temperature.value < 0 ? '#141c28' : '#1a120d');
-    this.fill.intensity = 0.12 + Math.max(this.temperature.value, 0) * 0.08;
+    this.fill.intensity = this.eraState.era === 'stable'
+      ? 0.22
+      : 0.12 + Math.max(this.temperature.value, 0) * 0.08;
+  }
+
+  consumeTransition(): EraTransition | null {
+    const transition = this.pendingTransition;
+    this.pendingTransition = null;
+    return transition;
   }
 
   dispose(): void {

@@ -1,10 +1,13 @@
 import { Game } from './core/Game';
 import { LogReader } from './ui/LogReader';
+import { StableEraBanner } from './ui/StableEraBanner';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
 const overlay = document.querySelector<HTMLDivElement>('#overlay');
 const hud = document.querySelector<HTMLDivElement>('#hud');
 const deathOverlay = document.querySelector<HTMLDivElement>('#death-overlay');
+const stableBanner = document.querySelector<HTMLDivElement>('#stable-banner');
+const stableBannerSubtitle = document.querySelector<HTMLParagraphElement>('#stable-banner-subtitle');
 const logReaderOverlay = document.querySelector<HTMLDivElement>('#log-reader');
 const startButton = document.querySelector<HTMLButtonElement>('#start-btn');
 const restartButton = document.querySelector<HTMLButtonElement>('#restart-btn');
@@ -29,6 +32,8 @@ if (
   || !overlay
   || !hud
   || !deathOverlay
+  || !stableBanner
+  || !stableBannerSubtitle
   || !logReaderOverlay
   || !startButton
   || !restartButton
@@ -52,6 +57,7 @@ if (
 }
 
 const logReader = new LogReader(logReaderOverlay, logTitle, logBody, logCloseButton);
+const stableEraBanner = new StableEraBanner(stableBanner, stableBannerSubtitle);
 
 const game = new Game(
   canvas,
@@ -74,12 +80,13 @@ const game = new Game(
     restartButton,
   },
   logReader,
+  stableEraBanner,
 );
 
 startButton.addEventListener('click', () => {
   overlay.classList.add('hidden');
   hud.classList.remove('hidden');
-  game.start();
+  void game.start();
 });
 
 document.addEventListener('pointerlockchange', () => {

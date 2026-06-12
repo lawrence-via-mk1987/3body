@@ -1,7 +1,9 @@
 import { defineConfig } from 'vite';
 
+const githubPages = process.env.GITHUB_PAGES === 'true';
+
 export default defineConfig({
-  base: './',
+  base: githubPages ? '/3body/' : './',
   server: {
     host: true,
   },

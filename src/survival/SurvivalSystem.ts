@@ -38,6 +38,7 @@ export class SurvivalSystem {
     shelter: ShelterSample,
     nearPit: boolean,
     sprinting: boolean,
+    stableEra = false,
   ): void {
     if (this.status === 'dead') {
       return;
@@ -64,8 +65,13 @@ export class SurvivalSystem {
       hydrationDrain *= SURVIVAL_CONFIG.sprintHydrationMultiplier;
     }
 
+    let hydrationDelta = -hydrationDrain * delta;
+    if (stableEra) {
+      hydrationDelta += 0.45 * delta;
+    }
+
     this.hydration = THREE.MathUtils.clamp(
-      this.hydration - hydrationDrain * delta,
+      this.hydration + hydrationDelta,
       0,
       SURVIVAL_CONFIG.maxHydration,
     );
