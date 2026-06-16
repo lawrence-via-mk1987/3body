@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3body — Trisolarian Survival</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="overlay">
+      <div class="panel">
+        <p class="eyebrow">Web demo · Milestone 5</p>
+        <h1>Trisolarian Survival</h1>
+        <p class="tagline">
+          Three suns. Chaotic skies. Endure until the next Stable Era.
+        </p>
+        <p class="disclaimer">
+          <strong>Disclaimer:</strong> This is a fan-inspired game inspired by the
+          original <em>Three Body Problem</em> by Liu Cixin. Unofficial,
+          non-commercial fan work — not affiliated with Liu Cixin, the
+          <em>Remembrance of Earth's Past</em> series, or any rights holders.
+        </p>
+        <button id="start-btn" type="button">Enter the wasteland</button>
+        <p class="controls">
+          WASD move · Shift sprint · F read logs · E dehydrate at pit · Esc release mouse · Audio starts on enter
+        </p>
+      </div>
+    </div>
+
+    <div id="stable-banner" class="hidden">
+      <div class="stable-banner-inner">
+        <p class="eyebrow">恒纪元 · Stable Era</p>
+        <h2>Hold your breath. The sky is kind.</h2>
+        <p id="stable-banner-subtitle">The suns settle. The grove remembers green. Breathe.</p>
+      </div>
+    </div>
+
+    <div id="log-reader" class="hidden">
+      <div class="panel log-panel">
+        <p class="eyebrow">Recovered text</p>
+        <h2 id="log-title"></h2>
+        <p id="log-body"></p>
+        <button id="log-close" type="button">Close</button>
+      </div>
+    </div>
+
+    <div id="death-overlay" class="hidden">
+      <div class="panel death-panel">
+        <p class="eyebrow">Civilization ended</p>
+        <h2>Another cycle falls</h2>
+        <p id="death-message"></p>
+        <button id="restart-btn" type="button">Begin again</button>
+      </div>
+    </div>
+
+    <div id="hud" class="hidden">
+      <div class="hud-block hud-era">
+        <span class="hud-label">Era</span>
+        <span id="hud-era">Chaotic</span>
+      </div>
+      <div class="hud-block hud-phase">
+        <span class="hud-label">Phase</span>
+        <span id="hud-phase">Thaw</span>
+      </div>
+      <div class="hud-block hud-temperature">
+        <span class="hud-label">Temperature</span>
+        <span id="hud-temperature" data-status="safe">Survivable (0.0)</span>
+      </div>
+      <div class="hud-block hud-vitals">
+        <span class="hud-label">Vitality</span>
+        <div class="meter">
+          <div id="hud-health-bar" class="meter-fill health"></div>
+        </div>
+        <span id="hud-health" class="meter-value">100</span>
+      </div>
+      <div class="hud-block hud-hydration">
+        <span class="hud-label">Hydration</span>
+        <div class="meter">
+          <div id="hud-hydration-bar" class="meter-fill hydration"></div>
+        </div>
+        <span id="hud-hydration" class="meter-value">100</span>
+      </div>
+      <div class="hud-block hud-forecast">
+        <span class="hud-label">Forecast</span>
+        <span id="hud-forecast">Conditions uncertain</span>
+      </div>
+      <div class="hud-block hud-logs">
+        <span class="hud-label">Logs found</span>
+        <span id="hud-logs">0 / 8</span>
+      </div>
+      <div class="hud-block hud-status">
+        <span class="hud-label">Status</span>
+        <span id="hud-status">Look up. The suns are rising.</span>
+      </div>
+      <div class="hud-block hud-position">
+        <span class="hud-label">Position</span>
+        <span id="hud-position">0, 0</span>
+      </div>
+      <div class="hud-crosshair" aria-hidden="true"></div>
+    </div>
+
+    <canvas id="game-canvas"></canvas>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

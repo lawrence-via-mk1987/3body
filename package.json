@@ -1,0 +1,22 @@
+{
+  "name": "3body",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "build:pages": "tsc && cross-env GITHUB_PAGES=true vite build",
+    "preview": "vite preview",
+    "preview:pages": "cross-env GITHUB_PAGES=true vite preview"
+  },
+  "dependencies": {
+    "three": "^0.177.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.177.0",
+    "cross-env": "^7.0.3",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  }
+}

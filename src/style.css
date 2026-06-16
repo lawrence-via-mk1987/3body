@@ -1,0 +1,345 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0b0907;
+  color: #f2e6d8;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+#game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(196, 92, 38, 0.18), transparent 45%),
+    linear-gradient(180deg, rgba(8, 6, 5, 0.92), rgba(8, 6, 5, 0.98));
+  z-index: 20;
+}
+
+#overlay.hidden {
+  display: none;
+}
+
+.panel {
+  width: min(92vw, 560px);
+  padding: 2rem;
+  border: 1px solid rgba(242, 230, 216, 0.18);
+  background: rgba(18, 14, 11, 0.88);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #c28a5a;
+  margin-bottom: 0.75rem;
+}
+
+h1 {
+  font-size: clamp(2rem, 5vw, 2.8rem);
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+}
+
+.tagline {
+  color: #d8c7b2;
+  line-height: 1.6;
+  margin-bottom: 1.25rem;
+}
+
+.disclaimer {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #b9a996;
+  border-left: 3px solid #8f4f2c;
+  padding-left: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+#start-btn {
+  width: 100%;
+  border: 0;
+  padding: 0.95rem 1rem;
+  font: inherit;
+  font-size: 1rem;
+  color: #1a120d;
+  background: linear-gradient(180deg, #e2b07f, #c07a45);
+  cursor: pointer;
+}
+
+#start-btn:hover {
+  filter: brightness(1.05);
+}
+
+.controls {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: #9f8d7b;
+  text-align: center;
+}
+
+#hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+#hud.hidden {
+  display: none;
+}
+
+.hud-block {
+  position: absolute;
+  left: 1rem;
+  padding: 0.65rem 0.8rem;
+  background: rgba(10, 8, 6, 0.55);
+  border: 1px solid rgba(242, 230, 216, 0.12);
+  min-width: 168px;
+}
+
+.hud-era { top: 1rem; }
+.hud-phase { top: 4.5rem; }
+.hud-temperature { top: 8rem; }
+.hud-vitals { top: 11.5rem; }
+.hud-hydration { top: 15rem; }
+.hud-forecast { top: 18.5rem; max-width: 220px; }
+.hud-logs { top: 22rem; }
+.hud-status { top: 25.5rem; max-width: 260px; }
+.hud-position { top: 30rem; }
+
+#log-reader {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 6, 5, 0.82);
+  z-index: 25;
+  pointer-events: auto;
+}
+
+#log-reader.hidden {
+  display: none;
+}
+
+.log-panel h2 {
+  font-size: 1.6rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+
+#log-body {
+  line-height: 1.7;
+  color: #d8c7b2;
+  margin-bottom: 1.5rem;
+  max-height: 42vh;
+  overflow-y: auto;
+}
+
+#log-close {
+  width: 100%;
+  border: 0;
+  padding: 0.85rem 1rem;
+  font: inherit;
+  font-size: 1rem;
+  color: #1a120d;
+  background: linear-gradient(180deg, #e2b07f, #c07a45);
+  cursor: pointer;
+}
+
+.meter {
+  width: 100%;
+  height: 8px;
+  margin: 0.35rem 0;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(242, 230, 216, 0.1);
+}
+
+.meter-fill {
+  height: 100%;
+  width: 100%;
+  transform-origin: left center;
+  transition: width 0.2s ease;
+}
+
+.meter-fill.health { background: linear-gradient(90deg, #8f3a2c, #d86a4d); }
+.meter-fill.hydration { background: linear-gradient(90deg, #2f5f8c, #6aa8d8); }
+.meter.critical .meter-fill.health { background: linear-gradient(90deg, #601808, #ff4020); }
+.meter.critical .meter-fill.hydration { background: linear-gradient(90deg, #183850, #4a88b8); }
+
+.meter-value {
+  font-size: 0.85rem;
+  color: #c9b59d;
+}
+
+#death-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 6, 5, 0.88);
+  z-index: 30;
+}
+
+#death-overlay.hidden {
+  display: none;
+}
+
+.death-panel h2 {
+  font-size: 2rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+
+#death-message {
+  line-height: 1.6;
+  color: #d8c7b2;
+  margin-bottom: 1.5rem;
+}
+
+body[data-survival='dehydrated'] #game-canvas {
+  filter: saturate(0.45) contrast(0.95);
+}
+
+body[data-survival='dehydrated'] .hud-crosshair {
+  opacity: 0.25;
+}
+
+body[data-era='stable'] #game-canvas {
+  box-shadow: inset 0 0 120px rgba(224, 184, 120, 0.18);
+}
+
+body[data-era='stable']::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 20%, rgba(224, 184, 120, 0.12), transparent 55%);
+  z-index: 5;
+}
+
+#stable-banner {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  pointer-events: none;
+}
+
+#stable-banner.hidden {
+  display: none;
+}
+
+.stable-banner-inner {
+  padding: 1rem 1.4rem;
+  border: 1px solid rgba(224, 184, 120, 0.35);
+  background: rgba(24, 30, 18, 0.78);
+  text-align: center;
+  min-width: min(92vw, 420px);
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.35);
+}
+
+.stable-banner-inner h2 {
+  font-size: 1.35rem;
+  font-weight: 500;
+  margin-bottom: 0.45rem;
+  color: #f0dfb8;
+}
+
+#stable-banner-subtitle {
+  color: #d4c29e;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.hud-era.stable-era {
+  border-color: rgba(224, 184, 120, 0.45);
+  background: rgba(34, 40, 22, 0.72);
+}
+
+.hud-era.stable-era #hud-era {
+  color: #e8d8a0;
+}
+
+.hud-label {
+  display: block;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #b79a7d;
+  margin-bottom: 0.2rem;
+}
+
+#hud-era,
+#hud-phase,
+#hud-temperature,
+#hud-forecast,
+#hud-status,
+#hud-position {
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+#hud-status {
+  color: #d8c7b2;
+}
+
+#hud-temperature[data-status='freezing'] { color: #8ec8ff; }
+#hud-temperature[data-status='cold'] { color: #a8c4e8; }
+#hud-temperature[data-status='safe'] { color: #d8e8c8; }
+#hud-temperature[data-status='warm'] { color: #f0c890; }
+#hud-temperature[data-status='heat'] { color: #ff9a5c; }
+#hud-temperature[data-status='lethal'] { color: #ff5a40; }
+
+#hud-forecast {
+  color: #c9b59d;
+}
+
+.hud-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 1px solid rgba(242, 230, 216, 0.35);
+  border-radius: 50%;
+}
+
+.hud-crosshair::before,
+.hud-crosshair::after {
+  content: '';
+  position: absolute;
+  background: rgba(242, 230, 216, 0.35);
+}
+
+.hud-crosshair::before {
+  top: 6px;
+  left: -4px;
+  width: 22px;
+  height: 1px;
+}
+
+.hud-crosshair::after {
+  top: -4px;
+  left: 6px;
+  width: 1px;
+  height: 22px;
+}
