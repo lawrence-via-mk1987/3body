@@ -1,6 +1,6 @@
 # Kairos Redeemer
 
-Transfer-ready design bundle for a Christ-centered time-travel JRPG inspired by Chrono Trigger and Another Eden.
+Christ-centered time-travel JRPG project inspired by Chrono Trigger and Another Eden.
 
 ## Purpose
 
@@ -9,6 +9,7 @@ This folder consolidates:
 1. Earlier concept iterations from the design process
 2. The current master GDD
 3. Production packet documents needed to start real game development
+4. A Godot 4 / GDScript vertical-slice project scaffold
 
 ## Structure
 
@@ -19,7 +20,21 @@ This folder consolidates:
   - Combat Design Spec
   - Narrative Beat Sheet
   - Vertical Slice Spec
+- `game/`
+  - Godot 4 project scaffold for the first playable vertical slice
+  - Autoloads, scenes, dialogue data, and battle shell
 
-## Note on repository transfer
+## Current Build Direction
 
-This bundle was prepared in the currently accessible workspace because the cloud agent does not yet have GitHub access to the target `kairos-redeemer` repository. Once that repository is accessible to the agent, this folder can be moved or pushed there directly.
+- Engine: Godot 4.x stable
+- Presentation: Option A, 2D-first with layered atmosphere
+- Scripting: GDScript
+
+## Current Vertical Slice Target
+
+1. Beth-Tikvah
+2. Lamp Pavilion fracture
+3. Threshold of Testimony
+4. Garden of First Light
+5. Briar Bridegroom
+6. Meridian teaser

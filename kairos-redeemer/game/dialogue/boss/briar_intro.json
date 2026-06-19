@@ -1,0 +1,24 @@
+{
+  "scene_id": "briar_intro",
+  "title": "Briar Bridegroom Intro",
+  "lines": [
+    {
+      "line_id": "briar_intro_001",
+      "speaker": "Briar Bridegroom",
+      "emotion": "grave",
+      "text": "If you love, seize. If you fear loss, tighten your hand."
+    },
+    {
+      "line_id": "briar_intro_002",
+      "speaker": "Micah",
+      "emotion": "wary",
+      "text": "He teaches fear to wear the face of devotion."
+    },
+    {
+      "line_id": "briar_intro_003",
+      "speaker": "Elior",
+      "emotion": "resolved",
+      "text": "That is not love."
+    }
+  ]
+}

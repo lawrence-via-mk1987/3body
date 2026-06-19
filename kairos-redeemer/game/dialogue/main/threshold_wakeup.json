@@ -1,0 +1,24 @@
+{
+  "scene_id": "threshold_wakeup",
+  "title": "Threshold Wakeup",
+  "lines": [
+    {
+      "line_id": "threshold_wakeup_001",
+      "speaker": "Junia",
+      "emotion": "shaken",
+      "text": "Are we dead?"
+    },
+    {
+      "line_id": "threshold_wakeup_002",
+      "speaker": "Micah",
+      "emotion": "dry",
+      "text": "Not yet."
+    },
+    {
+      "line_id": "threshold_wakeup_003",
+      "speaker": "Keeper",
+      "emotion": "grave",
+      "text": "The lie beneath all lies has awakened again."
+    }
+  ]
+}

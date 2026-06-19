@@ -1,0 +1,108 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/garden_main.gd" id="1_pk681"]
+[ext_resource type="Script" path="res://scripts/world/scene_trigger.gd" id="2_ieyr7"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_battle"]
+size = Vector2(140, 120)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pair"]
+size = Vector2(160, 120)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_glimpse"]
+size = Vector2(150, 110)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_briar"]
+size = Vector2(170, 140)
+
+[node name="GardenMain" type="Node2D"]
+script = ExtResource("1_pk681")
+
+[node name="EnvironmentRoot" type="Node2D" parent="."]
+
+[node name="Backdrop" type="ColorRect" parent="EnvironmentRoot"]
+offset_left = -640.0
+offset_top = -360.0
+offset_right = 1480.0
+offset_bottom = 360.0
+color = Color(0.35, 0.6, 0.38, 1)
+
+[node name="GardenEdge" type="ColorRect" parent="EnvironmentRoot"]
+offset_left = 0.0
+offset_top = 80.0
+offset_right = 320.0
+offset_bottom = 320.0
+color = Color(0.47, 0.73, 0.44, 1)
+
+[node name="WhisperingGrove" type="ColorRect" parent="EnvironmentRoot"]
+offset_left = 360.0
+offset_top = 40.0
+offset_right = 700.0
+offset_bottom = 300.0
+color = Color(0.4, 0.68, 0.43, 1)
+
+[node name="ThornVerge" type="ColorRect" parent="EnvironmentRoot"]
+offset_left = 780.0
+offset_top = 40.0
+offset_right = 1120.0
+offset_bottom = 300.0
+color = Color(0.46, 0.55, 0.34, 1)
+
+[node name="BossArena" type="ColorRect" parent="EnvironmentRoot"]
+offset_left = 1180.0
+offset_top = 20.0
+offset_right = 1460.0
+offset_bottom = 330.0
+color = Color(0.63, 0.55, 0.48, 1)
+
+[node name="EncounterRoot" type="Node2D" parent="."]
+
+[node name="TriggerRoot" type="Node2D" parent="."]
+
+[node name="FirstBattleTrigger" type="Area2D" parent="TriggerRoot"]
+script = ExtResource("2_ieyr7")
+position = Vector2(230, 200)
+trigger_id = "first_battle"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/FirstBattleTrigger"]
+shape = SubResource("RectangleShape2D_battle")
+
+[node name="FearfulPairTrigger" type="Area2D" parent="TriggerRoot"]
+script = ExtResource("2_ieyr7")
+position = Vector2(520, 180)
+trigger_id = "fearful_pair"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/FearfulPairTrigger"]
+shape = SubResource("RectangleShape2D_pair")
+
+[node name="VeiledGlimpseTrigger" type="Area2D" parent="TriggerRoot"]
+script = ExtResource("2_ieyr7")
+position = Vector2(900, 180)
+trigger_id = "veiled_glimpse"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/VeiledGlimpseTrigger"]
+shape = SubResource("RectangleShape2D_glimpse")
+
+[node name="BriarIntroTrigger" type="Area2D" parent="TriggerRoot"]
+script = ExtResource("2_ieyr7")
+position = Vector2(1320, 170)
+trigger_id = "briar_intro"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/BriarIntroTrigger"]
+shape = SubResource("RectangleShape2D_briar")
+
+[node name="RestorationTrigger" type="Area2D" parent="TriggerRoot"]
+script = ExtResource("2_ieyr7")
+position = Vector2(1410, 280)
+trigger_id = "restoration"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/RestorationTrigger"]
+shape = SubResource("RectangleShape2D_glimpse")
+
+[node name="PlayerSpawn" type="Marker2D" parent="."]
+position = Vector2(80, 210)
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(640, 180)
+zoom = Vector2(0.8, 0.8)
+enabled = true

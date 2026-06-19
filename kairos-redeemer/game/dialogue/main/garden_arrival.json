@@ -1,0 +1,24 @@
+{
+  "scene_id": "garden_arrival",
+  "title": "Garden Arrival",
+  "lines": [
+    {
+      "line_id": "garden_arrival_001",
+      "speaker": "Junia",
+      "emotion": "awe",
+      "text": "It is beautiful."
+    },
+    {
+      "line_id": "garden_arrival_002",
+      "speaker": "Micah",
+      "emotion": "wary",
+      "text": "It is frightened."
+    },
+    {
+      "line_id": "garden_arrival_003",
+      "speaker": "Elior",
+      "emotion": "uneasy",
+      "text": "Then the first wound here is deeper than overgrowth."
+    }
+  ]
+}

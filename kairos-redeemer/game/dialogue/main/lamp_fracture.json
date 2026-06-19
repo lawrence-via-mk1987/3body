@@ -1,0 +1,30 @@
+{
+  "scene_id": "lamp_fracture",
+  "title": "Lamp Fracture",
+  "lines": [
+    {
+      "line_id": "lamp_fracture_001",
+      "speaker": "Junia",
+      "emotion": "wary",
+      "text": "Elior... the Lamp is reacting."
+    },
+    {
+      "line_id": "lamp_fracture_002",
+      "speaker": "Rift Herald",
+      "emotion": "grave",
+      "text": "Behold the fracture. The ages no longer remember their Maker."
+    },
+    {
+      "line_id": "lamp_fracture_003",
+      "speaker": "Rift Herald",
+      "emotion": "accusing",
+      "text": "Love devours. Joy is ash. Peace is war."
+    },
+    {
+      "line_id": "lamp_fracture_004",
+      "speaker": "Elior",
+      "emotion": "urgent",
+      "text": "Junia! Hold on!"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "scene_id": "veiled_glimpse",
+  "title": "Veiled Glimpse",
+  "lines": [
+    {
+      "line_id": "veiled_glimpse_001",
+      "speaker": "Junia",
+      "emotion": "shaken",
+      "text": "I do not want to see that again."
+    },
+    {
+      "line_id": "veiled_glimpse_002",
+      "speaker": "Micah",
+      "emotion": "steady",
+      "text": "You will need to. The wound is older than the vines."
+    },
+    {
+      "line_id": "veiled_glimpse_003",
+      "speaker": "Elior",
+      "emotion": "prayerful",
+      "text": "Then the Serpent taught fear to grow around gift."
+    }
+  ]
+}

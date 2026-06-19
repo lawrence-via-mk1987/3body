@@ -1,0 +1,30 @@
+{
+  "scene_id": "fearful_pair",
+  "title": "Fearful Pair",
+  "lines": [
+    {
+      "line_id": "fearful_pair_001",
+      "speaker": "Garden Woman",
+      "emotion": "fear",
+      "text": "Do not take him from me."
+    },
+    {
+      "line_id": "fearful_pair_002",
+      "speaker": "Elior",
+      "emotion": "gentle",
+      "text": "No one is taking anyone."
+    },
+    {
+      "line_id": "fearful_pair_003",
+      "speaker": "Garden Woman",
+      "emotion": "fear",
+      "text": "If I loosen my hand, I will lose what I love."
+    },
+    {
+      "line_id": "fearful_pair_004",
+      "speaker": "Micah",
+      "emotion": "grave",
+      "text": "That is how fear learns to call itself devotion."
+    }
+  ]
+}

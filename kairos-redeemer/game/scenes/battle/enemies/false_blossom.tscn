@@ -1,0 +1,21 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/battle/enemy_actor.gd" id="1_uc4mi"]
+
+[node name="FalseBlossom" type="Node2D"]
+script = ExtResource("1_uc4mi")
+actor_id = "false_blossom"
+display_name = "False Blossom"
+max_hp = 50
+max_sp = 10
+power = 5
+guard = 4
+spirit = 10
+speed = 9
+
+[node name="Body" type="ColorRect" parent="."]
+offset_left = -26.0
+offset_top = -26.0
+offset_right = 26.0
+offset_bottom = 26.0
+color = Color(0.92, 0.55, 0.72, 1)

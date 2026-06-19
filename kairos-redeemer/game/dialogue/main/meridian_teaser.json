@@ -1,0 +1,30 @@
+{
+  "scene_id": "meridian_teaser",
+  "title": "Meridian Teaser",
+  "lines": [
+    {
+      "line_id": "meridian_teaser_001",
+      "speaker": "Keeper",
+      "emotion": "awe",
+      "text": "One day you will stand where the waters opened over the Beloved Son."
+    },
+    {
+      "line_id": "meridian_teaser_002",
+      "speaker": "Elior",
+      "emotion": "quiet",
+      "text": "And then?"
+    },
+    {
+      "line_id": "meridian_teaser_003",
+      "speaker": "Keeper",
+      "emotion": "steady",
+      "text": "Then you will see that the Serpent does not only want man sinful. He wants man orphaned."
+    },
+    {
+      "line_id": "meridian_teaser_004",
+      "speaker": "Keeper",
+      "emotion": "awe",
+      "text": "The Son reveals the Father."
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "scene_id": "garden_gate_open",
+  "title": "Garden Gate",
+  "lines": [
+    {
+      "line_id": "garden_gate_open_001",
+      "speaker": "Keeper",
+      "emotion": "steady",
+      "text": "Go. See what becomes of gift when fear takes root."
+    },
+    {
+      "line_id": "garden_gate_open_002",
+      "speaker": "Micah",
+      "emotion": "wary",
+      "text": "Then let us enter carefully."
+    }
+  ]
+}

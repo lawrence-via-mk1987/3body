@@ -1,0 +1,24 @@
+{
+  "scene_id": "opening_blessing",
+  "title": "Opening Blessing",
+  "lines": [
+    {
+      "line_id": "opening_blessing_001",
+      "speaker": "Hadarah",
+      "emotion": "warm",
+      "text": "Beloved one, remember whose you are."
+    },
+    {
+      "line_id": "opening_blessing_002",
+      "speaker": "Elior",
+      "emotion": "light",
+      "text": "You always say that."
+    },
+    {
+      "line_id": "opening_blessing_003",
+      "speaker": "Hadarah",
+      "emotion": "gentle",
+      "text": "Because the world is always trying to say otherwise."
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/beth_tikvah_main.gd" id="1_1ob16"]
+[ext_resource type="Script" path="res://scripts/world/scene_trigger.gd" id="2_ctkgb"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_opening"]
+size = Vector2(120, 120)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_festival"]
+size = Vector2(140, 140)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lamp"]
+size = Vector2(120, 120)
+
+[node name="BethTikvahMain" type="Node2D"]
+script = ExtResource("1_1ob16")
+
+[node name="EnvironmentRoot" type="Node2D" parent="."]
+
+[node name="Ground" type="ColorRect" parent="EnvironmentRoot"]
+offset_left = -640.0
+offset_top = -360.0
+offset_right = 640.0
+offset_bottom = 360.0
+color = Color(0.76, 0.65, 0.45, 1)
+
+[node name="FeastSquare" type="ColorRect" parent="EnvironmentRoot"]
+offset_left = 360.0
+offset_top = -40.0
+offset_right = 700.0
+offset_bottom = 220.0
+color = Color(0.82, 0.72, 0.52, 1)
+
+[node name="LampPavilion" type="ColorRect" parent="EnvironmentRoot"]
+offset_left = 820.0
+offset_top = -20.0
+offset_right = 1040.0
+offset_bottom = 180.0
+color = Color(0.9, 0.88, 0.7, 1)
+
+[node name="HomeLane" type="ColorRect" parent="EnvironmentRoot"]
+offset_left = -40.0
+offset_top = 140.0
+offset_right = 260.0
+offset_bottom = 320.0
+color = Color(0.68, 0.54, 0.35, 1)
+
+[node name="NPCRoot" type="Node2D" parent="."]
+
+[node name="HadarahMarker" type="Marker2D" parent="NPCRoot"]
+position = Vector2(130, 220)
+
+[node name="JuniaMarker" type="Marker2D" parent="NPCRoot"]
+position = Vector2(520, 100)
+
+[node name="TriggerRoot" type="Node2D" parent="."]
+
+[node name="OpeningBlessingTrigger" type="Area2D" parent="TriggerRoot"]
+script = ExtResource("2_ctkgb")
+position = Vector2(140, 210)
+trigger_id = "opening_blessing"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/OpeningBlessingTrigger"]
+shape = SubResource("RectangleShape2D_opening")
+
+[node name="FestivalTrigger" type="Area2D" parent="TriggerRoot"]
+script = ExtResource("2_ctkgb")
+position = Vector2(520, 100)
+trigger_id = "festival_intro"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/FestivalTrigger"]
+shape = SubResource("RectangleShape2D_festival")
+
+[node name="LampPavilionTrigger" type="Area2D" parent="TriggerRoot"]
+script = ExtResource("2_ctkgb")
+position = Vector2(930, 90)
+trigger_id = "lamp_pavilion"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/LampPavilionTrigger"]
+shape = SubResource("RectangleShape2D_lamp")
+
+[node name="PlayerSpawn" type="Marker2D" parent="."]
+position = Vector2(80, 230)
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(540, 80)
+zoom = Vector2(0.9, 0.9)
+enabled = true

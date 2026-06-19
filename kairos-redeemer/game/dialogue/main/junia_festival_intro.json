@@ -1,0 +1,30 @@
+{
+  "scene_id": "junia_festival_intro",
+  "title": "Junia at the Festival",
+  "lines": [
+    {
+      "line_id": "junia_festival_001",
+      "speaker": "Junia",
+      "emotion": "bright",
+      "text": "You are late."
+    },
+    {
+      "line_id": "junia_festival_002",
+      "speaker": "Elior",
+      "emotion": "light",
+      "text": "You started early."
+    },
+    {
+      "line_id": "junia_festival_003",
+      "speaker": "Junia",
+      "emotion": "playful",
+      "text": "That is what people say when they refuse to admit I am disciplined."
+    },
+    {
+      "line_id": "junia_festival_004",
+      "speaker": "Elior",
+      "emotion": "dry",
+      "text": "No one has ever said that about you."
+    }
+  ]
+}

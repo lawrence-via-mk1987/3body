@@ -1,0 +1,69 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/threshold_main.gd" id="1_j8n2w"]
+[ext_resource type="Script" path="res://scripts/world/scene_trigger.gd" id="2_qah6q"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_keeper"]
+size = Vector2(160, 120)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gate"]
+size = Vector2(160, 120)
+
+[node name="ThresholdMain" type="Node2D"]
+script = ExtResource("1_j8n2w")
+
+[node name="EnvironmentRoot" type="Node2D" parent="."]
+
+[node name="Backdrop" type="ColorRect" parent="EnvironmentRoot"]
+offset_left = -640.0
+offset_top = -360.0
+offset_right = 640.0
+offset_bottom = 360.0
+color = Color(0.18, 0.23, 0.3, 1)
+
+[node name="ArrivalPlatform" type="ColorRect" parent="EnvironmentRoot"]
+offset_left = -40.0
+offset_top = 140.0
+offset_right = 220.0
+offset_bottom = 300.0
+color = Color(0.75, 0.78, 0.85, 1)
+
+[node name="WitnessPool" type="ColorRect" parent="EnvironmentRoot"]
+offset_left = 280.0
+offset_top = 110.0
+offset_right = 520.0
+offset_bottom = 300.0
+color = Color(0.37, 0.55, 0.72, 1)
+
+[node name="GateDais" type="ColorRect" parent="EnvironmentRoot"]
+offset_left = 760.0
+offset_top = 90.0
+offset_right = 1040.0
+offset_bottom = 310.0
+color = Color(0.85, 0.83, 0.68, 1)
+
+[node name="TriggerRoot" type="Node2D" parent="."]
+
+[node name="KeeperTrigger" type="Area2D" parent="TriggerRoot"]
+script = ExtResource("2_qah6q")
+position = Vector2(420, 200)
+trigger_id = "keeper_briefing"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/KeeperTrigger"]
+shape = SubResource("RectangleShape2D_keeper")
+
+[node name="GardenGateTrigger" type="Area2D" parent="TriggerRoot"]
+script = ExtResource("2_qah6q")
+position = Vector2(900, 190)
+trigger_id = "garden_gate"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/GardenGateTrigger"]
+shape = SubResource("RectangleShape2D_gate")
+
+[node name="PlayerSpawn" type="Marker2D" parent="."]
+position = Vector2(90, 210)
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(540, 170)
+zoom = Vector2(0.9, 0.9)
+enabled = true

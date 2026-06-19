@@ -1,0 +1,30 @@
+{
+  "scene_id": "love_restoration",
+  "title": "Love Restored",
+  "lines": [
+    {
+      "line_id": "love_restoration_001",
+      "speaker": "Junia",
+      "emotion": "urgent",
+      "text": "The Fruit—take it!"
+    },
+    {
+      "line_id": "love_restoration_002",
+      "speaker": "Elior",
+      "emotion": "prayerful",
+      "text": "If I seize what is meant to be received, I have learned nothing."
+    },
+    {
+      "line_id": "love_restoration_003",
+      "speaker": "Keeper",
+      "emotion": "steady",
+      "text": "The first man grasped. The Beloved Son receives and gives."
+    },
+    {
+      "line_id": "love_restoration_004",
+      "speaker": "Elior",
+      "emotion": "soft",
+      "text": "Father... teach me how to receive."
+    }
+  ]
+}

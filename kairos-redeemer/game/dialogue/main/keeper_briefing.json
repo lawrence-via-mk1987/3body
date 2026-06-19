@@ -1,0 +1,24 @@
+{
+  "scene_id": "keeper_briefing",
+  "title": "Keeper Briefing",
+  "lines": [
+    {
+      "line_id": "keeper_briefing_001",
+      "speaker": "Keeper",
+      "emotion": "grave",
+      "text": "The Ancient Serpent has wrapped himself around wounded history."
+    },
+    {
+      "line_id": "keeper_briefing_002",
+      "speaker": "Keeper",
+      "emotion": "grave",
+      "text": "He steals trust, kills hope, and teaches the children of men to fear the Father."
+    },
+    {
+      "line_id": "keeper_briefing_003",
+      "speaker": "Keeper",
+      "emotion": "steady",
+      "text": "The first wound waits in a garden where love has become grasping."
+    }
+  ]
+}
