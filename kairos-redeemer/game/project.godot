@@ -17,6 +17,7 @@ QuestState="*res://systems/autoload/quest_state.gd"
 DialogueState="*res://systems/autoload/dialogue_state.gd"
 CombatState="*res://systems/autoload/combat_state.gd"
 SceneRouter="*res://systems/autoload/scene_router.gd"
+CodexState="*res://systems/autoload/codex_state.gd"
 
 [display]
 

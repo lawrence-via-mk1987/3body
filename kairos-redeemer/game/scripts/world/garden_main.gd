@@ -3,10 +3,12 @@ extends Node2D
 const PLAYER_SCENE := preload("res://scenes/characters/player.tscn")
 const DIALOGUE_BOX_SCENE := preload("res://scenes/ui/dialogue_box.tscn")
 const OBJECTIVE_HUD_SCENE := preload("res://scenes/ui/objective_hud.tscn")
+const PAUSE_MENU_SCENE := preload("res://scenes/ui/pause_menu.tscn")
 const DIALOGUE_LOADER := preload("res://scripts/dialogue/dialogue_loader.gd")
 
 var _dialogue_box: CanvasLayer
 var _objective_hud: CanvasLayer
+var _pause_menu: CanvasLayer
 var _pending_action: Callable
 
 func _ready() -> void:
@@ -14,8 +16,14 @@ func _ready() -> void:
 	_spawn_player()
 	_spawn_ui()
 	_objective_hud.call("set_zone", "Garden of First Light")
-	QuestState.set_objective_text("Reach the Tree of First Light.")
+	if GameState.has_flag("briar_bridegroom_defeated"):
+		QuestState.set_objective_text("Return to the Threshold of Testimony.")
+	elif GameState.has_flag("garden_first_battle_complete"):
+		QuestState.set_objective_text("Speak with the fearful pair and continue toward the Tree.")
+	else:
+		QuestState.set_objective_text("Reach the Tree of First Light.")
 	_objective_hud.call("refresh_objective")
+	CodexState.unlock_entry("garden_of_first_light")
 
 	if GameState.has_flag("briar_bridegroom_defeated") and not DialogueState.has_seen_scene("love_restoration"):
 		call_deferred("_play_restoration")
@@ -34,6 +42,13 @@ func _spawn_ui() -> void:
 
 	_objective_hud = OBJECTIVE_HUD_SCENE.instantiate()
 	add_child(_objective_hud)
+
+	_pause_menu = PAUSE_MENU_SCENE.instantiate()
+	add_child(_pause_menu)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("pause") and _pause_menu != null:
+		_pause_menu.toggle_menu()
 
 func _play_arrival() -> void:
 	_play_dialogue("res://dialogue/main/garden_arrival.json", Callable())

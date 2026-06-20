@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/battle/battle_controller.gd" id="1_c4h48"]
+[ext_resource type="Script" path="res://scripts/ui/tutorial_popup.gd" id="2_0mn46"]
 
 [node name="BattleScene" type="Node2D"]
 
@@ -94,7 +95,63 @@ offset_top = 520.0
 offset_right = 1240.0
 offset_bottom = 670.0
 
-[node name="CommandLabel" type="Label" parent="UILayer/CommandMenu"]
-horizontal_alignment = 1
-vertical_alignment = 1
-text = "Placeholder battle shell."
+[node name="CommandMargin" type="MarginContainer" parent="UILayer/CommandMenu"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="CommandVBox" type="VBoxContainer" parent="UILayer/CommandMenu/CommandMargin"]
+layout_mode = 2
+
+[node name="CommandLabel" type="Label" parent="UILayer/CommandMenu/CommandMargin/CommandVBox"]
+text = "Awaiting actor..."
+
+[node name="CommandButtons" type="HBoxContainer" parent="UILayer/CommandMenu/CommandMargin/CommandVBox"]
+layout_mode = 2
+
+[node name="AttackButton" type="Button" parent="UILayer/CommandMenu/CommandMargin/CommandVBox/CommandButtons"]
+text = "Attack"
+
+[node name="TechButton" type="Button" parent="UILayer/CommandMenu/CommandMargin/CommandVBox/CommandButtons"]
+text = "Tech"
+
+[node name="DefendButton" type="Button" parent="UILayer/CommandMenu/CommandMargin/CommandVBox/CommandButtons"]
+text = "Defend"
+
+[node name="PrayButton" type="Button" parent="UILayer/CommandMenu/CommandMargin/CommandVBox/CommandButtons"]
+text = "Pray"
+
+[node name="SynergyButton" type="Button" parent="UILayer/CommandMenu/CommandMargin/CommandVBox/CommandButtons"]
+text = "Synergy"
+
+[node name="TechList" type="VBoxContainer" parent="UILayer/CommandMenu/CommandMargin/CommandVBox"]
+visible = false
+layout_mode = 2
+
+[node name="TutorialPopup" type="CanvasLayer" parent="UILayer"]
+script = ExtResource("2_0mn46")
+
+[node name="TutorialPanel" type="PanelContainer" parent="UILayer/TutorialPopup"]
+unique_name_in_owner = true
+offset_left = 780.0
+offset_top = 20.0
+offset_right = 1240.0
+offset_bottom = 160.0
+visible = false
+
+[node name="TutorialMargin" type="MarginContainer" parent="UILayer/TutorialPopup/TutorialPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="TutorialBody" type="RichTextLabel" parent="UILayer/TutorialPopup/TutorialPanel/TutorialMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+text = ""

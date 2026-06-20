@@ -3,10 +3,12 @@ extends Node2D
 const PLAYER_SCENE := preload("res://scenes/characters/player.tscn")
 const DIALOGUE_BOX_SCENE := preload("res://scenes/ui/dialogue_box.tscn")
 const OBJECTIVE_HUD_SCENE := preload("res://scenes/ui/objective_hud.tscn")
+const PAUSE_MENU_SCENE := preload("res://scenes/ui/pause_menu.tscn")
 const DIALOGUE_LOADER := preload("res://scripts/dialogue/dialogue_loader.gd")
 
 var _dialogue_box: CanvasLayer
 var _objective_hud: CanvasLayer
+var _pause_menu: CanvasLayer
 var _pending_action: Callable
 
 func _ready() -> void:
@@ -14,6 +16,7 @@ func _ready() -> void:
 	_spawn_player()
 	_spawn_ui()
 	_objective_hud.call("set_zone", "Threshold of Testimony")
+	CodexState.unlock_entry("threshold_of_testimony")
 	if GameState.has_flag("fruit_love_restored"):
 		QuestState.set_objective_text("Receive the Meridian teaser.")
 	elif not DialogueState.has_seen_scene("threshold_wakeup"):
@@ -40,6 +43,13 @@ func _spawn_ui() -> void:
 	_objective_hud = OBJECTIVE_HUD_SCENE.instantiate()
 	add_child(_objective_hud)
 
+	_pause_menu = PAUSE_MENU_SCENE.instantiate()
+	add_child(_pause_menu)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("pause") and _pause_menu != null:
+		_pause_menu.toggle_menu()
+
 func _play_intro() -> void:
 	_play_dialogue("res://dialogue/main/threshold_wakeup.json", Callable())
 
@@ -64,6 +74,7 @@ func _play_dialogue(path: String, on_finish: Callable) -> void:
 	if path.ends_with("keeper_briefing.json"):
 		QuestState.set_objective_text("Step through the first gate into the Garden.")
 		_objective_hud.call("refresh_objective")
+		CodexState.unlock_entry("keeper_of_hours")
 
 func _on_dialogue_finished() -> void:
 	if _pending_action.is_valid():
