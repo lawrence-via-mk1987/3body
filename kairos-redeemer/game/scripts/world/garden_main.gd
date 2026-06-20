@@ -3,6 +3,7 @@ extends Node2D
 const PLAYER_SCENE := preload("res://scenes/characters/player.tscn")
 const DIALOGUE_BOX_SCENE := preload("res://scenes/ui/dialogue_box.tscn")
 const OBJECTIVE_HUD_SCENE := preload("res://scenes/ui/objective_hud.tscn")
+const DIALOGUE_LOADER := preload("res://scripts/dialogue/dialogue_loader.gd")
 
 var _dialogue_box: CanvasLayer
 var _objective_hud: CanvasLayer
@@ -67,7 +68,7 @@ func handle_trigger(trigger_id: String) -> void:
 
 func _play_dialogue(path: String, on_finish: Callable) -> void:
 	_pending_action = on_finish
-	var lines = DialogueLoader.load_scene_lines(path)
+	var lines = DIALOGUE_LOADER.load_scene_lines(path)
 	_dialogue_box.start_dialogue(lines)
 	DialogueState.mark_scene_seen(path.get_file().get_basename())
 
