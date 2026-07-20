@@ -49,10 +49,7 @@ func _refresh_all() -> void:
 		QuestState.current_objective_text,
 		_format_dict_keys(QuestState.active_quests)
 	]
-	codex_content.text = "[b]Unlocked Entries[/b]\n%s\n\n[b]Unlocked Truths[/b]\n%s" % [
-		_format_array(CodexState.get_unlocked_entry_ids()),
-		_format_dict_keys(CodexState.unlocked_truths)
-	]
+	codex_content.text = _build_codex_text()
 
 	%SummaryContent.visible = _active_tab == "summary"
 	%JournalContent.visible = _active_tab == "journal"
@@ -70,3 +67,23 @@ func _format_array(values: Array) -> String:
 	for value in values:
 		lines.append("- %s" % str(value))
 	return "\n".join(lines)
+
+func _build_codex_text() -> String:
+	var sections: Array[String] = ["[b]Unlocked Entries[/b]"]
+	var entry_ids = CodexState.get_unlocked_entry_ids()
+	if entry_ids.is_empty():
+		sections.append("- None -")
+	else:
+		for entry_id in entry_ids:
+			var entry = CodexData.get_entry(entry_id)
+			sections.append("[b]%s[/b]\n%s" % [entry.title, entry.body])
+
+	sections.append("\n[b]Unlocked Truths[/b]")
+	if CodexState.unlocked_truths.is_empty():
+		sections.append("- None -")
+	else:
+		for truth_id in CodexState.unlocked_truths.keys():
+			var truth = CodexData.get_truth(truth_id)
+			sections.append("[b]%s[/b]\n%s" % [truth.title, truth.body])
+
+	return "\n\n".join(sections)

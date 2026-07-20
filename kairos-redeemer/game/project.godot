@@ -18,6 +18,7 @@ DialogueState="*res://systems/autoload/dialogue_state.gd"
 CombatState="*res://systems/autoload/combat_state.gd"
 SceneRouter="*res://systems/autoload/scene_router.gd"
 CodexState="*res://systems/autoload/codex_state.gd"
+CodexData="*res://systems/autoload/codex_data.gd"
 
 [display]
 
