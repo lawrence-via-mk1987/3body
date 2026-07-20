@@ -58,6 +58,9 @@ text = "Active Lie: --"
 [node name="LieBreakMeter" type="ProgressBar" parent="UILayer/BattleHUD/BossPanel/BossVBox"]
 value = 0.0
 
+[node name="PrayerRootStatus" type="Label" parent="UILayer/BattleHUD/BossPanel/BossVBox"]
+text = "Prayer Root: --"
+
 [node name="PartyPanel" type="PanelContainer" parent="UILayer/BattleHUD"]
 offset_left = 28.0
 offset_top = 520.0
@@ -161,3 +164,33 @@ bbcode_enabled = true
 fit_content = true
 scroll_active = false
 text = ""
+
+[node name="RewardPanel" type="PanelContainer" parent="UILayer"]
+offset_left = 390.0
+offset_top = 170.0
+offset_right = 890.0
+offset_bottom = 520.0
+visible = false
+
+[node name="RewardMargin" type="MarginContainer" parent="UILayer/RewardPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="RewardVBox" type="VBoxContainer" parent="UILayer/RewardPanel/RewardMargin"]
+layout_mode = 2
+
+[node name="RewardTitle" type="Label" parent="UILayer/RewardPanel/RewardMargin/RewardVBox"]
+text = "Victory"
+
+[node name="RewardBody" type="RichTextLabel" parent="UILayer/RewardPanel/RewardMargin/RewardVBox"]
+custom_minimum_size = Vector2(0, 220)
+bbcode_enabled = true
+fit_content = false
+scroll_active = true
+text = ""
+
+[node name="RewardContinueButton" type="Button" parent="UILayer/RewardPanel/RewardMargin/RewardVBox"]
+text = "Return"

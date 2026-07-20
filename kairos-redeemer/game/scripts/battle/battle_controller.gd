@@ -13,6 +13,7 @@ const BRIAR_SCENE := preload("res://scenes/battle/bosses/briar_bridegroom.tscn")
 @onready var boss_phase_label: Label = $"../UILayer/BattleHUD/BossPanel/BossVBox/BossPhase"
 @onready var active_lie_label: Label = $"../UILayer/BattleHUD/BossPanel/BossVBox/ActiveLie"
 @onready var lie_break_bar: ProgressBar = $"../UILayer/BattleHUD/BossPanel/BossVBox/LieBreakMeter"
+@onready var prayer_root_status_label: Label = $"../UILayer/BattleHUD/BossPanel/BossVBox/PrayerRootStatus"
 @onready var assurance_bar: ProgressBar = $"../UILayer/BattleHUD/AssurancePanel/AssuranceVBox/AssuranceBar"
 @onready var status_labels: Array[Label] = [
 	$"../UILayer/BattleHUD/PartyPanel/PartyVBox/EliorStatus",
@@ -28,6 +29,9 @@ const BRIAR_SCENE := preload("res://scenes/battle/bosses/briar_bridegroom.tscn")
 @onready var synergy_button: Button = $"../UILayer/CommandMenu/CommandMargin/CommandVBox/CommandButtons/SynergyButton"
 @onready var tech_list: VBoxContainer = $"../UILayer/CommandMenu/CommandMargin/CommandVBox/TechList"
 @onready var tutorial_popup: CanvasLayer = $"../UILayer/TutorialPopup"
+@onready var reward_panel: PanelContainer = $"../UILayer/RewardPanel"
+@onready var reward_body: RichTextLabel = $"../UILayer/RewardPanel/RewardMargin/RewardVBox/RewardBody"
+@onready var reward_continue_button: Button = $"../UILayer/RewardPanel/RewardMargin/RewardVBox/RewardContinueButton"
 
 var battle_context: Dictionary = {}
 var party_actors: Array[ActorBase] = []
@@ -43,6 +47,9 @@ var first_tutorial_shown: bool = false
 var pending_target_action: Dictionary = {}
 var pending_synergy_helper_id: String = ""
 var boss_phase_transition_seen: Dictionary = {}
+var prayer_root_phase_available: Dictionary = {}
+var battle_result_pending_return: bool = false
+var battle_victory_rewards_text: String = ""
 
 func _ready() -> void:
 	lie_manager = preload("res://scripts/battle/lie_manager.gd").new()
@@ -77,9 +84,13 @@ func _start_battle() -> void:
 	_spawn_party()
 	_spawn_enemies()
 	battle_active = true
+	battle_result_pending_return = false
+	battle_victory_rewards_text = ""
+	reward_panel.visible = false
 	command_label.text = "Awaiting actor..."
 	target_hint_label.text = ""
 	_set_command_buttons_enabled(false)
+	_initialize_prayer_root_state()
 	if not first_tutorial_shown:
 		tutorial_popup.show_popup("[b]BATTLE BASICS[/b]\nSelect actions when a party member is ready. Use [i]Pray[/i] to gain Assurance and [i]Tech[/i] abilities to break Lies.")
 		first_tutorial_shown = true
@@ -90,6 +101,7 @@ func _bind_buttons() -> void:
 	defend_button.pressed.connect(_on_defend_pressed)
 	pray_button.pressed.connect(_on_pray_pressed)
 	synergy_button.pressed.connect(_on_synergy_pressed)
+	reward_continue_button.pressed.connect(_on_reward_continue_pressed)
 
 func _spawn_party() -> void:
 	var actors = [
@@ -191,13 +203,16 @@ func _update_briar_phase(actor: ActorBase) -> void:
 
 	if not boss_phase_transition_seen.get(boss_phase, false):
 		boss_phase_transition_seen[boss_phase] = true
+		_ensure_prayer_root_for_phase(boss_phase)
 		match boss_phase:
 			2:
 				command_label.text = "Briar Bridegroom tightens the Garden's grip."
 				target_hint_label.text = "A Lie may soon be imposed. Prepare Truth actions."
+				tutorial_popup.show_popup("[b]Phase 2 - Possession[/b]\nThe Garden closes in. Use Truth actions and prayer wisely when the Lie appears.")
 			3:
 				command_label.text = "Briar Bridegroom forces beauty into possession."
 				target_hint_label.text = "Break the Lie or the final phase will intensify."
+				tutorial_popup.show_popup("[b]Phase 3 - False Union[/b]\nThe Briar Bridegroom grows more violent. A fresh Prayer Root pulse is available this phase.")
 
 func _finish_turn(actor: ActorBase) -> void:
 	ready_queue.erase(actor)
@@ -221,18 +236,20 @@ func _cleanup_defeated() -> void:
 func _check_battle_end() -> void:
 	if enemy_actors.is_empty():
 		battle_active = false
-		command_label.text = "Victory. Returning to world..."
+		command_label.text = "Victory."
 		match battle_context.get("battle_id", ""):
 			"briar_bridegroom":
 				GameState.set_flag("briar_bridegroom_defeated", true)
 				CodexState.unlock_entry("briar_bridegroom")
 				CodexState.unlock_truth("beloved_son_receives_and_gives")
+				battle_victory_rewards_text = "[b]Fruit of Love Restored[/b]\n- Codex entry unlocked: Briar Bridegroom\n- Truth unlocked: The Beloved Son Receives and Gives\n- Return to the Threshold of Testimony"
 			"garden_encounter_01":
 				GameState.set_flag("garden_first_battle_complete", true)
 				QuestState.set_objective_text("Speak with the fearful pair and continue toward the Tree.")
 				CodexState.unlock_entry("garden_of_first_light")
 				CodexState.unlock_entry("false_blossom")
-		call_deferred("_return_to_world")
+				battle_victory_rewards_text = "[b]Garden Encounter Cleared[/b]\n- Objective updated\n- Codex entries unlocked: Garden of First Light, False Blossom"
+		_show_reward_panel()
 	elif party_actors.is_empty():
 		battle_active = false
 		command_label.text = "Defeat. Returning to previous scene."
@@ -253,6 +270,7 @@ func _update_ui() -> void:
 	active_lie_label.text = "Active Lie: %s" % (CombatState.active_lie_id if not CombatState.active_lie_id.is_empty() else "--")
 	lie_break_bar.max_value = max(CombatState.lie_break_threshold, 1)
 	lie_break_bar.value = CombatState.lie_break_progress
+	prayer_root_status_label.text = "Prayer Root: %s" % _current_prayer_root_status()
 	assurance_bar.max_value = CombatState.assurance_max_points
 	assurance_bar.value = CombatState.assurance_points
 
@@ -301,8 +319,23 @@ func _on_defend_pressed() -> void:
 func _on_pray_pressed() -> void:
 	if not _can_accept_player_input():
 		return
-	CombatState.add_assurance(20)
-	command_label.text = "%s prays and steadies the party." % active_actor.display_name
+	var boosted_prayer := false
+	if battle_context.get("battle_id", "") == "briar_bridegroom" and prayer_root_phase_available.get(boss_phase, false):
+		prayer_root_phase_available[boss_phase] = false
+		CombatState.add_assurance(35)
+		boosted_prayer = true
+		command_label.text = "%s prays at the truth-root. The Garden answers with clarity." % active_actor.display_name
+		if CombatState.active_lie_id == "if_you_release_you_lose":
+			var broke := lie_manager.apply_truth_counter(["beloved", "release", "truth", "worship"], 2)
+			if broke and not enemy_actors.is_empty():
+				_clear_active_lie()
+				enemy_actors[0].take_damage(70)
+				command_label.text = "Prayer breaks the Lie and opens Briar Bridegroom!"
+	else:
+		CombatState.add_assurance(20)
+		command_label.text = "%s prays and steadies the party." % active_actor.display_name
+	if boosted_prayer:
+		target_hint_label.text = "The truth-root has gone still for this phase."
 	_finish_turn(active_actor)
 
 func _on_synergy_pressed() -> void:
@@ -491,6 +524,7 @@ func _clear_active_lie() -> void:
 	CombatState.active_lie_id = ""
 	CombatState.lie_break_progress = 0
 	CombatState.lie_break_threshold = 0
+	target_hint_label.text = "The Lie has broken. Press the advantage."
 
 func _get_party_target(target_index: int) -> ActorBase:
 	if party_actors.is_empty():
@@ -509,3 +543,33 @@ func _refresh_boss_max_value() -> void:
 
 func _on_tech_button_pressed(ability: Dictionary) -> void:
 	_use_tech(ability)
+
+func _initialize_prayer_root_state() -> void:
+	prayer_root_phase_available.clear()
+	_ensure_prayer_root_for_phase(1)
+
+func _ensure_prayer_root_for_phase(phase: int) -> void:
+	if battle_context.get("battle_id", "") != "briar_bridegroom":
+		return
+	if not prayer_root_phase_available.has(phase):
+		prayer_root_phase_available[phase] = true
+
+func _current_prayer_root_status() -> String:
+	if battle_context.get("battle_id", "") != "briar_bridegroom":
+		return "--"
+	return "Ready" if prayer_root_phase_available.get(boss_phase, false) else "Spent"
+
+func _show_reward_panel() -> void:
+	reward_panel.visible = true
+	reward_body.text = battle_victory_rewards_text
+	battle_result_pending_return = true
+	target_hint_label.text = "Choose Return to leave the battle."
+	_set_command_buttons_enabled(false)
+	tech_list.visible = false
+
+func _on_reward_continue_pressed() -> void:
+	if not battle_result_pending_return:
+		return
+	battle_result_pending_return = false
+	reward_panel.visible = false
+	call_deferred("_return_to_world")
