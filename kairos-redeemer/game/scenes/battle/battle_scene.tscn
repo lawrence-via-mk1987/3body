@@ -14,6 +14,9 @@ color = Color(0.09, 0.12, 0.16, 1)
 
 [node name="EnemyRoot" type="Node2D" parent="."]
 
+[node name="EnemyButtons" type="VBoxContainer" parent="EnemyRoot"]
+position = Vector2(1040, 220)
+
 [node name="PartyRoot" type="Node2D" parent="."]
 
 [node name="EffectRoot" type="Node2D" parent="."]
@@ -107,6 +110,9 @@ layout_mode = 2
 
 [node name="CommandLabel" type="Label" parent="UILayer/CommandMenu/CommandMargin/CommandVBox"]
 text = "Awaiting actor..."
+
+[node name="TargetHint" type="Label" parent="UILayer/CommandMenu/CommandMargin/CommandVBox"]
+text = ""
 
 [node name="CommandButtons" type="HBoxContainer" parent="UILayer/CommandMenu/CommandMargin/CommandVBox"]
 layout_mode = 2

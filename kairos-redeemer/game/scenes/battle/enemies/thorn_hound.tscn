@@ -1,0 +1,22 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/battle/enemy_actor.gd" id="1_qv8fo"]
+
+[node name="ThornHound" type="Node2D"]
+script = ExtResource("1_qv8fo")
+actor_id = "thorn_hound"
+display_name = "Thorn Hound"
+max_hp = 75
+max_sp = 0
+power = 12
+guard = 6
+spirit = 4
+speed = 13
+enemy_role = "striker"
+
+[node name="Body" type="ColorRect" parent="."]
+offset_left = -24.0
+offset_top = -18.0
+offset_right = 24.0
+offset_bottom = 18.0
+color = Color(0.56, 0.3, 0.24, 1)

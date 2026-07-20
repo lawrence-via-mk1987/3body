@@ -69,7 +69,6 @@ func handle_trigger(trigger_id: String) -> void:
 		"first_battle":
 			if GameState.has_flag("garden_first_battle_complete"):
 				return
-			GameState.set_flag("garden_first_battle_complete", true)
 			SceneRouter.goto_battle_scene("res://scenes/battle/battle_scene.tscn", {"battle_id": "garden_encounter_01"})
 		"briar_intro":
 			if DialogueState.has_seen_scene("briar_intro"):
