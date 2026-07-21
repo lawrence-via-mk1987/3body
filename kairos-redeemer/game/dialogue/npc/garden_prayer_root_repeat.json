@@ -1,0 +1,12 @@
+{
+  "scene_id": "garden_prayer_root_repeat",
+  "title": "Prayer at the Root",
+  "lines": [
+    {
+      "line_id": "garden_root_repeat_001",
+      "speaker": "Elior",
+      "emotion": "prayerful",
+      "text": "Let gift be received without fear."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "scene_id": "garden_prayer_root",
+  "title": "Prayer at the Root",
+  "lines": [
+    {
+      "line_id": "garden_root_001",
+      "speaker": "Elior",
+      "emotion": "prayerful",
+      "text": "Father, if fear has taught this place to grasp, teach us how to open our hands."
+    },
+    {
+      "line_id": "garden_root_002",
+      "speaker": "Junia",
+      "emotion": "quiet",
+      "text": "The roots moved."
+    },
+    {
+      "line_id": "garden_root_003",
+      "speaker": "Micah",
+      "emotion": "steady",
+      "text": "Not toward us. Away. As if making room."
+    }
+  ]
+}

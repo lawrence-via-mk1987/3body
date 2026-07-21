@@ -1,0 +1,24 @@
+{
+  "scene_id": "toben_baker",
+  "title": "Bread Before Speeches",
+  "lines": [
+    {
+      "line_id": "toben_001",
+      "speaker": "Toben",
+      "emotion": "warm",
+      "text": "Eat before you argue theology, Elior. A hungry man can make even wisdom sound hostile."
+    },
+    {
+      "line_id": "toben_002",
+      "speaker": "Elior",
+      "emotion": "light",
+      "text": "Is that one of Hadarah's sayings?"
+    },
+    {
+      "line_id": "toben_003",
+      "speaker": "Toben",
+      "emotion": "playful",
+      "text": "No. Hers are shorter. She knows when to stop talking."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "scene_id": "witness_pool",
+  "title": "The Witness Pool",
+  "lines": [
+    {
+      "line_id": "witness_pool_001",
+      "speaker": "Junia",
+      "emotion": "awe",
+      "text": "The water reflects places that are not above it."
+    },
+    {
+      "line_id": "witness_pool_002",
+      "speaker": "Keeper",
+      "emotion": "steady",
+      "text": "It does not show what is nearest. It shows what must be remembered."
+    },
+    {
+      "line_id": "witness_pool_003",
+      "speaker": "Elior",
+      "emotion": "quiet",
+      "text": "Then memory here is a kind of witness."
+    }
+  ]
+}

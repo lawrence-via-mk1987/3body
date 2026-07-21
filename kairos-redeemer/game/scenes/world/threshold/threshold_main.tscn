@@ -15,11 +15,18 @@ script = ExtResource("1_j8n2w")
 [node name="EnvironmentRoot" type="Node2D" parent="."]
 
 [node name="Backdrop" type="ColorRect" parent="EnvironmentRoot"]
-offset_left = -640.0
-offset_top = -360.0
-offset_right = 640.0
-offset_bottom = 360.0
+offset_left = -120.0
+offset_top = -100.0
+offset_right = 1160.0
+offset_bottom = 420.0
 color = Color(0.18, 0.23, 0.3, 1)
+
+[node name="Starway" type="ColorRect" parent="EnvironmentRoot"]
+offset_left = 100.0
+offset_top = 175.0
+offset_right = 950.0
+offset_bottom = 230.0
+color = Color(0.45, 0.48, 0.56, 1)
 
 [node name="ArrivalPlatform" type="ColorRect" parent="EnvironmentRoot"]
 offset_left = -40.0
@@ -42,11 +49,64 @@ offset_right = 1040.0
 offset_bottom = 310.0
 color = Color(0.85, 0.83, 0.68, 1)
 
+[node name="ArrivalLabel" type="Label" parent="EnvironmentRoot"]
+offset_left = 20.0
+offset_top = 145.0
+offset_right = 210.0
+offset_bottom = 180.0
+text = "Arrival Platform"
+
+[node name="WitnessPoolLabel" type="Label" parent="EnvironmentRoot"]
+offset_left = 330.0
+offset_top = 120.0
+offset_right = 500.0
+offset_bottom = 155.0
+text = "Witness Pool"
+
+[node name="GateLabel" type="Label" parent="EnvironmentRoot"]
+offset_left = 820.0
+offset_top = 105.0
+offset_right = 990.0
+offset_bottom = 140.0
+text = "Gate of First Light"
+
+[node name="NPCRoot" type="Node2D" parent="."]
+
+[node name="KeeperMarker" type="ColorRect" parent="NPCRoot"]
+position = Vector2(620, 65)
+offset_left = -14.0
+offset_top = -14.0
+offset_right = 14.0
+offset_bottom = 14.0
+color = Color(0.82, 0.82, 0.76, 1)
+
+[node name="MicahMarker" type="ColorRect" parent="NPCRoot"]
+position = Vector2(650, 325)
+offset_left = -12.0
+offset_top = -12.0
+offset_right = 12.0
+offset_bottom = 12.0
+color = Color(0.35, 0.45, 0.7, 1)
+
+[node name="KeeperName" type="Label" parent="NPCRoot"]
+offset_left = 580.0
+offset_top = 82.0
+offset_right = 675.0
+offset_bottom = 117.0
+text = "Keeper"
+
+[node name="MicahName" type="Label" parent="NPCRoot"]
+offset_left = 625.0
+offset_top = 340.0
+offset_right = 690.0
+offset_bottom = 375.0
+text = "Micah"
+
 [node name="TriggerRoot" type="Node2D" parent="."]
 
 [node name="KeeperTrigger" type="Area2D" parent="TriggerRoot"]
 script = ExtResource("2_qah6q")
-position = Vector2(420, 200)
+position = Vector2(620, 65)
 trigger_id = "keeper_briefing"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/KeeperTrigger"]
@@ -59,6 +119,33 @@ trigger_id = "garden_gate"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/GardenGateTrigger"]
 shape = SubResource("RectangleShape2D_gate")
+
+[node name="WitnessPoolTrigger" type="Area2D" parent="TriggerRoot"]
+script = ExtResource("2_qah6q")
+position = Vector2(400, 210)
+trigger_id = "witness_pool"
+one_shot = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/WitnessPoolTrigger"]
+shape = SubResource("RectangleShape2D_keeper")
+
+[node name="MicahWatchTrigger" type="Area2D" parent="TriggerRoot"]
+script = ExtResource("2_qah6q")
+position = Vector2(650, 325)
+trigger_id = "micah_watch"
+one_shot = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/MicahWatchTrigger"]
+shape = SubResource("RectangleShape2D_keeper")
+
+[node name="InscriptionTrigger" type="Area2D" parent="TriggerRoot"]
+script = ExtResource("2_qah6q")
+position = Vector2(735, 100)
+trigger_id = "threshold_inscription"
+one_shot = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/InscriptionTrigger"]
+shape = SubResource("RectangleShape2D_keeper")
 
 [node name="PlayerSpawn" type="Marker2D" parent="."]
 position = Vector2(90, 210)

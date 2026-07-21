@@ -13,6 +13,8 @@ var _pending_action: Callable
 
 func _ready() -> void:
 	GameState.set_current_map("beth_tikvah_main")
+	if not QuestState.is_quest_active("firstfruits_morning"):
+		QuestState.start_quest("firstfruits_morning")
 	_spawn_player()
 	_spawn_ui()
 	_objective_hud.call("set_zone", "Beth-Tikvah")
@@ -44,12 +46,26 @@ func handle_trigger(trigger_id: String) -> void:
 		"opening_blessing":
 			if DialogueState.has_seen_scene("opening_blessing"):
 				return
-			_play_dialogue("res://dialogue/main/opening_blessing.json", Callable())
+			_play_dialogue("res://dialogue/main/opening_blessing.json", Callable(self, "_after_opening_blessing"))
 		"festival_intro":
+			if not DialogueState.has_seen_scene("opening_blessing"):
+				QuestState.set_objective_text("Receive Hadarah's blessing before joining the feast.")
+				_objective_hud.call("refresh_objective")
+				return
 			if DialogueState.has_seen_scene("junia_festival_intro"):
 				return
-			_play_dialogue("res://dialogue/main/junia_festival_intro.json", Callable())
+			_play_dialogue("res://dialogue/main/junia_festival_intro.json", Callable(self, "_after_festival_intro"))
+		"toben_baker":
+			_play_dialogue("res://dialogue/npc/toben_baker.json", Callable())
+		"neriah_questions":
+			_play_dialogue("res://dialogue/npc/neriah_questions.json", Callable())
+		"asael_lamp_steward":
+			_play_dialogue("res://dialogue/npc/asael_lamp_steward.json", Callable())
 		"lamp_pavilion":
+			if not DialogueState.has_seen_scene("junia_festival_intro"):
+				QuestState.set_objective_text("Meet Junia at the Singer's Steps first.")
+				_objective_hud.call("refresh_objective")
+				return
 			if DialogueState.has_seen_scene("lamp_fracture"):
 				return
 			_play_dialogue("res://dialogue/main/lamp_fracture.json", Callable(self, "_go_to_threshold"))
@@ -66,8 +82,20 @@ func _on_dialogue_finished() -> void:
 		_pending_action = Callable()
 		action.call()
 
+func _after_opening_blessing() -> void:
+	QuestState.advance_quest("firstfruits_morning", "meet_junia")
+	QuestState.set_objective_text("Meet Junia at the Singer's Steps.")
+	_objective_hud.call("refresh_objective")
+
+func _after_festival_intro() -> void:
+	QuestState.advance_quest("firstfruits_morning", "approach_lamp")
+	QuestState.set_objective_text("Approach the Lamp Pavilion. You may speak with the townspeople first.")
+	_objective_hud.call("refresh_objective")
+
 func _go_to_threshold() -> void:
 	GameState.set_flag("lamp_fracture_seen", true)
+	QuestState.complete_quest("firstfruits_morning")
+	QuestState.start_quest("through_the_rupture")
 	CodexState.unlock_entry("threshold_of_testimony")
 	QuestState.set_objective_text("Awaken in the Threshold of Testimony.")
 	SceneRouter.goto_world_scene("res://scenes/world/threshold/threshold_main.tscn")

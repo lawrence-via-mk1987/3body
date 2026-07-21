@@ -1,0 +1,24 @@
+{
+  "scene_id": "hidden_child",
+  "title": "Behind the Vines",
+  "lines": [
+    {
+      "line_id": "hidden_child_001",
+      "speaker": "Garden Child",
+      "emotion": "wary",
+      "text": "If someone loves you, do they always need to know where you are?"
+    },
+    {
+      "line_id": "hidden_child_002",
+      "speaker": "Junia",
+      "emotion": "gentle",
+      "text": "No. Love can make room for you to return freely."
+    },
+    {
+      "line_id": "hidden_child_003",
+      "speaker": "Garden Child",
+      "emotion": "quiet",
+      "text": "No one here remembers how."
+    }
+  ]
+}

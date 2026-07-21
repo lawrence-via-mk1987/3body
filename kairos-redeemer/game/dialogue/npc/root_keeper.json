@@ -1,0 +1,24 @@
+{
+  "scene_id": "root_keeper",
+  "title": "The Root-Keeper",
+  "lines": [
+    {
+      "line_id": "root_keeper_001",
+      "speaker": "Root-Keeper",
+      "emotion": "grief",
+      "text": "The garden once gave without trembling."
+    },
+    {
+      "line_id": "root_keeper_002",
+      "speaker": "Elior",
+      "emotion": "thoughtful",
+      "text": "What changed?"
+    },
+    {
+      "line_id": "root_keeper_003",
+      "speaker": "Root-Keeper",
+      "emotion": "grave",
+      "text": "We began to fear that gift could leave us. So we held fruit, beasts, children, and one another until nothing could breathe."
+    }
+  ]
+}

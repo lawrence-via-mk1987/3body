@@ -1,0 +1,18 @@
+{
+  "scene_id": "threshold_inscription",
+  "title": "Inscription of the Threshold",
+  "lines": [
+    {
+      "line_id": "threshold_inscription_001",
+      "speaker": "Inscription",
+      "emotion": "awe",
+      "text": "The ages are not held together by memory alone, but by the Word before all memory."
+    },
+    {
+      "line_id": "threshold_inscription_002",
+      "speaker": "Micah",
+      "emotion": "steady",
+      "text": "Then fracture is real, but never ultimate."
+    }
+  ]
+}

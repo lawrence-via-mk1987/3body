@@ -1,0 +1,24 @@
+{
+  "scene_id": "asael_lamp_steward",
+  "title": "The Steward of Memory",
+  "lines": [
+    {
+      "line_id": "asael_001",
+      "speaker": "Asael",
+      "emotion": "wary",
+      "text": "The Lamp is brighter today."
+    },
+    {
+      "line_id": "asael_002",
+      "speaker": "Elior",
+      "emotion": "curious",
+      "text": "Is that unusual?"
+    },
+    {
+      "line_id": "asael_003",
+      "speaker": "Asael",
+      "emotion": "grave",
+      "text": "Some relics are dangerous because they are evil. This one is dangerous because it remembers too much."
+    }
+  ]
+}

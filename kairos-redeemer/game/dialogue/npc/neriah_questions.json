@@ -1,0 +1,24 @@
+{
+  "scene_id": "neriah_questions",
+  "title": "The Child of Questions",
+  "lines": [
+    {
+      "line_id": "neriah_001",
+      "speaker": "Neriah",
+      "emotion": "curious",
+      "text": "Do you think the Father enjoys Firstfruits, or does He only enjoy that we remember?"
+    },
+    {
+      "line_id": "neriah_002",
+      "speaker": "Elior",
+      "emotion": "thoughtful",
+      "text": "Perhaps He enjoys both."
+    },
+    {
+      "line_id": "neriah_003",
+      "speaker": "Neriah",
+      "emotion": "bright",
+      "text": "Good. It would be sad to make peaches and never enjoy them."
+    }
+  ]
+}

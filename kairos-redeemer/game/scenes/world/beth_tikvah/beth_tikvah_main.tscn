@@ -18,11 +18,18 @@ script = ExtResource("1_1ob16")
 [node name="EnvironmentRoot" type="Node2D" parent="."]
 
 [node name="Ground" type="ColorRect" parent="EnvironmentRoot"]
-offset_left = -640.0
-offset_top = -360.0
-offset_right = 640.0
-offset_bottom = 360.0
+offset_left = -120.0
+offset_top = -100.0
+offset_right = 1160.0
+offset_bottom = 420.0
 color = Color(0.76, 0.65, 0.45, 1)
+
+[node name="PilgrimRoad" type="ColorRect" parent="EnvironmentRoot"]
+offset_left = 40.0
+offset_top = 180.0
+offset_right = 1050.0
+offset_bottom = 250.0
+color = Color(0.64, 0.52, 0.34, 1)
 
 [node name="FeastSquare" type="ColorRect" parent="EnvironmentRoot"]
 offset_left = 360.0
@@ -45,13 +52,103 @@ offset_right = 260.0
 offset_bottom = 320.0
 color = Color(0.68, 0.54, 0.35, 1)
 
+[node name="HomeLaneLabel" type="Label" parent="EnvironmentRoot"]
+offset_left = 20.0
+offset_top = 145.0
+offset_right = 245.0
+offset_bottom = 180.0
+text = "House of Bread Lane"
+
+[node name="FeastSquareLabel" type="Label" parent="EnvironmentRoot"]
+offset_left = 455.0
+offset_top = -30.0
+offset_right = 650.0
+offset_bottom = 10.0
+text = "Feast Square / Singer's Steps"
+
+[node name="LampPavilionLabel" type="Label" parent="EnvironmentRoot"]
+offset_left = 850.0
+offset_top = -10.0
+offset_right = 1030.0
+offset_bottom = 30.0
+text = "Lamp Pavilion"
+
 [node name="NPCRoot" type="Node2D" parent="."]
 
-[node name="HadarahMarker" type="Marker2D" parent="NPCRoot"]
+[node name="HadarahMarker" type="ColorRect" parent="NPCRoot"]
 position = Vector2(130, 220)
+offset_left = -12.0
+offset_top = -12.0
+offset_right = 12.0
+offset_bottom = 12.0
+color = Color(0.65, 0.36, 0.55, 1)
 
-[node name="JuniaMarker" type="Marker2D" parent="NPCRoot"]
+[node name="JuniaMarker" type="ColorRect" parent="NPCRoot"]
 position = Vector2(520, 100)
+offset_left = -12.0
+offset_top = -12.0
+offset_right = 12.0
+offset_bottom = 12.0
+color = Color(0.95, 0.62, 0.47, 1)
+
+[node name="TobenMarker" type="ColorRect" parent="NPCRoot"]
+position = Vector2(310, 205)
+offset_left = -12.0
+offset_top = -12.0
+offset_right = 12.0
+offset_bottom = 12.0
+color = Color(0.48, 0.27, 0.16, 1)
+
+[node name="NeriahMarker" type="ColorRect" parent="NPCRoot"]
+position = Vector2(680, 255)
+offset_left = -9.0
+offset_top = -9.0
+offset_right = 9.0
+offset_bottom = 9.0
+color = Color(0.3, 0.62, 0.82, 1)
+
+[node name="AsaelMarker" type="ColorRect" parent="NPCRoot"]
+position = Vector2(800, 110)
+offset_left = -12.0
+offset_top = -12.0
+offset_right = 12.0
+offset_bottom = 12.0
+color = Color(0.34, 0.37, 0.48, 1)
+
+[node name="HadarahName" type="Label" parent="NPCRoot"]
+offset_left = 95.0
+offset_top = 235.0
+offset_right = 180.0
+offset_bottom = 270.0
+text = "Hadarah"
+
+[node name="JuniaName" type="Label" parent="NPCRoot"]
+offset_left = 495.0
+offset_top = 115.0
+offset_right = 560.0
+offset_bottom = 150.0
+text = "Junia"
+
+[node name="TobenName" type="Label" parent="NPCRoot"]
+offset_left = 285.0
+offset_top = 220.0
+offset_right = 350.0
+offset_bottom = 255.0
+text = "Toben"
+
+[node name="NeriahName" type="Label" parent="NPCRoot"]
+offset_left = 655.0
+offset_top = 268.0
+offset_right = 720.0
+offset_bottom = 303.0
+text = "Neriah"
+
+[node name="AsaelName" type="Label" parent="NPCRoot"]
+offset_left = 775.0
+offset_top = 125.0
+offset_right = 840.0
+offset_bottom = 160.0
+text = "Asael"
 
 [node name="TriggerRoot" type="Node2D" parent="."]
 
@@ -78,6 +175,33 @@ trigger_id = "lamp_pavilion"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/LampPavilionTrigger"]
 shape = SubResource("RectangleShape2D_lamp")
+
+[node name="TobenTrigger" type="Area2D" parent="TriggerRoot"]
+script = ExtResource("2_ctkgb")
+position = Vector2(310, 205)
+trigger_id = "toben_baker"
+one_shot = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/TobenTrigger"]
+shape = SubResource("RectangleShape2D_opening")
+
+[node name="NeriahTrigger" type="Area2D" parent="TriggerRoot"]
+script = ExtResource("2_ctkgb")
+position = Vector2(680, 255)
+trigger_id = "neriah_questions"
+one_shot = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/NeriahTrigger"]
+shape = SubResource("RectangleShape2D_opening")
+
+[node name="AsaelTrigger" type="Area2D" parent="TriggerRoot"]
+script = ExtResource("2_ctkgb")
+position = Vector2(800, 110)
+trigger_id = "asael_lamp_steward"
+one_shot = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/AsaelTrigger"]
+shape = SubResource("RectangleShape2D_opening")
 
 [node name="PlayerSpawn" type="Marker2D" parent="."]
 position = Vector2(80, 230)

@@ -32,6 +32,10 @@ const ENTRIES := {
 }
 
 const TRUTHS := {
+	"gift_is_received_not_seized": {
+		"title": "Gift Is Received, Not Seized",
+		"body": "Fear grasps because it distrusts the Giver. Love opens its hand and receives without possession."
+	},
 	"beloved_son_receives_and_gives": {
 		"title": "The Beloved Son Receives and Gives",
 		"body": "The first man grasped in distrust. The Beloved Son receives from the Father and gives without fear."

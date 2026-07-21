@@ -62,7 +62,17 @@ func handle_trigger(trigger_id: String) -> void:
 			if DialogueState.has_seen_scene("keeper_briefing"):
 				return
 			_play_dialogue("res://dialogue/main/keeper_briefing.json", Callable())
+		"witness_pool":
+			_play_dialogue("res://dialogue/npc/witness_pool.json", Callable())
+		"micah_watch":
+			_play_dialogue("res://dialogue/npc/micah_watch.json", Callable())
+		"threshold_inscription":
+			_play_dialogue("res://dialogue/npc/threshold_inscription.json", Callable())
 		"garden_gate":
+			if not DialogueState.has_seen_scene("keeper_briefing"):
+				QuestState.set_objective_text("Listen to the Keeper before approaching the gate.")
+				_objective_hud.call("refresh_objective")
+				return
 			_play_dialogue("res://dialogue/main/garden_gate_open.json", Callable(self, "_go_to_garden"))
 
 func _play_dialogue(path: String, on_finish: Callable) -> void:
@@ -84,4 +94,6 @@ func _on_dialogue_finished() -> void:
 
 func _go_to_garden() -> void:
 	GameState.set_flag("garden_gate_opened", true)
+	QuestState.complete_quest("through_the_rupture")
+	QuestState.start_quest("the_first_wound")
 	SceneRouter.goto_world_scene("res://scenes/world/garden_of_first_light/garden_main.tscn")

@@ -1,0 +1,30 @@
+{
+  "scene_id": "micah_watch",
+  "title": "The Watchman",
+  "lines": [
+    {
+      "line_id": "micah_watch_001",
+      "speaker": "Junia",
+      "emotion": "light",
+      "text": "Do you stand that stiffly when no one is looking?"
+    },
+    {
+      "line_id": "micah_watch_002",
+      "speaker": "Micah",
+      "emotion": "dry",
+      "text": "When no one is looking is when standing watch matters most."
+    },
+    {
+      "line_id": "micah_watch_003",
+      "speaker": "Elior",
+      "emotion": "thoughtful",
+      "text": "You sound as though rest is an error."
+    },
+    {
+      "line_id": "micah_watch_004",
+      "speaker": "Micah",
+      "emotion": "wary",
+      "text": "I have known errors with kinder faces."
+    }
+  ]
+}

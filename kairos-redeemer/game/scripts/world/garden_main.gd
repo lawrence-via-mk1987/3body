@@ -62,6 +62,17 @@ func handle_trigger(trigger_id: String) -> void:
 			if DialogueState.has_seen_scene("fearful_pair"):
 				return
 			_play_dialogue("res://dialogue/npc/fearful_pair.json", Callable())
+		"root_keeper":
+			_play_dialogue("res://dialogue/npc/root_keeper.json", Callable())
+		"hidden_child":
+			_play_dialogue("res://dialogue/npc/hidden_child.json", Callable())
+		"garden_prayer_root":
+			if GameState.has_flag("garden_prayer_root_seen"):
+				_play_dialogue("res://dialogue/npc/garden_prayer_root_repeat.json", Callable())
+				return
+			GameState.set_flag("garden_prayer_root_seen", true)
+			CodexState.unlock_truth("gift_is_received_not_seized")
+			_play_dialogue("res://dialogue/npc/garden_prayer_root.json", Callable())
 		"veiled_glimpse":
 			if DialogueState.has_seen_scene("veiled_glimpse"):
 				return
@@ -97,5 +108,6 @@ func _start_briar_battle() -> void:
 
 func _return_to_threshold() -> void:
 	GameState.set_flag("fruit_love_restored", true)
+	QuestState.complete_quest("the_first_wound")
 	QuestState.set_objective_text("Return to the Threshold of Testimony.")
 	SceneRouter.goto_world_scene("res://scenes/world/threshold/threshold_main.tscn")
