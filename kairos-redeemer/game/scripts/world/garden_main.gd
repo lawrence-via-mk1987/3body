@@ -4,11 +4,13 @@ const PLAYER_SCENE := preload("res://scenes/characters/player.tscn")
 const DIALOGUE_BOX_SCENE := preload("res://scenes/ui/dialogue_box.tscn")
 const OBJECTIVE_HUD_SCENE := preload("res://scenes/ui/objective_hud.tscn")
 const PAUSE_MENU_SCENE := preload("res://scenes/ui/pause_menu.tscn")
+const NOTIFICATION_HUD_SCENE := preload("res://scenes/ui/notification_hud.tscn")
 const DIALOGUE_LOADER := preload("res://scripts/dialogue/dialogue_loader.gd")
 
 var _dialogue_box: CanvasLayer
 var _objective_hud: CanvasLayer
 var _pause_menu: CanvasLayer
+var _notification_hud: CanvasLayer
 var _pending_action: Callable
 
 func _ready() -> void:
@@ -24,6 +26,7 @@ func _ready() -> void:
 		QuestState.set_objective_text("Reach the Tree of First Light.")
 	_objective_hud.call("refresh_objective")
 	CodexState.unlock_entry("garden_of_first_light")
+	_refresh_world_state()
 
 	if GameState.has_flag("briar_bridegroom_defeated") and not DialogueState.has_seen_scene("love_restoration"):
 		call_deferred("_play_restoration")
@@ -46,6 +49,9 @@ func _spawn_ui() -> void:
 	_pause_menu = PAUSE_MENU_SCENE.instantiate()
 	add_child(_pause_menu)
 
+	_notification_hud = NOTIFICATION_HUD_SCENE.instantiate()
+	add_child(_notification_hud)
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause") and _pause_menu != null:
 		_pause_menu.toggle_menu()
@@ -61,18 +67,18 @@ func handle_trigger(trigger_id: String) -> void:
 		"fearful_pair":
 			if DialogueState.has_seen_scene("fearful_pair"):
 				return
-			_play_dialogue("res://dialogue/npc/fearful_pair.json", Callable())
+			_play_dialogue("res://dialogue/npc/fearful_pair.json", Callable(self, "_refresh_world_state"))
 		"root_keeper":
-			_play_dialogue("res://dialogue/npc/root_keeper.json", Callable())
+			_play_dialogue("res://dialogue/npc/root_keeper.json", Callable(self, "_refresh_world_state"))
 		"hidden_child":
-			_play_dialogue("res://dialogue/npc/hidden_child.json", Callable())
+			_play_dialogue("res://dialogue/npc/hidden_child.json", Callable(self, "_refresh_world_state"))
 		"garden_prayer_root":
 			if GameState.has_flag("garden_prayer_root_seen"):
 				_play_dialogue("res://dialogue/npc/garden_prayer_root_repeat.json", Callable())
 				return
 			GameState.set_flag("garden_prayer_root_seen", true)
 			CodexState.unlock_truth("gift_is_received_not_seized")
-			_play_dialogue("res://dialogue/npc/garden_prayer_root.json", Callable())
+			_play_dialogue("res://dialogue/npc/garden_prayer_root.json", Callable(self, "_refresh_world_state"))
 		"veiled_glimpse":
 			if DialogueState.has_seen_scene("veiled_glimpse"):
 				return
@@ -111,3 +117,20 @@ func _return_to_threshold() -> void:
 	QuestState.complete_quest("the_first_wound")
 	QuestState.set_objective_text("Return to the Threshold of Testimony.")
 	SceneRouter.goto_world_scene("res://scenes/world/threshold/threshold_main.tscn")
+
+func _refresh_world_state() -> void:
+	var first_battle_complete := GameState.has_flag("garden_first_battle_complete")
+	var prayer_root_seen := GameState.has_flag("garden_prayer_root_seen")
+	var briar_defeated := GameState.has_flag("briar_bridegroom_defeated")
+	var pair_seen := DialogueState.has_seen_scene("fearful_pair")
+	var root_seen := DialogueState.has_seen_scene("root_keeper")
+	var child_seen := DialogueState.has_seen_scene("hidden_child")
+
+	$EnvironmentRoot/MainRootPath.color = Color(0.62, 0.75, 0.45, 1.0) if first_battle_complete else Color(0.55, 0.67, 0.4, 1.0)
+	$EnvironmentRoot/PrayerRootLabel.modulate = Color(1.0, 0.95, 0.7, 1.0) if prayer_root_seen else Color(1, 1, 1, 0.8)
+	$EnvironmentRoot/BossArena.color = Color(0.78, 0.71, 0.6, 1.0) if briar_defeated else Color(0.63, 0.55, 0.48, 1.0)
+	$EnvironmentRoot/TreeLabel.modulate = Color(1.0, 0.92, 0.68, 1.0) if briar_defeated else Color(1, 1, 1, 0.85)
+
+	$NPCRoot/FearfulPairMarker.modulate = Color(0.85, 1.0, 0.85, 1.0) if pair_seen else Color(1, 1, 1, 1)
+	$NPCRoot/RootKeeperMarker.modulate = Color(0.85, 1.0, 0.85, 1.0) if root_seen else Color(1, 1, 1, 1)
+	$NPCRoot/HiddenChildMarker.modulate = Color(0.85, 1.0, 0.85, 1.0) if child_seen else Color(1, 1, 1, 1)

@@ -1,0 +1,36 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/notification_hud.gd" id="1_9r6ny"]
+
+[node name="NotificationHUD" type="CanvasLayer"]
+script = ExtResource("1_9r6ny")
+
+[node name="NotificationPanel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+offset_left = 860.0
+offset_top = 18.0
+offset_right = 1240.0
+offset_bottom = 130.0
+visible = false
+
+[node name="NotificationMargin" type="MarginContainer" parent="NotificationPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="NotificationVBox" type="VBoxContainer" parent="NotificationPanel/NotificationMargin"]
+layout_mode = 2
+
+[node name="NotificationTitle" type="Label" parent="NotificationPanel/NotificationMargin/NotificationVBox"]
+unique_name_in_owner = true
+text = "Notice"
+
+[node name="NotificationBody" type="RichTextLabel" parent="NotificationPanel/NotificationMargin/NotificationVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+text = ""

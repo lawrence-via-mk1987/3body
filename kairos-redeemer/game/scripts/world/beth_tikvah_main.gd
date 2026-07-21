@@ -4,11 +4,13 @@ const PLAYER_SCENE := preload("res://scenes/characters/player.tscn")
 const DIALOGUE_BOX_SCENE := preload("res://scenes/ui/dialogue_box.tscn")
 const OBJECTIVE_HUD_SCENE := preload("res://scenes/ui/objective_hud.tscn")
 const PAUSE_MENU_SCENE := preload("res://scenes/ui/pause_menu.tscn")
+const NOTIFICATION_HUD_SCENE := preload("res://scenes/ui/notification_hud.tscn")
 const DIALOGUE_LOADER := preload("res://scripts/dialogue/dialogue_loader.gd")
 
 var _dialogue_box: CanvasLayer
 var _objective_hud: CanvasLayer
 var _pause_menu: CanvasLayer
+var _notification_hud: CanvasLayer
 var _pending_action: Callable
 
 func _ready() -> void:
@@ -20,6 +22,7 @@ func _ready() -> void:
 	_objective_hud.call("set_zone", "Beth-Tikvah")
 	_objective_hud.call("refresh_objective")
 	CodexState.unlock_entry("beth_tikvah")
+	_refresh_world_state()
 
 func _spawn_player() -> void:
 	var player = PLAYER_SCENE.instantiate()
@@ -36,6 +39,9 @@ func _spawn_ui() -> void:
 
 	_pause_menu = PAUSE_MENU_SCENE.instantiate()
 	add_child(_pause_menu)
+
+	_notification_hud = NOTIFICATION_HUD_SCENE.instantiate()
+	add_child(_notification_hud)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause") and _pause_menu != null:
@@ -86,11 +92,13 @@ func _after_opening_blessing() -> void:
 	QuestState.advance_quest("firstfruits_morning", "meet_junia")
 	QuestState.set_objective_text("Meet Junia at the Singer's Steps.")
 	_objective_hud.call("refresh_objective")
+	_refresh_world_state()
 
 func _after_festival_intro() -> void:
 	QuestState.advance_quest("firstfruits_morning", "approach_lamp")
 	QuestState.set_objective_text("Approach the Lamp Pavilion. You may speak with the townspeople first.")
 	_objective_hud.call("refresh_objective")
+	_refresh_world_state()
 
 func _go_to_threshold() -> void:
 	GameState.set_flag("lamp_fracture_seen", true)
@@ -99,3 +107,12 @@ func _go_to_threshold() -> void:
 	CodexState.unlock_entry("threshold_of_testimony")
 	QuestState.set_objective_text("Awaken in the Threshold of Testimony.")
 	SceneRouter.goto_world_scene("res://scenes/world/threshold/threshold_main.tscn")
+
+func _refresh_world_state() -> void:
+	var hadarah_done := DialogueState.has_seen_scene("opening_blessing")
+	var festival_done := DialogueState.has_seen_scene("junia_festival_intro")
+
+	$NPCRoot/HadarahMarker.modulate = Color(0.8, 0.8, 0.8, 0.7) if hadarah_done else Color(1, 1, 1, 1)
+	$NPCRoot/JuniaMarker.modulate = Color(1.2, 1.2, 1.0, 1.0) if hadarah_done and not festival_done else Color(1, 1, 1, 1)
+	$EnvironmentRoot/LampPavilion.color = Color(1.0, 0.92, 0.72, 1.0) if festival_done else Color(0.9, 0.88, 0.7, 1)
+	$EnvironmentRoot/LampPavilionLabel.modulate = Color(1.0, 0.92, 0.72, 1.0) if festival_done else Color(1, 1, 1, 0.85)

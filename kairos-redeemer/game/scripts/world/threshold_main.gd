@@ -4,11 +4,13 @@ const PLAYER_SCENE := preload("res://scenes/characters/player.tscn")
 const DIALOGUE_BOX_SCENE := preload("res://scenes/ui/dialogue_box.tscn")
 const OBJECTIVE_HUD_SCENE := preload("res://scenes/ui/objective_hud.tscn")
 const PAUSE_MENU_SCENE := preload("res://scenes/ui/pause_menu.tscn")
+const NOTIFICATION_HUD_SCENE := preload("res://scenes/ui/notification_hud.tscn")
 const DIALOGUE_LOADER := preload("res://scripts/dialogue/dialogue_loader.gd")
 
 var _dialogue_box: CanvasLayer
 var _objective_hud: CanvasLayer
 var _pause_menu: CanvasLayer
+var _notification_hud: CanvasLayer
 var _pending_action: Callable
 
 func _ready() -> void:
@@ -24,6 +26,7 @@ func _ready() -> void:
 	else:
 		QuestState.set_objective_text("Enter the Garden of First Light.")
 	_objective_hud.call("refresh_objective")
+	_refresh_world_state()
 
 	if not DialogueState.has_seen_scene("threshold_wakeup"):
 		call_deferred("_play_intro")
@@ -45,6 +48,9 @@ func _spawn_ui() -> void:
 
 	_pause_menu = PAUSE_MENU_SCENE.instantiate()
 	add_child(_pause_menu)
+
+	_notification_hud = NOTIFICATION_HUD_SCENE.instantiate()
+	add_child(_notification_hud)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause") and _pause_menu != null:
@@ -85,6 +91,7 @@ func _play_dialogue(path: String, on_finish: Callable) -> void:
 		QuestState.set_objective_text("Step through the first gate into the Garden.")
 		_objective_hud.call("refresh_objective")
 		CodexState.unlock_entry("keeper_of_hours")
+		_refresh_world_state()
 
 func _on_dialogue_finished() -> void:
 	if _pending_action.is_valid():
@@ -97,3 +104,12 @@ func _go_to_garden() -> void:
 	QuestState.complete_quest("through_the_rupture")
 	QuestState.start_quest("the_first_wound")
 	SceneRouter.goto_world_scene("res://scenes/world/garden_of_first_light/garden_main.tscn")
+
+func _refresh_world_state() -> void:
+	var keeper_seen := DialogueState.has_seen_scene("keeper_briefing")
+	var love_restored := GameState.has_flag("fruit_love_restored")
+
+	$EnvironmentRoot/GateDais.color = Color(0.96, 0.9, 0.58, 1.0) if keeper_seen else Color(0.72, 0.72, 0.62, 1.0)
+	$EnvironmentRoot/GateLabel.text = "Meridian Reflection" if love_restored else "Gate of First Light"
+	$EnvironmentRoot/GateLabel.modulate = Color(0.8, 0.94, 1.0, 1.0) if love_restored else Color(1, 1, 1, 1)
+	$NPCRoot/KeeperMarker.modulate = Color(1.0, 1.0, 1.0, 0.75) if keeper_seen else Color(1, 1, 1, 1)
