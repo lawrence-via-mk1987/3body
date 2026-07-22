@@ -8,6 +8,7 @@
 [node name="BackgroundRoot" type="Node2D" parent="."]
 
 [node name="Backdrop" type="ColorRect" parent="BackgroundRoot"]
+unique_name_in_owner = true
 offset_right = 1280.0
 offset_bottom = 720.0
 color = Color(0.09, 0.12, 0.16, 1)
@@ -183,6 +184,7 @@ theme_override_constants/margin_bottom = 16
 layout_mode = 2
 
 [node name="RewardTitle" type="Label" parent="UILayer/RewardPanel/RewardMargin/RewardVBox"]
+unique_name_in_owner = true
 text = "Victory"
 
 [node name="RewardBody" type="RichTextLabel" parent="UILayer/RewardPanel/RewardMargin/RewardVBox"]
@@ -193,4 +195,47 @@ scroll_active = true
 text = ""
 
 [node name="RewardContinueButton" type="Button" parent="UILayer/RewardPanel/RewardMargin/RewardVBox"]
+text = "Return"
+
+[node name="PhaseBanner" type="Label" parent="UILayer"]
+unique_name_in_owner = true
+visible = false
+offset_left = 340.0
+offset_top = 88.0
+offset_right = 940.0
+offset_bottom = 140.0
+theme_override_colors/font_color = Color(1, 0.92, 0.68, 1)
+theme_override_font_sizes/font_size = 28
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "Phase 1"
+
+[node name="DefeatPanel" type="PanelContainer" parent="UILayer"]
+offset_left = 390.0
+offset_top = 220.0
+offset_right = 890.0
+offset_bottom = 460.0
+visible = false
+
+[node name="DefeatMargin" type="MarginContainer" parent="UILayer/DefeatPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="DefeatVBox" type="VBoxContainer" parent="UILayer/DefeatPanel/DefeatMargin"]
+layout_mode = 2
+
+[node name="DefeatTitle" type="Label" parent="UILayer/DefeatPanel/DefeatMargin/DefeatVBox"]
+text = "Defeat"
+
+[node name="DefeatBody" type="RichTextLabel" parent="UILayer/DefeatPanel/DefeatMargin/DefeatVBox"]
+custom_minimum_size = Vector2(0, 120)
+bbcode_enabled = true
+fit_content = false
+scroll_active = false
+text = "The party falters. Retreat and try again."
+
+[node name="DefeatContinueButton" type="Button" parent="UILayer/DefeatPanel/DefeatMargin/DefeatVBox"]
 text = "Return"

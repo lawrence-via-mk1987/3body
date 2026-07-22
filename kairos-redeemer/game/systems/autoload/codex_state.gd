@@ -28,4 +28,8 @@ func has_truth(truth_id: String) -> bool:
 	return unlocked_truths.get(truth_id, false)
 
 func get_unlocked_entry_ids() -> Array[String]:
-	return unlocked_entries.keys()
+	var ids: Array[String] = []
+	for entry_id in unlocked_entries.keys():
+		if unlocked_entries[entry_id]:
+			ids.append(entry_id)
+	return ids

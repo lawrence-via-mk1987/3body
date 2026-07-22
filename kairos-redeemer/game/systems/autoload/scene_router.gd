@@ -3,15 +3,17 @@ extends Node
 var previous_world_scene_path: String = ""
 var current_scene_path: String = ""
 var battle_context: Dictionary = {}
+var world_return_context: Dictionary = {}
 var _transition_layer: CanvasLayer
 var _fade_rect: ColorRect
 
 func _ready() -> void:
 	_ensure_transition_nodes()
 
-func goto_world_scene(scene_path: String) -> void:
+func goto_world_scene(scene_path: String, return_context: Dictionary = {}) -> void:
 	previous_world_scene_path = current_scene_path
 	current_scene_path = scene_path
+	world_return_context = return_context
 	_change_scene_with_fade(scene_path)
 
 func goto_battle_scene(scene_path: String, context: Dictionary = {}) -> void:
@@ -20,11 +22,17 @@ func goto_battle_scene(scene_path: String, context: Dictionary = {}) -> void:
 	battle_context = context
 	_change_scene_with_fade(scene_path)
 
-func return_to_previous_world_scene() -> void:
+func return_to_previous_world_scene(return_context: Dictionary = {}) -> void:
 	if previous_world_scene_path.is_empty():
 		return
+	world_return_context = return_context
 	current_scene_path = previous_world_scene_path
 	_change_scene_with_fade(previous_world_scene_path)
+
+func consume_world_return_context() -> Dictionary:
+	var context := world_return_context.duplicate()
+	world_return_context.clear()
+	return context
 
 func _ensure_transition_nodes() -> void:
 	if _transition_layer != null:

@@ -19,8 +19,12 @@ func _ready() -> void:
 	_spawn_ui()
 	_objective_hud.call("set_zone", "Threshold of Testimony")
 	CodexState.unlock_entry("threshold_of_testimony")
+	var return_ctx := SceneRouter.consume_world_return_context()
 	if GameState.has_flag("fruit_love_restored"):
-		QuestState.set_objective_text("Receive the Meridian teaser.")
+		if return_ctx.get("from_garden_restoration", false):
+			QuestState.set_objective_text("Receive the Meridian teaser.")
+		else:
+			QuestState.set_objective_text("Receive the Meridian teaser.")
 	elif not DialogueState.has_seen_scene("threshold_wakeup"):
 		QuestState.set_objective_text("Listen to the Keeper's briefing.")
 	else:
@@ -28,7 +32,9 @@ func _ready() -> void:
 	_objective_hud.call("refresh_objective")
 	_refresh_world_state()
 
-	if not DialogueState.has_seen_scene("threshold_wakeup"):
+	if return_ctx.get("from_garden_restoration", false) and GameState.has_flag("fruit_love_restored") and not DialogueState.has_seen_scene("meridian_teaser"):
+		call_deferred("_play_meridian_teaser")
+	elif not DialogueState.has_seen_scene("threshold_wakeup"):
 		call_deferred("_play_intro")
 	elif GameState.has_flag("fruit_love_restored") and not DialogueState.has_seen_scene("meridian_teaser"):
 		call_deferred("_play_meridian_teaser")
