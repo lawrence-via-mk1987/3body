@@ -19,4 +19,8 @@ static func load_scene_lines(path: String) -> Array[Dictionary]:
 		return []
 
 	var data: Dictionary = json.data
-	return data.get("lines", [])
+	var lines: Array[Dictionary] = []
+	for line in data.get("lines", []):
+		if line is Dictionary:
+			lines.append(line)
+	return lines

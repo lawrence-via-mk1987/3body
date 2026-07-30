@@ -33,3 +33,11 @@ func get_unlocked_entry_ids() -> Array[String]:
 		if unlocked_entries[entry_id]:
 			ids.append(entry_id)
 	return ids
+
+func get_unlocked_truth_ids() -> Array[String]:
+	var ids: Array[String] = []
+	for truth_id in unlocked_truths.keys():
+		if unlocked_truths[truth_id]:
+			ids.append(truth_id)
+	ids.sort()
+	return ids

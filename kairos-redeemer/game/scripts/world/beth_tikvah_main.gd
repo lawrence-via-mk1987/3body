@@ -102,6 +102,7 @@ func _after_festival_intro() -> void:
 
 func _go_to_threshold() -> void:
 	GameState.set_flag("lamp_fracture_seen", true)
+	JournalState.unlock_entry("journal_lamp_fracture")
 	QuestState.complete_quest("firstfruits_morning")
 	QuestState.start_quest("through_the_rupture")
 	CodexState.unlock_entry("threshold_of_testimony")

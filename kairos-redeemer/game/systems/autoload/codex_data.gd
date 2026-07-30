@@ -3,31 +3,38 @@ extends Node
 const ENTRIES := {
 	"beth_tikvah": {
 		"title": "Beth-Tikvah",
-		"body": "House of Hope. A hill community of bread, prayer, song, and firstfruits remembrance."
+		"body": "House of Hope. A hill community of bread, prayer, song, and firstfruits remembrance.",
+		"category": "places"
 	},
 	"lamp_of_ages": {
 		"title": "Lamp of Ages",
-		"body": "A sacred witness relic tied to memory, fracture, and the wounds of history."
+		"body": "A sacred witness relic tied to memory, fracture, and the wounds of history.",
+		"category": "places"
 	},
 	"threshold_of_testimony": {
 		"title": "Threshold of Testimony",
-		"body": "A realm outside ordinary chronology where history is seen in the light of Christ."
+		"body": "A realm outside ordinary chronology where history is seen in the light of Christ.",
+		"category": "places"
 	},
 	"keeper_of_hours": {
 		"title": "Keeper of Hours",
-		"body": "A grave guide of the Threshold who interprets wounded history and sends the party into the first age."
+		"body": "A grave guide of the Threshold who interprets wounded history and sends the party into the first age.",
+		"category": "people"
 	},
 	"garden_of_first_light": {
 		"title": "Garden of First Light",
-		"body": "The oldest remembered wound. Beauty survives here, but fear has taught gift to clutch and love to possess."
+		"body": "The oldest remembered wound. Beauty survives here, but fear has taught gift to clutch and love to possess.",
+		"category": "places"
 	},
 	"false_blossom": {
 		"title": "False Blossom",
-		"body": "A deceiver of the Garden whose beauty disguises distortion and false blessing."
+		"body": "A deceiver of the Garden whose beauty disguises distortion and false blessing.",
+		"category": "foes"
 	},
 	"briar_bridegroom": {
 		"title": "Briar Bridegroom",
-		"body": "Counterfeit guardian of devotion. He teaches fear to wear the face of love and possession to call itself faithfulness."
+		"body": "Counterfeit guardian of devotion. He teaches fear to wear the face of love and possession to call itself faithfulness.",
+		"category": "foes"
 	}
 }
 
@@ -43,7 +50,17 @@ const TRUTHS := {
 }
 
 func get_entry(entry_id: String) -> Dictionary:
-	return ENTRIES.get(entry_id, {"title": entry_id, "body": "No entry available."})
+	return ENTRIES.get(entry_id, {"title": entry_id, "body": "No entry available.", "category": "places"})
 
 func get_truth(truth_id: String) -> Dictionary:
 	return TRUTHS.get(truth_id, {"title": truth_id, "body": "No truth available."})
+
+func get_entries_by_category(category: String) -> Array[String]:
+	var ids: Array[String] = []
+	for entry_id in ENTRIES.keys():
+		if ENTRIES[entry_id].get("category", "") == category:
+			ids.append(entry_id)
+	ids.sort()
+	return ids
+
+const CODEX_CATEGORIES := ["places", "people", "foes"]

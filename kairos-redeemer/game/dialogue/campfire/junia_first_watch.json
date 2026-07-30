@@ -1,0 +1,54 @@
+{
+  "scene_id": "junia_first_watch",
+  "title": "Junia — First Watch",
+  "lines": [
+    {
+      "line_id": "junia_watch_001",
+      "speaker": "Junia",
+      "emotion": "quiet",
+      "text": "You always look like the weight of the feast is yours alone."
+    },
+    {
+      "line_id": "junia_watch_002",
+      "speaker": "Elior",
+      "emotion": "deflecting",
+      "text": "Someone has to carry it."
+    },
+    {
+      "line_id": "junia_watch_003",
+      "speaker": "Junia",
+      "emotion": "firm",
+      "text": "That is not what Hadarah said. That is what fear says when it refuses to be loved."
+    },
+    {
+      "line_id": "junia_watch_004",
+      "speaker": "Elior",
+      "emotion": "honest",
+      "text": "I do not know how to rest when people are hurting."
+    },
+    {
+      "line_id": "junia_watch_005",
+      "speaker": "Junia",
+      "emotion": "soft",
+      "text": "I am not good at sitting still either. I rush because I am afraid love will slip away if I do not hold it."
+    },
+    {
+      "line_id": "junia_watch_006",
+      "speaker": "Junia",
+      "emotion": "hopeful",
+      "text": "But I am learning that love does not clutch. It receives. It gives. It stays."
+    },
+    {
+      "line_id": "junia_watch_007",
+      "speaker": "Elior",
+      "emotion": "quiet",
+      "text": "You make it sound almost possible."
+    },
+    {
+      "line_id": "junia_watch_008",
+      "speaker": "Junia",
+      "emotion": "warm",
+      "text": "I did not say easy. I said received."
+    }
+  ]
+}

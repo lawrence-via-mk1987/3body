@@ -87,6 +87,23 @@ func handle_trigger(trigger_id: String) -> void:
 				return
 			_play_dialogue("res://dialogue/main/garden_gate_open.json", Callable(self, "_go_to_garden"))
 
+func handle_campfire(campfire_id: String) -> void:
+	match campfire_id:
+		"junia_first_watch":
+			if JournalState.has_seen_campfire(campfire_id):
+				return
+			if not JournalState.is_campfire_available(campfire_id):
+				QuestState.set_objective_text("Junia may speak after the Keeper's briefing.")
+				_objective_hud.call("refresh_objective")
+				return
+			var campfire := JournalData.get_campfire(campfire_id)
+			_play_dialogue(campfire.get("dialogue_path", ""), Callable(self, "_on_junia_campfire_finished").bind(campfire_id))
+
+func _on_junia_campfire_finished(campfire_id: String) -> void:
+	JournalState.complete_campfire(campfire_id)
+	DialogueState.mark_scene_seen(campfire_id)
+	_refresh_world_state()
+
 func _play_dialogue(path: String, on_finish: Callable) -> void:
 	_pending_action = on_finish
 	var lines = DIALOGUE_LOADER.load_scene_lines(path)
@@ -119,3 +136,11 @@ func _refresh_world_state() -> void:
 	$EnvironmentRoot/GateLabel.text = "Meridian Reflection" if love_restored else "Gate of First Light"
 	$EnvironmentRoot/GateLabel.modulate = Color(0.8, 0.94, 1.0, 1.0) if love_restored else Color(1, 1, 1, 1)
 	$NPCRoot/KeeperMarker.modulate = Color(1.0, 1.0, 1.0, 0.75) if keeper_seen else Color(1, 1, 1, 1)
+
+	var campfire_available := JournalState.is_campfire_available("junia_first_watch")
+	var campfire_seen := JournalState.has_seen_campfire("junia_first_watch")
+	$EnvironmentRoot/CampfireRing.color = Color(1.0, 0.72, 0.42, 1.0) if campfire_available else Color(0.55, 0.42, 0.32, 1.0)
+	$EnvironmentRoot/CampfireLabel.modulate = Color(1.0, 0.9, 0.65, 1.0) if campfire_available else Color(1, 1, 1, 0.7)
+	$EnvironmentRoot/CampfireLabel.text = "Junia's Watch" if not campfire_seen else "Quiet Campfire"
+	$TriggerRoot/CampfireTrigger.monitoring = campfire_available
+	$NPCRoot/JuniaMarker.modulate = Color(1.15, 1.0, 0.85, 1.0) if campfire_available else Color(1, 1, 1, 0.65)

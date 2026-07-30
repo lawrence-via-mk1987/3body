@@ -13,6 +13,7 @@ func _ready() -> void:
 	QuestState.objective_changed.connect(_on_objective_changed)
 	CodexState.entry_unlocked.connect(_on_entry_unlocked)
 	CodexState.truth_unlocked.connect(_on_truth_unlocked)
+	JournalState.journal_entry_unlocked.connect(_on_journal_unlocked)
 
 func _on_objective_changed(text: String) -> void:
 	_enqueue_notice("Objective Updated", text)
@@ -24,6 +25,10 @@ func _on_entry_unlocked(entry_id: String) -> void:
 func _on_truth_unlocked(truth_id: String) -> void:
 	var truth := CodexData.get_truth(truth_id)
 	_enqueue_notice("Truth Remembered", truth.title)
+
+func _on_journal_unlocked(entry_id: String) -> void:
+	var entry := JournalData.get_entry(entry_id)
+	_enqueue_notice("Journal Updated", entry.title)
 
 func _enqueue_notice(title: String, body: String) -> void:
 	_queue.append({"title": title, "body": body})

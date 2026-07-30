@@ -1,13 +1,17 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/threshold_main.gd" id="1_j8n2w"]
 [ext_resource type="Script" path="res://scripts/world/scene_trigger.gd" id="2_qah6q"]
+[ext_resource type="Script" path="res://scripts/world/campfire_trigger.gd" id="3_campfire"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_keeper"]
 size = Vector2(160, 120)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_gate"]
 size = Vector2(160, 120)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_campfire"]
+size = Vector2(140, 110)
 
 [node name="ThresholdMain" type="Node2D"]
 script = ExtResource("1_j8n2w")
@@ -56,6 +60,20 @@ offset_right = 210.0
 offset_bottom = 180.0
 text = "Arrival Platform"
 
+[node name="CampfireRing" type="ColorRect" parent="EnvironmentRoot"]
+offset_left = 120.0
+offset_top = 250.0
+offset_right = 220.0
+offset_bottom = 320.0
+color = Color(0.55, 0.42, 0.32, 1)
+
+[node name="CampfireLabel" type="Label" parent="EnvironmentRoot"]
+offset_left = 105.0
+offset_top = 325.0
+offset_right = 245.0
+offset_bottom = 360.0
+text = "Junia's Watch"
+
 [node name="WitnessPoolLabel" type="Label" parent="EnvironmentRoot"]
 offset_left = 330.0
 offset_top = 120.0
@@ -88,6 +106,14 @@ offset_right = 12.0
 offset_bottom = 12.0
 color = Color(0.35, 0.45, 0.7, 1)
 
+[node name="JuniaMarker" type="ColorRect" parent="NPCRoot"]
+position = Vector2(170, 285)
+offset_left = -10.0
+offset_top = -10.0
+offset_right = 10.0
+offset_bottom = 10.0
+color = Color(0.95, 0.62, 0.47, 1)
+
 [node name="KeeperName" type="Label" parent="NPCRoot"]
 offset_left = 580.0
 offset_top = 82.0
@@ -101,6 +127,13 @@ offset_top = 340.0
 offset_right = 690.0
 offset_bottom = 375.0
 text = "Micah"
+
+[node name="JuniaName" type="Label" parent="NPCRoot"]
+offset_left = 130.0
+offset_top = 300.0
+offset_right = 190.0
+offset_bottom = 335.0
+text = "Junia"
 
 [node name="TriggerRoot" type="Node2D" parent="."]
 
@@ -146,6 +179,14 @@ one_shot = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/InscriptionTrigger"]
 shape = SubResource("RectangleShape2D_keeper")
+
+[node name="CampfireTrigger" type="Area2D" parent="TriggerRoot"]
+script = ExtResource("3_campfire")
+position = Vector2(170, 285)
+campfire_id = "junia_first_watch"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/CampfireTrigger"]
+shape = SubResource("RectangleShape2D_campfire")
 
 [node name="PlayerSpawn" type="Marker2D" parent="."]
 position = Vector2(90, 210)
