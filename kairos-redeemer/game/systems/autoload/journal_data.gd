@@ -30,6 +30,15 @@ const QUESTS := {
 		"stages": {
 			"started": "Enter the Garden and reach the Tree of First Light."
 		}
+	},
+	"whisper_of_the_grove": {
+		"title": "Whisper of the Grove",
+		"stages": {
+			"started": "A whisper speaks of a child hiding in the Thorn Verge.",
+			"hear_rumor": "Search the Thorn Verge for the hidden child.",
+			"find_child": "Visit the Hidden Prayer Root, then return to the child.",
+			"root_witnessed": "Return to the hidden child in the Thorn Verge."
+		}
 	}
 }
 
@@ -63,6 +72,21 @@ const ENTRIES := {
 		"title": "Junia — First Watch",
 		"body": "Junia admitted she also struggles to receive rest. She watches because love refuses to clutch.",
 		"category": "companions"
+	},
+	"journal_micah_veiled_watch": {
+		"title": "Micah — Veiled Watch",
+		"body": "Micah confessed that witness is not the same as clutching control. The Father sees in the dark.",
+		"category": "companions"
+	},
+	"journal_whisper_grove_started": {
+		"title": "Whisper in the Grove",
+		"body": "After the first skirmish, whispers spread of a child who hides because love here once felt like possession.",
+		"category": "sidequest"
+	},
+	"journal_whisper_grove_complete": {
+		"title": "Room to Return",
+		"body": "The hidden child chose to return freely — invited, not seized. The Grove remembers a gentler way.",
+		"category": "sidequest"
 	}
 }
 
@@ -77,7 +101,8 @@ const RELATIONSHIPS := {
 	"micah": {
 		"name": "Micah",
 		"notes": {
-			0: "Quiet watchman. Sees more than he says at the Threshold gate."
+			0: "Quiet watchman. Sees more than he says at the Threshold gate.",
+			1: "Shared the veiled watch in the Grove. Learning that witness is not clutching control."
 		}
 	}
 }
@@ -91,6 +116,9 @@ const QUEST_JOURNAL_HOOKS := {
 	},
 	"the_first_wound": {
 		"started": "journal_garden_edge"
+	},
+	"whisper_of_the_grove": {
+		"started": "journal_whisper_grove_started"
 	}
 }
 
@@ -98,11 +126,20 @@ const CAMPFIRES := {
 	"junia_first_watch": {
 		"title": "Junia — First Watch",
 		"companion": "junia",
-		"hint_locked": "Junia may have something to say after the Keeper's briefing.",
-		"hint_available": "Junia is waiting at the campfire.",
+		"required_scenes": ["keeper_briefing"],
 		"dialogue_path": "res://dialogue/campfire/junia_first_watch.json",
 		"journal_unlock": "journal_junia_first_watch",
 		"relationship_flag": "junia_trust",
+		"relationship_value": 1
+	},
+	"micah_veiled_watch": {
+		"title": "Micah — Veiled Watch",
+		"companion": "micah",
+		"required_scenes": ["keeper_briefing"],
+		"required_flags": ["garden_first_battle_complete"],
+		"dialogue_path": "res://dialogue/campfire/micah_veiled_watch.json",
+		"journal_unlock": "journal_micah_veiled_watch",
+		"relationship_flag": "micah_trust",
 		"relationship_value": 1
 	}
 }

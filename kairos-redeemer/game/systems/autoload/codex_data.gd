@@ -49,11 +49,47 @@ const TRUTHS := {
 	}
 }
 
+const VERSES := {
+	"psalm_23_shepherd": {
+		"title": "Psalm 23:1",
+		"reference": "Psalm 23:1",
+		"body": "The Lord is my shepherd; I shall not want.",
+		"theme": "beloved"
+	},
+	"romans_8_beloved": {
+		"title": "Romans 8:16",
+		"reference": "Romans 8:16",
+		"body": "The Spirit himself testifies with our spirit that we are children of God.",
+		"theme": "identity"
+	},
+	"philippians_4_guard": {
+		"title": "Philippians 4:7",
+		"reference": "Philippians 4:7",
+		"body": "And the peace of God, which surpasses all understanding, will guard your hearts and your minds in Christ Jesus.",
+		"theme": "peace"
+	},
+	"isaiah_43_fear_not": {
+		"title": "Isaiah 43:1",
+		"reference": "Isaiah 43:1",
+		"body": "Fear not, for I have redeemed you; I have called you by name, you are mine.",
+		"theme": "beloved"
+	},
+	"first_john_3_beloved": {
+		"title": "1 John 3:1",
+		"reference": "1 John 3:1",
+		"body": "See what kind of love the Father has given to us, that we should be called children of God.",
+		"theme": "beloved"
+	}
+}
+
 func get_entry(entry_id: String) -> Dictionary:
 	return ENTRIES.get(entry_id, {"title": entry_id, "body": "No entry available.", "category": "places"})
 
 func get_truth(truth_id: String) -> Dictionary:
 	return TRUTHS.get(truth_id, {"title": truth_id, "body": "No truth available."})
+
+func get_verse(verse_id: String) -> Dictionary:
+	return VERSES.get(verse_id, {"title": verse_id, "reference": "", "body": "No verse available.", "theme": ""})
 
 func get_entries_by_category(category: String) -> Array[String]:
 	var ids: Array[String] = []

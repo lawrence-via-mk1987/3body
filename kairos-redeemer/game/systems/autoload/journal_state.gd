@@ -40,8 +40,12 @@ func is_campfire_available(campfire_id: String) -> bool:
 	var campfire: Dictionary = JournalData.get_campfire(campfire_id)
 	if campfire.is_empty():
 		return false
-	if not DialogueState.has_seen_scene("keeper_briefing"):
-		return false
+	for scene_id in campfire.get("required_scenes", []):
+		if not DialogueState.has_seen_scene(scene_id):
+			return false
+	for flag_id in campfire.get("required_flags", []):
+		if not GameState.has_flag(flag_id):
+			return false
 	return true
 
 func get_available_campfire_ids() -> Array[String]:
@@ -70,6 +74,8 @@ func _on_quest_advanced(quest_id: String, stage_id: String) -> void:
 func _on_quest_completed(quest_id: String) -> void:
 	if quest_id == "the_first_wound":
 		unlock_entry("journal_love_restored")
+	if quest_id == "whisper_of_the_grove":
+		unlock_entry("journal_whisper_grove_complete")
 
 func _maybe_unlock_quest_journal(quest_id: String, stage_id: String) -> void:
 	var hooks: Dictionary = JournalData.QUEST_JOURNAL_HOOKS.get(quest_id, {})

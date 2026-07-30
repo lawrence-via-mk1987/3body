@@ -1,0 +1,30 @@
+{
+  "scene_id": "fearful_pair_grove_hint",
+  "title": "Whisper in the Grove",
+  "lines": [
+    {
+      "line_id": "grove_hint_001",
+      "speaker": "Garden Man",
+      "emotion": "uneasy",
+      "text": "There is a child in the Thorn Verge who will not come out."
+    },
+    {
+      "line_id": "grove_hint_002",
+      "speaker": "Garden Woman",
+      "emotion": "fear",
+      "text": "We all learned to hide when love felt like possession."
+    },
+    {
+      "line_id": "grove_hint_003",
+      "speaker": "Junia",
+      "emotion": "gentle",
+      "text": "Maybe someone needs to show that return is safe."
+    },
+    {
+      "line_id": "grove_hint_004",
+      "speaker": "Micah",
+      "emotion": "watchful",
+      "text": "The Prayer Root on the upper path still remembers how gift was given freely."
+    }
+  ]
+}

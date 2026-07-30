@@ -1,0 +1,54 @@
+{
+  "scene_id": "micah_veiled_watch",
+  "title": "Micah — Veiled Watch",
+  "lines": [
+    {
+      "line_id": "micah_watch_cf_001",
+      "speaker": "Micah",
+      "emotion": "quiet",
+      "text": "You keep scanning the Grove like the enemy might be hiding in every leaf."
+    },
+    {
+      "line_id": "micah_watch_cf_002",
+      "speaker": "Elior",
+      "emotion": "tired",
+      "text": "Someone has to watch."
+    },
+    {
+      "line_id": "micah_watch_cf_003",
+      "speaker": "Micah",
+      "emotion": "steady",
+      "text": "I know. I was taught the same lie — that love means vigilance without end."
+    },
+    {
+      "line_id": "micah_watch_cf_004",
+      "speaker": "Elior",
+      "emotion": "honest",
+      "text": "If I stop watching, what if harm comes through my silence?"
+    },
+    {
+      "line_id": "micah_watch_cf_005",
+      "speaker": "Micah",
+      "emotion": "grave",
+      "text": "The Father is not careless. He sees in the dark where we cannot."
+    },
+    {
+      "line_id": "micah_watch_cf_006",
+      "speaker": "Micah",
+      "emotion": "soft",
+      "text": "I am learning that witness is not the same as clutching control. I can watch without owning every outcome."
+    },
+    {
+      "line_id": "micah_watch_cf_007",
+      "speaker": "Elior",
+      "emotion": "quiet",
+      "text": "That would change everything."
+    },
+    {
+      "line_id": "micah_watch_cf_008",
+      "speaker": "Micah",
+      "emotion": "warm",
+      "text": "It already has. You are not alone on the watch tonight."
+    }
+  ]
+}

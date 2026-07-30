@@ -114,6 +114,7 @@ func _play_dialogue(path: String, on_finish: Callable) -> void:
 		QuestState.set_objective_text("Step through the first gate into the Garden.")
 		_objective_hud.call("refresh_objective")
 		CodexState.unlock_entry("keeper_of_hours")
+		CodexState.unlock_verse("romans_8_beloved")
 		_refresh_world_state()
 
 func _on_dialogue_finished() -> void:

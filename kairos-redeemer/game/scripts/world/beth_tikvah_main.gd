@@ -89,6 +89,7 @@ func _on_dialogue_finished() -> void:
 		action.call()
 
 func _after_opening_blessing() -> void:
+	CodexState.unlock_verse("psalm_23_shepherd")
 	QuestState.advance_quest("firstfruits_morning", "meet_junia")
 	QuestState.set_objective_text("Meet Junia at the Singer's Steps.")
 	_objective_hud.call("refresh_objective")

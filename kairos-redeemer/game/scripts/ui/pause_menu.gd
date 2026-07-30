@@ -20,6 +20,7 @@ func _ready() -> void:
 	QuestState.quest_completed.connect(func(_id): _on_live_refresh(""))
 	CodexState.entry_unlocked.connect(func(_id): _on_live_refresh(""))
 	CodexState.truth_unlocked.connect(func(_id): _on_live_refresh(""))
+	CodexState.verse_unlocked.connect(func(_id): _on_live_refresh(""))
 	JournalState.journal_entry_unlocked.connect(func(_id): _on_live_refresh(""))
 	_refresh_all()
 
@@ -95,6 +96,8 @@ func _build_summary_text() -> String:
 		milestones.append("Briar Bridegroom defeated")
 	if GameState.has_flag("fruit_love_restored"):
 		milestones.append("Fruit of Love restored")
+	if QuestState.completed_quests.has("whisper_of_the_grove"):
+		milestones.append("Whisper of the Grove resolved")
 
 	if milestones.is_empty():
 		sections.append("[b]Story Milestones[/b]\n- None yet -")
@@ -172,14 +175,23 @@ func _build_codex_text() -> String:
 			var truth := CodexData.get_truth(truth_id)
 			sections.append("[i]%s[/i]\n%s" % [truth.title, truth.body])
 
+	sections.append("[b]Verse Fragments[/b]")
+	var verse_ids := CodexState.get_unlocked_verse_ids()
+	if verse_ids.is_empty():
+		sections.append("- None yet -")
+	else:
+		for verse_id in verse_ids:
+			var verse := CodexData.get_verse(verse_id)
+			sections.append("[i]%s[/i]\n%s" % [verse.reference, verse.body])
+
 	return "\n\n".join(sections)
 
 func _build_footer_hint() -> String:
 	if _active_tab == "journal":
 		return "Journal updates as quests advance and companions share campfire scenes."
 	if _active_tab == "codex":
-		return "Codex entries unlock from exploration, battles, and truth-breaking."
+		return "Codex entries, truths, and verse fragments unlock through exploration and story."
 	return "Press Escape to close."
 
 func _codex_unlock_count() -> int:
-	return CodexState.get_unlocked_entry_ids().size() + CodexState.get_unlocked_truth_ids().size()
+	return CodexState.get_unlocked_entry_ids().size() + CodexState.get_unlocked_truth_ids().size() + CodexState.get_unlocked_verse_ids().size()

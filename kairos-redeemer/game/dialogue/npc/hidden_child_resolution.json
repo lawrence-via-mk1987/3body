@@ -1,0 +1,42 @@
+{
+  "scene_id": "hidden_child_resolution",
+  "title": "Room to Return",
+  "lines": [
+    {
+      "line_id": "child_res_001",
+      "speaker": "Garden Child",
+      "emotion": "shy",
+      "text": "You went to the Prayer Root. I saw the light change."
+    },
+    {
+      "line_id": "child_res_002",
+      "speaker": "Elior",
+      "emotion": "gentle",
+      "text": "Gift was never meant to be a chain."
+    },
+    {
+      "line_id": "child_res_003",
+      "speaker": "Garden Child",
+      "emotion": "hopeful",
+      "text": "So love can wait for me without pulling?"
+    },
+    {
+      "line_id": "child_res_004",
+      "speaker": "Junia",
+      "emotion": "warm",
+      "text": "Yes. Real love makes room for you to come back on your own feet."
+    },
+    {
+      "line_id": "child_res_005",
+      "speaker": "Garden Child",
+      "emotion": "quiet",
+      "text": "Then I will try. Not because I was seized — because I was invited."
+    },
+    {
+      "line_id": "child_res_006",
+      "speaker": "Micah",
+      "emotion": "soft",
+      "text": "The Father has always watched that way."
+    }
+  ]
+}

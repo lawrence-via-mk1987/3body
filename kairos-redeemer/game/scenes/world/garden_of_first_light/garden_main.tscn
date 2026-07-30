@@ -1,7 +1,8 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/garden_main.gd" id="1_pk681"]
 [ext_resource type="Script" path="res://scripts/world/scene_trigger.gd" id="2_ieyr7"]
+[ext_resource type="Script" path="res://scripts/world/campfire_trigger.gd" id="3_campfire"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_battle"]
 size = Vector2(140, 120)
@@ -14,6 +15,9 @@ size = Vector2(150, 110)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_briar"]
 size = Vector2(170, 140)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_campfire"]
+size = Vector2(130, 100)
 
 [node name="GardenMain" type="Node2D"]
 script = ExtResource("1_pk681")
@@ -83,6 +87,20 @@ offset_right = 650.0
 offset_bottom = 85.0
 text = "Whispering Grove"
 
+[node name="CampfireRing" type="ColorRect" parent="EnvironmentRoot"]
+offset_left = 430.0
+offset_top = 230.0
+offset_right = 510.0
+offset_bottom = 290.0
+color = Color(0.42, 0.38, 0.32, 1)
+
+[node name="CampfireLabel" type="Label" parent="EnvironmentRoot"]
+offset_left = 405.0
+offset_top = 295.0
+offset_right = 535.0
+offset_bottom = 330.0
+text = "Micah's Watch"
+
 [node name="ThornVergeLabel" type="Label" parent="EnvironmentRoot"]
 offset_left = 850.0
 offset_top = 50.0
@@ -132,6 +150,14 @@ offset_right = 9.0
 offset_bottom = 9.0
 color = Color(0.9, 0.75, 0.38, 1)
 
+[node name="MicahMarker" type="ColorRect" parent="NPCRoot"]
+position = Vector2(470, 255)
+offset_left = -10.0
+offset_top = -10.0
+offset_right = 10.0
+offset_bottom = 10.0
+color = Color(0.35, 0.45, 0.7, 1)
+
 [node name="FearfulPairName" type="Label" parent="NPCRoot"]
 offset_left = 475.0
 offset_top = 195.0
@@ -152,6 +178,13 @@ offset_top = 320.0
 offset_right = 1125.0
 offset_bottom = 355.0
 text = "Hidden Child"
+
+[node name="MicahName" type="Label" parent="NPCRoot"]
+offset_left = 435.0
+offset_top = 270.0
+offset_right = 495.0
+offset_bottom = 305.0
+text = "Micah"
 
 [node name="TriggerRoot" type="Node2D" parent="."]
 
@@ -221,6 +254,14 @@ trigger_id = "restoration"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/RestorationTrigger"]
 shape = SubResource("RectangleShape2D_glimpse")
+
+[node name="CampfireTrigger" type="Area2D" parent="TriggerRoot"]
+script = ExtResource("3_campfire")
+position = Vector2(470, 255)
+campfire_id = "micah_veiled_watch"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/CampfireTrigger"]
+shape = SubResource("RectangleShape2D_campfire")
 
 [node name="PlayerSpawn" type="Marker2D" parent="."]
 position = Vector2(80, 210)
