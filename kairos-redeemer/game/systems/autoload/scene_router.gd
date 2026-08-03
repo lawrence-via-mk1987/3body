@@ -11,13 +11,18 @@ func _ready() -> void:
 	_ensure_transition_nodes()
 
 func goto_world_scene(scene_path: String, return_context: Dictionary = {}) -> void:
+	if not SaveState.is_loading():
+		SaveState.save_game(scene_path, "world_transition")
 	previous_world_scene_path = current_scene_path
 	current_scene_path = scene_path
 	world_return_context = return_context
 	_change_scene_with_fade(scene_path)
 
 func goto_battle_scene(scene_path: String, context: Dictionary = {}) -> void:
-	previous_world_scene_path = get_tree().current_scene.scene_file_path
+	var world_path := get_tree().current_scene.scene_file_path
+	if not SaveState.is_loading() and not world_path.is_empty():
+		SaveState.save_game(world_path, "before_battle")
+	previous_world_scene_path = world_path
 	current_scene_path = scene_path
 	battle_context = context
 	_change_scene_with_fade(scene_path)
@@ -25,6 +30,8 @@ func goto_battle_scene(scene_path: String, context: Dictionary = {}) -> void:
 func return_to_previous_world_scene(return_context: Dictionary = {}) -> void:
 	if previous_world_scene_path.is_empty():
 		return
+	if not SaveState.is_loading():
+		SaveState.save_game(previous_world_scene_path, "return_world")
 	world_return_context = return_context
 	current_scene_path = previous_world_scene_path
 	_change_scene_with_fade(previous_world_scene_path)

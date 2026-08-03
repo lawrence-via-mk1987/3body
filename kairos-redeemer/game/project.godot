@@ -6,7 +6,7 @@ config_version=5
 [application]
 
 config/name="Kairos Redeemer"
-run/main_scene="res://scenes/world/beth_tikvah/beth_tikvah_main.tscn"
+run/main_scene="res://scenes/ui/main_menu.tscn"
 config/features=PackedStringArray("4.2")
 config/icon="res://art/ui/icon_placeholder.svg"
 
@@ -16,11 +16,12 @@ GameState="*res://systems/autoload/game_state.gd"
 QuestState="*res://systems/autoload/quest_state.gd"
 DialogueState="*res://systems/autoload/dialogue_state.gd"
 CombatState="*res://systems/autoload/combat_state.gd"
-SceneRouter="*res://systems/autoload/scene_router.gd"
 CodexState="*res://systems/autoload/codex_state.gd"
 CodexData="*res://systems/autoload/codex_data.gd"
 JournalState="*res://systems/autoload/journal_state.gd"
 JournalData="*res://systems/autoload/journal_data.gd"
+SaveState="*res://systems/autoload/save_state.gd"
+SceneRouter="*res://systems/autoload/scene_router.gd"
 
 [display]
 

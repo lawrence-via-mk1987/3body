@@ -5,12 +5,14 @@ const DIALOGUE_BOX_SCENE := preload("res://scenes/ui/dialogue_box.tscn")
 const OBJECTIVE_HUD_SCENE := preload("res://scenes/ui/objective_hud.tscn")
 const PAUSE_MENU_SCENE := preload("res://scenes/ui/pause_menu.tscn")
 const NOTIFICATION_HUD_SCENE := preload("res://scenes/ui/notification_hud.tscn")
+const PROLOGUE_COMPLETE_SCENE := preload("res://scenes/ui/prologue_complete_screen.tscn")
 const DIALOGUE_LOADER := preload("res://scripts/dialogue/dialogue_loader.gd")
 
 var _dialogue_box: CanvasLayer
 var _objective_hud: CanvasLayer
 var _pause_menu: CanvasLayer
 var _notification_hud: CanvasLayer
+var _prologue_screen: CanvasLayer
 var _pending_action: Callable
 
 func _ready() -> void:
@@ -31,6 +33,9 @@ func _ready() -> void:
 		call_deferred("_play_intro")
 	elif GameState.has_flag("fruit_love_restored") and not DialogueState.has_seen_scene("meridian_teaser"):
 		call_deferred("_play_meridian_teaser")
+
+	if GameState.has_flag("prologue_complete") and not GameState.has_flag("prologue_complete_screen_seen"):
+		call_deferred("_show_prologue_complete_screen")
 
 func _spawn_player() -> void:
 	var player = PLAYER_SCENE.instantiate()
@@ -56,8 +61,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		_pause_menu.toggle_menu()
 
 func _refresh_objective_from_state(return_ctx: Dictionary = {}) -> void:
-	if GameState.has_flag("elior_wound_confessed"):
-		QuestState.set_objective_text("Prologue wound named. The Threshold holds its silence.")
+	if GameState.has_flag("prologue_complete"):
+		QuestState.set_objective_text("Prologue complete. Explore the Threshold or review the Journal.")
 	elif QuestState.is_quest_active("elior_beloved_wound"):
 		var stage: String = str(QuestState.active_quests.get("elior_beloved_wound", "started"))
 		var quest := JournalData.get_quest("elior_beloved_wound")
@@ -155,10 +160,31 @@ func _on_campfire_finished(campfire_id: String) -> void:
 		CodexState.unlock_truth("beloved_before_you_grasp")
 		CodexState.unlock_verse("zephaniah_3_quiet_love")
 		GameState.set_flag("elior_wound_confessed", true)
+		GameState.set_flag("prologue_complete", true)
+		GameState.set_current_chapter("prologue_clear")
 		QuestState.complete_quest("elior_beloved_wound")
 		_refresh_objective_from_state()
 		_objective_hud.call("refresh_objective")
+		SaveState.autosave("prologue_complete")
+		if not GameState.has_flag("prologue_complete_screen_seen"):
+			call_deferred("_show_prologue_complete_screen")
 	_refresh_world_state()
+
+func _show_prologue_complete_screen() -> void:
+	if _prologue_screen != null:
+		return
+	_prologue_screen = PROLOGUE_COMPLETE_SCENE.instantiate()
+	_prologue_screen.dismissed.connect(_on_prologue_complete_dismissed)
+	add_child(_prologue_screen)
+	get_tree().paused = true
+
+func _on_prologue_complete_dismissed() -> void:
+	GameState.set_flag("prologue_complete_screen_seen", true)
+	get_tree().paused = false
+	if _prologue_screen != null:
+		_prologue_screen.queue_free()
+		_prologue_screen = null
+	SaveState.autosave("prologue_screen_seen")
 
 func _play_dialogue(path: String, on_finish: Callable) -> void:
 	_pending_action = on_finish

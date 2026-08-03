@@ -38,6 +38,12 @@ func close_menu() -> void:
 	visible = false
 	get_tree().paused = false
 
+func return_to_main_menu() -> void:
+	visible = false
+	get_tree().paused = false
+	SaveState.autosave("main_menu")
+	get_tree().change_scene_to_file(SaveState.MAIN_MENU_SCENE)
+
 func show_summary() -> void:
 	_active_tab = "summary"
 	_refresh_all()
@@ -100,6 +106,8 @@ func _build_summary_text() -> String:
 		milestones.append("Whisper of the Grove resolved")
 	if GameState.has_flag("elior_wound_confessed"):
 		milestones.append("Elior named the beloved wound")
+	if GameState.has_flag("prologue_complete"):
+		milestones.append("Prologue — The First Wound complete")
 
 	if milestones.is_empty():
 		sections.append("[b]Story Milestones[/b]\n- None yet -")

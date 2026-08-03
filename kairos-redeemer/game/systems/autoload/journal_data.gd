@@ -1,7 +1,8 @@
 extends Node
 
 const CHAPTERS := {
-	"prologue": "Prologue — House of Hope"
+	"prologue": "Prologue — House of Hope",
+	"prologue_clear": "Prologue Clear — The First Wound"
 }
 
 const MAPS := {

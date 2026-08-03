@@ -15,6 +15,7 @@ func _ready() -> void:
 	CodexState.truth_unlocked.connect(_on_truth_unlocked)
 	CodexState.verse_unlocked.connect(_on_verse_unlocked)
 	JournalState.journal_entry_unlocked.connect(_on_journal_unlocked)
+	SaveState.save_completed.connect(_on_save_completed)
 
 func _on_objective_changed(text: String) -> void:
 	_enqueue_notice("Objective Updated", text)
@@ -34,6 +35,9 @@ func _on_journal_unlocked(entry_id: String) -> void:
 func _on_verse_unlocked(verse_id: String) -> void:
 	var verse := CodexData.get_verse(verse_id)
 	_enqueue_notice("Verse Fragment", verse.reference)
+
+func _on_save_completed() -> void:
+	_enqueue_notice("Progress Saved", "Your journey was saved.")
 
 func _enqueue_notice(title: String, body: String) -> void:
 	_queue.append({"title": title, "body": body})
