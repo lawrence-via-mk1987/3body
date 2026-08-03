@@ -217,6 +217,9 @@ func _refresh_world_state() -> void:
 	var elior_wound_active := QuestState.is_quest_active("elior_beloved_wound")
 	var elior_wound_stage: String = str(QuestState.active_quests.get("elior_beloved_wound", ""))
 
+	$EnvironmentRoot/Backdrop.color = Color(0.12, 0.18, 0.28, 1.0) if love_restored else Color(0.1, 0.14, 0.22, 1.0)
+	$EnvironmentRoot/Starway.color = Color(0.42, 0.5, 0.62, 1.0) if keeper_seen else Color(0.32, 0.38, 0.48, 1.0)
+
 	$EnvironmentRoot/GateDais.color = Color(0.96, 0.9, 0.58, 1.0) if keeper_seen else Color(0.72, 0.72, 0.62, 1.0)
 	$EnvironmentRoot/GateLabel.text = "Meridian Reflection" if love_restored else "Gate of First Light"
 	$EnvironmentRoot/GateLabel.modulate = Color(0.8, 0.94, 1.0, 1.0) if love_restored else Color(1, 1, 1, 1)
@@ -225,9 +228,13 @@ func _refresh_world_state() -> void:
 	_refresh_junia_campfire_state()
 	_refresh_elior_campfire_state(elior_wound_active, elior_wound_stage)
 
-	$EnvironmentRoot/WitnessPool.color = Color(0.42, 0.62, 0.82, 1.0) if elior_wound_active else Color(0.37, 0.55, 0.72, 1.0)
+	$EnvironmentRoot/WitnessPool.color = Color(0.42, 0.62, 0.82, 1.0) if elior_wound_active else Color(0.28, 0.48, 0.68, 1.0)
+	$EnvironmentRoot/WitnessPoolGlow.color = Color(0.72, 0.88, 1.0, 0.5) if elior_wound_active else (Color(0.65, 0.82, 0.98, 0.38) if keeper_seen else Color(0.55, 0.78, 0.95, 0.35))
 	$EnvironmentRoot/WitnessPoolLabel.modulate = Color(0.9, 0.95, 1.0, 1.0) if elior_wound_active else Color(1, 1, 1, 1)
 	$NPCRoot/EliorMarker.modulate = Color(1.0, 0.95, 0.7, 1.0) if JournalState.is_campfire_available("elior_beloved_wound") else (Color(0.95, 0.9, 0.75, 1.0) if elior_wound_active else Color(1, 1, 1, 0.65))
+
+	if has_node("MoodRoot/ZoneAtmosphere"):
+		$MoodRoot/ZoneAtmosphere.call("apply_mood", keeper_seen, love_restored)
 
 func _refresh_junia_campfire_state() -> void:
 	var campfire_available := JournalState.is_campfire_available("junia_first_watch")

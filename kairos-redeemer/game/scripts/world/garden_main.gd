@@ -245,7 +245,11 @@ func _refresh_world_state() -> void:
 	var grove_active := QuestState.is_quest_active("whisper_of_the_grove")
 	var grove_stage: String = str(QuestState.active_quests.get("whisper_of_the_grove", ""))
 
-	$EnvironmentRoot/MainRootPath.color = Color(0.62, 0.75, 0.45, 1.0) if first_battle_complete else Color(0.55, 0.67, 0.4, 1.0)
+	$EnvironmentRoot/MainRootPath.color = Color(0.62, 0.75, 0.45, 1.0) if first_battle_complete else Color(0.48, 0.62, 0.36, 1.0)
+	$EnvironmentRoot/Backdrop.color = Color(0.28, 0.5, 0.34, 1.0) if love_restored else Color(0.22, 0.42, 0.28, 1.0)
+	$EnvironmentRoot/WhisperingGrove.color = Color(0.42, 0.68, 0.44, 1.0) if first_battle_complete else Color(0.34, 0.58, 0.38, 1.0)
+	$EnvironmentRoot/GroveLightWash.color = Color(0.92, 0.98, 0.72, 0.34) if love_restored else (Color(0.85, 0.95, 0.68, 0.28) if grove_active else Color(0.78, 0.92, 0.62, 0.22))
+	$EnvironmentRoot/ThornVerge.color = Color(0.38, 0.46, 0.28, 1.0) if grove_stage in ["hear_rumor", "find_child", "root_witnessed"] else Color(0.32, 0.38, 0.24, 1.0)
 	$EnvironmentRoot/PrayerRootLabel.modulate = Color(1.0, 0.95, 0.7, 1.0) if prayer_root_seen else Color(1, 1, 1, 0.8)
 	$EnvironmentRoot/BossArena.color = Color(0.88, 0.82, 0.62, 1.0) if love_restored else (Color(0.72, 0.78, 0.58, 1.0) if briar_defeated else Color(0.63, 0.55, 0.48, 1.0))
 	$EnvironmentRoot/TreeLabel.text = "Fruit of Love Restored" if love_restored else "Tree of First Light"
@@ -267,3 +271,6 @@ func _refresh_world_state() -> void:
 	$EnvironmentRoot/CampfireLabel.text = "Micah's Watch" if not micah_campfire_seen else "Quiet Campfire"
 	$TriggerRoot/CampfireTrigger.monitoring = micah_campfire_available
 	$NPCRoot/MicahMarker.modulate = Color(0.9, 0.95, 1.15, 1.0) if micah_campfire_available else Color(1, 1, 1, 0.7)
+
+	if has_node("MoodRoot/ZoneAtmosphere"):
+		$MoodRoot/ZoneAtmosphere.call("apply_mood", first_battle_complete, love_restored, grove_active)

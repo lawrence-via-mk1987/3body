@@ -1,8 +1,10 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/garden_main.gd" id="1_pk681"]
 [ext_resource type="Script" path="res://scripts/world/scene_trigger.gd" id="2_ieyr7"]
 [ext_resource type="Script" path="res://scripts/world/campfire_trigger.gd" id="3_campfire"]
+[ext_resource type="Script" path="res://scripts/world/zone_atmosphere.gd" id="4_atmo"]
+[ext_resource type="Script" path="res://scripts/world/zone_ambience.gd" id="5_amb"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_battle"]
 size = Vector2(140, 120)
@@ -29,14 +31,14 @@ offset_left = -120.0
 offset_top = -100.0
 offset_right = 1580.0
 offset_bottom = 430.0
-color = Color(0.35, 0.6, 0.38, 1)
+color = Color(0.22, 0.42, 0.28, 1)
 
 [node name="MainRootPath" type="ColorRect" parent="EnvironmentRoot"]
 offset_left = 40.0
 offset_top = 175.0
 offset_right = 1450.0
 offset_bottom = 240.0
-color = Color(0.55, 0.67, 0.4, 1)
+color = Color(0.48, 0.62, 0.36, 1)
 
 [node name="PrayerRootSidepath" type="ColorRect" parent="EnvironmentRoot"]
 offset_left = 920.0
@@ -57,21 +59,28 @@ offset_left = 360.0
 offset_top = 40.0
 offset_right = 700.0
 offset_bottom = 300.0
-color = Color(0.4, 0.68, 0.43, 1)
+color = Color(0.34, 0.58, 0.38, 1)
 
 [node name="ThornVerge" type="ColorRect" parent="EnvironmentRoot"]
 offset_left = 780.0
 offset_top = 40.0
 offset_right = 1120.0
 offset_bottom = 300.0
-color = Color(0.46, 0.55, 0.34, 1)
+color = Color(0.32, 0.38, 0.24, 1)
 
 [node name="BossArena" type="ColorRect" parent="EnvironmentRoot"]
 offset_left = 1180.0
 offset_top = 20.0
 offset_right = 1460.0
 offset_bottom = 330.0
-color = Color(0.63, 0.55, 0.48, 1)
+color = Color(0.52, 0.44, 0.36, 1)
+
+[node name="GroveLightWash" type="ColorRect" parent="EnvironmentRoot"]
+offset_left = 380.0
+offset_top = 55.0
+offset_right = 680.0
+offset_bottom = 250.0
+color = Color(0.78, 0.92, 0.62, 0.22)
 
 [node name="GardenEdgeLabel" type="Label" parent="EnvironmentRoot"]
 offset_left = 80.0
@@ -121,6 +130,41 @@ offset_top = 35.0
 offset_right = 1435.0
 offset_bottom = 70.0
 text = "Tree of First Light"
+theme_override_colors/font_color = Color(0.95, 0.9, 0.72, 1)
+
+[node name="MoodRoot" type="Node2D" parent="."]
+
+[node name="ZoneAtmosphere" type="Node2D" parent="MoodRoot"]
+script = ExtResource("4_atmo")
+zone_kind = 1
+
+[node name="SkyBand" type="ColorRect" parent="MoodRoot/ZoneAtmosphere"]
+offset_left = -120.0
+offset_top = -100.0
+offset_right = 1580.0
+offset_bottom = 90.0
+color = Color(0.62, 0.78, 0.52, 0.28)
+
+[node name="VignetteTop" type="ColorRect" parent="MoodRoot/ZoneAtmosphere"]
+offset_left = -120.0
+offset_top = -100.0
+offset_right = 1580.0
+offset_bottom = 60.0
+color = Color(0.1, 0.18, 0.12, 0.26)
+
+[node name="VignetteBottom" type="ColorRect" parent="MoodRoot/ZoneAtmosphere"]
+offset_left = -120.0
+offset_top = 280.0
+offset_right = 1580.0
+offset_bottom = 430.0
+color = Color(0.08, 0.14, 0.1, 0.3)
+
+[node name="StarsRoot" type="Node2D" parent="MoodRoot/ZoneAtmosphere"]
+
+[node name="ZoneAmbience" type="Node" parent="MoodRoot"]
+script = ExtResource("5_amb")
+stream_path = "res://audio/ambient/garden_first_light.ogg"
+volume_db = -13.0
 
 [node name="EncounterRoot" type="Node2D" parent="."]
 

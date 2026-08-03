@@ -14,7 +14,7 @@ The current playable work lives in:
 
 Use:
 
-- **Godot 4.7 stable**
+- **Godot 4.4+ stable** (4.7 also works)
 
 Download it from:
 
@@ -24,16 +24,16 @@ You want the **standard editor build**, not just export templates.
 
 ## Cloud workspace note
 
-For this repository's cloud workspace, a project-local Godot editor binary was installed at:
+For this repository's cloud workspace, a project-local Godot editor binary is installed at:
 
 ```text
-/workspace/tools/godot/Godot_v4.7-stable_linux.x86_64
+/workspace/tools/godot/Godot_v4.4.1-stable_linux.x86_64
 ```
 
 That binary successfully validates the project headlessly with:
 
 ```bash
-/workspace/tools/godot/Godot_v4.7-stable_linux.x86_64 --headless --path /workspace/kairos-redeemer/game --quit
+/workspace/tools/godot/Godot_v4.4.1-stable_linux.x86_64 --headless --path /workspace/kairos-redeemer/game --quit
 ```
 
 ### Recommended choices
@@ -52,7 +52,7 @@ That binary successfully validates the project headlessly with:
 - make executable if needed:
 
 ```bash
-chmod +x Godot_v4.7-stable_linux.x86_64
+chmod +x Godot_v4.4.1-stable_linux.x86_64
 ```
 
 ---
@@ -73,7 +73,33 @@ kairos-redeemer/game/project.godot
 
 ---
 
-## 3. First Recommended Test Scenes
+## 3. Automated QA (headless)
+
+Before a manual playtest, run the slice validator:
+
+```bash
+godot --headless --path kairos-redeemer/game -s res://scripts/qa/qa_validate.gd
+```
+
+Expected output:
+
+```text
+QA: ALL CHECKS PASSED (28 dialogue files, 6 scenes)
+```
+
+The validator checks:
+
+- all dialogue JSON parses and has lines
+- main menu, world maps, movement test, and battle scene load/instantiate
+- campfire dialogue paths and journal hooks
+- Threshold/Garden ambient audio files exist
+- core quest/map definitions exist
+
+Exit code `0` means pass; non-zero prints each failure.
+
+---
+
+## 4. First Recommended Test Scenes
 
 ### A. Movement smoke test
 Open and run:
@@ -92,19 +118,21 @@ Run the project normally.
 Current main scene:
 
 ```text
-res://scenes/world/beth_tikvah/beth_tikvah_main.tscn
+res://scenes/ui/main_menu.tscn
 ```
 
 Expected:
-- player spawns in Beth-Tikvah
-- pause menu works with Escape
-- walking into triggers starts dialogue
+- **New Game** starts in Beth-Tikvah
+- **Continue** loads autosave when `user://kairos_redeemer_save.json` exists
+- pause menu works with Escape (Journal, Codex, Save, Main Menu)
+- walking into triggers starts dialogue (body_enter triggers; `E` is mapped but not required)
 - Lamp Pavilion sequence transitions to Threshold
 - Threshold transitions into Garden
+- Briar battle → love restoration → Meridian teaser → Elior wound arc → prologue complete screen
 
 ### C. Battle validation
 In Garden:
-- trigger first battle zone
+- trigger first battle zone (Garden Edge)
 - confirm battle scene opens
 - manual buttons work:
   - Attack
@@ -113,13 +141,19 @@ In Garden:
   - Pray
   - Synergy
 
+### D. Threshold / Garden mood pass
+In Threshold and Garden:
+- starlit sky band + vignette on Threshold; warm sky wash on Garden
+- ambient loop plays (`threshold_starlit.ogg` / `garden_first_light.ogg`)
+- zone colors shift as quests progress (gate glow, witness pool, grove light, restored tree)
+
 ---
 
-## 4. Current Controls
+## 5. Current Controls
 
 ### Exploration
 - Move: `WASD`
-- Interact: `E`
+- Interact: `E` (mapped; most triggers fire on walk-in)
 - Advance dialogue: `Space`
 - Pause menu: `Esc`
 
@@ -128,50 +162,73 @@ In Garden:
 
 ---
 
-## 5. What Is Implemented Right Now
+## 6. What Is Implemented Right Now
 
 ### Working
 - Godot 4 project opens cleanly
-- autoload states registered
+- autoload states registered (including save/load)
+- main menu (New Game / Continue / Quit)
+- autosave on world transitions and key milestones
 - Beth-Tikvah world scene
-- Threshold scene
-- Garden scene
+- Threshold scene (ambient + starlit mood layers)
+- Garden scene (ambient + first-light mood layers)
 - dialogue JSON loading
-- pause menu
-- journal tab
-- codex tab
-- battle scene shell
-- manual command buttons
-- first encounter return flow
-- Briar boss shell
+- pause menu with Journal and Codex tabs
+- campfires: Junia (Threshold), Micah (Garden), Elior (Threshold)
+- Whisper of the Grove sidequest
+- battle scene shell with manual command buttons
+- first encounter and Briar boss return flow
+- prologue complete overlay after Elior campfire
 
 ### Still Placeholder / Early
 - battle target selection is simplified
 - animations are placeholder
-- environment art is graybox
+- environment art is graybox (mood-polished, not final art)
 - codex is basic
 - no inventory/equipment UI yet
-- no polished VFX/audio pass
+- ambient audio is procedural placeholder loops (not final score)
 
 ---
 
-## 6. Fast Local Sanity Checklist
+## 7. Fast Local Sanity Checklist
 
 When you first test locally, confirm:
 
-- [ ] project imports without parse errors
+- [x] project imports without parse errors (headless `--quit`)
+- [x] automated QA script passes (28 dialogue files, 6 scenes)
 - [ ] player movement works
-- [ ] opening dialogue appears
+- [ ] opening dialogue appears (Hadarah blessing)
 - [ ] pause menu opens and closes
-- [ ] Threshold scene loads
-- [ ] Garden loads
+- [ ] Threshold scene loads with ambient audio
+- [ ] Garden loads with ambient audio
 - [ ] first battle starts
 - [ ] battle buttons work
 - [ ] winning returns you to Garden
+- [ ] save/load and Continue from main menu
+- [ ] prologue complete screen after Elior campfire
+
+Items marked `[x]` were verified headlessly in the cloud workspace (Aug 2026 QA pass). Manual items still need an interactive editor run.
 
 ---
 
-## 7. If Godot Reports Errors
+## 8. Suggested Local Testing Order
+
+1. run automated QA script
+2. movement test scene
+3. main menu → New Game → Beth-Tikvah opening
+4. Threshold flow (Keeper briefing, Junia campfire, gate)
+5. Garden arrival and first battle
+6. Micah campfire, Whisper of the Grove sidequest
+7. Briar shell flow and love restoration
+8. return to Threshold → Meridian teaser → Elior wound arc
+9. pause menu / codex / journal checks
+10. Continue from main menu after autosave
+
+That keeps debugging simple and layered.
+
+---
+
+## 9. If Godot Reports Errors
 
 The fastest way to continue is:
 
@@ -181,16 +238,3 @@ The fastest way to continue is:
 4. send that back into the agent
 
 Then the next pass can fix the actual project issues quickly.
-
----
-
-## 8. Suggested Local Testing Order
-
-1. movement test scene
-2. Beth-Tikvah opening
-3. Threshold flow
-4. Garden arrival and first battle
-5. Briar shell flow
-6. pause menu / codex / journal checks
-
-That keeps debugging simple and layered.
