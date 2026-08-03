@@ -98,6 +98,8 @@ func _build_summary_text() -> String:
 		milestones.append("Fruit of Love restored")
 	if QuestState.completed_quests.has("whisper_of_the_grove"):
 		milestones.append("Whisper of the Grove resolved")
+	if GameState.has_flag("elior_wound_confessed"):
+		milestones.append("Elior named the beloved wound")
 
 	if milestones.is_empty():
 		sections.append("[b]Story Milestones[/b]\n- None yet -")
@@ -136,8 +138,9 @@ func _build_journal_text() -> String:
 			sections.append("[b]%s[/b]\n%s" % [entry.title, entry.body])
 
 	sections.append("[b]Companions[/b]")
-	for companion_id in ["junia", "micah"]:
-		var level := DialogueState.get_relationship_flag("%s_trust" % companion_id, 0)
+	for companion_id in ["elior", "junia", "micah"]:
+		var flag_name := "elior_wound" if companion_id == "elior" else "%s_trust" % companion_id
+		var level := DialogueState.get_relationship_flag(flag_name, 0)
 		var rel: Dictionary = JournalData.RELATIONSHIPS.get(companion_id, {})
 		var name: String = rel.get("name", companion_id.capitalize())
 		var note := JournalData.get_relationship_note(companion_id, level)

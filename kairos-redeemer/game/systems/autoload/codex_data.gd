@@ -46,6 +46,10 @@ const TRUTHS := {
 	"beloved_son_receives_and_gives": {
 		"title": "The Beloved Son Receives and Gives",
 		"body": "The first man grasped in distrust. The Beloved Son receives from the Father and gives without fear."
+	},
+	"beloved_before_you_grasp": {
+		"title": "Beloved Before You Grasp",
+		"body": "The Father's love is not wages for the strong. You were His before you proved anything."
 	}
 }
 
@@ -78,6 +82,12 @@ const VERSES := {
 		"title": "1 John 3:1",
 		"reference": "1 John 3:1",
 		"body": "See what kind of love the Father has given to us, that we should be called children of God.",
+		"theme": "beloved"
+	},
+	"zephaniah_3_quiet_love": {
+		"title": "Zephaniah 3:17",
+		"reference": "Zephaniah 3:17",
+		"body": "The Lord your God is in your midst, a mighty one who will save; he will rejoice over you with gladness.",
 		"theme": "beloved"
 	}
 }

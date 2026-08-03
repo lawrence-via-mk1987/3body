@@ -1,0 +1,66 @@
+{
+  "scene_id": "elior_beloved_wound",
+  "title": "Elior — Beloved Before the Grasp",
+  "lines": [
+    {
+      "line_id": "elior_wound_001",
+      "speaker": "Elior",
+      "emotion": "quiet",
+      "text": "When I was young, I thought love meant readiness. Always ready. Always enough."
+    },
+    {
+      "line_id": "elior_wound_002",
+      "speaker": "Elior",
+      "emotion": "raw",
+      "text": "After my father died, I decided the feast would not fall if I carried it. If I failed, it would mean I was not truly His."
+    },
+    {
+      "line_id": "elior_wound_003",
+      "speaker": "Junia",
+      "emotion": "gentle",
+      "text": "You never told us that part."
+    },
+    {
+      "line_id": "elior_wound_004",
+      "speaker": "Elior",
+      "emotion": "honest",
+      "text": "I thought naming it would make it true. That if I admitted the fear, God would agree I had never been beloved."
+    },
+    {
+      "line_id": "elior_wound_005",
+      "speaker": "Keeper",
+      "emotion": "steady",
+      "text": "The Serpent does not invent new wounds. He teaches old ones to speak in the voice of Scripture twisted."
+    },
+    {
+      "line_id": "elior_wound_006",
+      "speaker": "Keeper",
+      "emotion": "awe",
+      "text": "But the Beloved Son was called beloved before He proved anything. Before the wilderness. Before the cross."
+    },
+    {
+      "line_id": "elior_wound_007",
+      "speaker": "Elior",
+      "emotion": "breaking",
+      "text": "Abba... I have been trying to earn what was already spoken over Him — and over me."
+    },
+    {
+      "line_id": "elior_wound_008",
+      "speaker": "Micah",
+      "emotion": "soft",
+      "text": "The watch is lighter when you are not carrying alone."
+    },
+    {
+      "line_id": "elior_wound_009",
+      "speaker": "Elior",
+      "emotion": "hopeful",
+      "text": "I am not beloved because I grasp. I was beloved before I learned to grasp."
+    },
+    {
+      "line_id": "elior_wound_010",
+      "speaker": "Junia",
+      "emotion": "warm",
+      "text": "That is the truth the Briar could not swallow."
+    }
+  ]
+}

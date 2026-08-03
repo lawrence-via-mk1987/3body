@@ -1,0 +1,42 @@
+{
+  "scene_id": "elior_wound_memory",
+  "title": "Memory at the Pool",
+  "lines": [
+    {
+      "line_id": "elior_mem_001",
+      "speaker": "Elior",
+      "emotion": "quiet",
+      "text": "The water keeps showing the same hand — closing, closing, closing."
+    },
+    {
+      "line_id": "elior_mem_002",
+      "speaker": "Junia",
+      "emotion": "soft",
+      "text": "At the feast. At the Lamp. At the Tree."
+    },
+    {
+      "line_id": "elior_mem_003",
+      "speaker": "Elior",
+      "emotion": "raw",
+      "text": "I have always believed that if I stop holding, everything I love will slip away — and God will look away with it."
+    },
+    {
+      "line_id": "elior_mem_004",
+      "speaker": "Micah",
+      "emotion": "steady",
+      "text": "That is the lie wearing your own voice."
+    },
+    {
+      "line_id": "elior_mem_005",
+      "speaker": "Keeper",
+      "emotion": "gentle",
+      "text": "The pool does not accuse. It waits until you are ready to speak the wound plainly."
+    },
+    {
+      "line_id": "elior_mem_006",
+      "speaker": "Elior",
+      "emotion": "honest",
+      "text": "Then I am ready."
+    }
+  ]
+}

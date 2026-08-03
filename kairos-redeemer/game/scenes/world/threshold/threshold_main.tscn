@@ -81,6 +81,20 @@ offset_right = 500.0
 offset_bottom = 155.0
 text = "Witness Pool"
 
+[node name="EliorCampfireRing" type="ColorRect" parent="EnvironmentRoot"]
+offset_left = 360.0
+offset_top = 250.0
+offset_right = 440.0
+offset_bottom = 310.0
+color = Color(0.48, 0.52, 0.62, 1)
+
+[node name="EliorCampfireLabel" type="Label" parent="EnvironmentRoot"]
+offset_left = 330.0
+offset_top = 315.0
+offset_right = 470.0
+offset_bottom = 350.0
+text = "Elior's Reflection"
+
 [node name="GateLabel" type="Label" parent="EnvironmentRoot"]
 offset_left = 820.0
 offset_top = 105.0
@@ -135,6 +149,21 @@ offset_right = 190.0
 offset_bottom = 335.0
 text = "Junia"
 
+[node name="EliorMarker" type="ColorRect" parent="NPCRoot"]
+position = Vector2(400, 280)
+offset_left = -10.0
+offset_top = -10.0
+offset_right = 10.0
+offset_bottom = 10.0
+color = Color(0.85, 0.75, 0.45, 1)
+
+[node name="EliorName" type="Label" parent="NPCRoot"]
+offset_left = 365.0
+offset_top = 295.0
+offset_right = 425.0
+offset_bottom = 330.0
+text = "Elior"
+
 [node name="TriggerRoot" type="Node2D" parent="."]
 
 [node name="KeeperTrigger" type="Area2D" parent="TriggerRoot"]
@@ -186,6 +215,14 @@ position = Vector2(170, 285)
 campfire_id = "junia_first_watch"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/CampfireTrigger"]
+shape = SubResource("RectangleShape2D_campfire")
+
+[node name="EliorCampfireTrigger" type="Area2D" parent="TriggerRoot"]
+script = ExtResource("3_campfire")
+position = Vector2(400, 280)
+campfire_id = "elior_beloved_wound"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerRoot/EliorCampfireTrigger"]
 shape = SubResource("RectangleShape2D_campfire")
 
 [node name="PlayerSpawn" type="Marker2D" parent="."]

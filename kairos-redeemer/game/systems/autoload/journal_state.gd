@@ -46,6 +46,12 @@ func is_campfire_available(campfire_id: String) -> bool:
 	for flag_id in campfire.get("required_flags", []):
 		if not GameState.has_flag(flag_id):
 			return false
+	var quest_req: Dictionary = campfire.get("required_quest_stage", {})
+	for quest_id in quest_req.keys():
+		if not QuestState.is_quest_active(quest_id):
+			return false
+		if str(QuestState.active_quests.get(quest_id, "")) != str(quest_req[quest_id]):
+			return false
 	return true
 
 func get_available_campfire_ids() -> Array[String]:

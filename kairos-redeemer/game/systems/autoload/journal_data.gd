@@ -39,6 +39,13 @@ const QUESTS := {
 			"find_child": "Visit the Hidden Prayer Root, then return to the child.",
 			"root_witnessed": "Return to the hidden child in the Thorn Verge."
 		}
+	},
+	"elior_beloved_wound": {
+		"title": "Beloved Before the Grasp",
+		"stages": {
+			"started": "Elior needs quiet at the Witness Pool.",
+			"memory_spoken": "Sit with Elior at the Witness Pool reflection."
+		}
 	}
 }
 
@@ -87,10 +94,27 @@ const ENTRIES := {
 		"title": "Room to Return",
 		"body": "The hidden child chose to return freely — invited, not seized. The Grove remembers a gentler way.",
 		"category": "sidequest"
+	},
+	"journal_elior_wound_surfaced": {
+		"title": "The Wound Surfaces",
+		"body": "After the Fruit of Love was restored, Elior could not hide the old lie: that he must grasp to prove he belongs to God.",
+		"category": "wound"
+	},
+	"journal_elior_wound_named": {
+		"title": "Beloved Before the Grasp",
+		"body": "Elior named the wound at the Witness Pool. He was trying to earn what the Father had already spoken — beloved before proof.",
+		"category": "wound"
 	}
 }
 
 const RELATIONSHIPS := {
+	"elior": {
+		"name": "Elior",
+		"notes": {
+			0: "Carries feast, Lamp, and Garden like proof is required. Afraid rest will mean he is not beloved.",
+			1: "Named the wound at the Witness Pool. Beginning to hear Abba before the grasp."
+		}
+	},
 	"junia": {
 		"name": "Junia",
 		"notes": {
@@ -119,6 +143,9 @@ const QUEST_JOURNAL_HOOKS := {
 	},
 	"whisper_of_the_grove": {
 		"started": "journal_whisper_grove_started"
+	},
+	"elior_beloved_wound": {
+		"started": "journal_elior_wound_surfaced"
 	}
 }
 
@@ -140,6 +167,19 @@ const CAMPFIRES := {
 		"dialogue_path": "res://dialogue/campfire/micah_veiled_watch.json",
 		"journal_unlock": "journal_micah_veiled_watch",
 		"relationship_flag": "micah_trust",
+		"relationship_value": 1
+	},
+	"elior_beloved_wound": {
+		"title": "Elior — Beloved Before the Grasp",
+		"companion": "elior",
+		"required_scenes": ["meridian_teaser", "love_restoration"],
+		"required_flags": ["fruit_love_restored"],
+		"required_quest_stage": {
+			"elior_beloved_wound": "memory_spoken"
+		},
+		"dialogue_path": "res://dialogue/campfire/elior_beloved_wound.json",
+		"journal_unlock": "journal_elior_wound_named",
+		"relationship_flag": "elior_wound",
 		"relationship_value": 1
 	}
 }
