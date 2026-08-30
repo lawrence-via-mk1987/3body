@@ -57,9 +57,21 @@ chmod +x Godot_v4.4.1-stable_linux.x86_64
 
 ---
 
-## 2. Open the Project
+## 2. Get the Project (clone once, update forever)
 
-In Godot:
+Clone the repo **once** with git. Do not download ZIPs repeatedly — a clone lets
+you pull fixes with a single command.
+
+```bash
+git clone https://github.com/lawrence-via-mk1987/3body.git
+cd 3body
+git checkout cursor/kairos-redeemer-transfer-ec01
+```
+
+On macOS, if `git` is missing, running it once will prompt you to install the
+Xcode Command Line Tools. Accept the prompt.
+
+### Open in Godot
 
 1. click **Import**
 2. choose:
@@ -70,6 +82,48 @@ kairos-redeemer/game/project.godot
 
 3. import the project
 4. let Godot re-scan and import resources
+
+You only import once. After that, reopening Godot goes straight to the project.
+
+---
+
+## 2b. Getting updates later
+
+Whenever there is a bug fix or new content, run this from the `kairos-redeemer`
+folder:
+
+```bash
+./update.sh
+```
+
+Or, on macOS with Godot not on your PATH:
+
+```bash
+./update.sh /Applications/Godot.app/Contents/MacOS/Godot
+```
+
+That pulls the latest changes for your branch and immediately runs the QA
+harness, so you know the build is healthy before you play.
+
+If Godot is already open when you pull, it usually picks up changes
+automatically. If anything looks stale, use **Project → Reload Current Project**.
+
+### If update.sh reports local changes
+
+You edited files in the project. Either keep them:
+
+```bash
+git stash        # set your changes aside
+./update.sh
+git stash pop    # bring them back
+```
+
+Or discard them:
+
+```bash
+git restore .
+./update.sh
+```
 
 ---
 
@@ -231,7 +285,7 @@ Items marked `[x]` were verified headlessly in the cloud workspace (Aug 2026 QA 
 
 ## 8. Suggested Local Testing Order
 
-1. run automated QA script
+1. run `./update.sh` to pull latest and verify QA
 2. movement test scene
 3. main menu → New Game → Beth-Tikvah opening
 4. Threshold flow (Keeper briefing, Junia campfire, gate)
