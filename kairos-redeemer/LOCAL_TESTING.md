@@ -75,20 +75,35 @@ kairos-redeemer/game/project.godot
 
 ## 3. Automated QA (headless)
 
-Before a manual playtest, run the slice validator:
+Before a manual playtest, run the QA harness from the `kairos-redeemer` folder:
 
 ```bash
-godot --headless --path kairos-redeemer/game -s res://scripts/qa/qa_validate.gd
+./qa.sh
+```
+
+On macOS, if Godot is not on your PATH, pass the binary explicitly:
+
+```bash
+./qa.sh /Applications/Godot.app/Contents/MacOS/Godot
 ```
 
 Expected output:
 
 ```text
+--- 1/2 Script + scene load check ---
+PASS: project loads with no script errors
+
+--- 2/2 Script compile + content validation ---
 QA: ALL CHECKS PASSED (28 dialogue files, 6 scenes)
+
+== QA PASSED ==
 ```
 
-The validator checks:
+The harness checks:
 
+- project boots with no script/parse/compile errors
+- **every `.gd` script compiles** (catches errors in scenes you have not visited yet, such as battle)
+- scripts actually attach to their scene nodes
 - all dialogue JSON parses and has lines
 - main menu, world maps, movement test, and battle scene load/instantiate
 - campfire dialogue paths and journal hooks
@@ -96,6 +111,9 @@ The validator checks:
 - core quest/map definitions exist
 
 Exit code `0` means pass; non-zero prints each failure.
+
+Run this after every code change — a script that fails to compile will crash the
+game the moment you enter the scene that uses it.
 
 ---
 

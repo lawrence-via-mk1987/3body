@@ -1,7 +1,6 @@
 extends Node
 
 signal journal_entry_unlocked(entry_id: String)
-signal campfire_available(campfire_id: String)
 
 var unlocked_entries: Dictionary = {}
 var seen_campfires: Dictionary = {}

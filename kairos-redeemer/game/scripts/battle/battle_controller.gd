@@ -56,7 +56,7 @@ var party_actors: Array[ActorBase] = []
 var enemy_actors: Array[ActorBase] = []
 var active_actor: ActorBase
 var ready_queue: Array[ActorBase] = []
-var lie_manager: Node
+var lie_manager: LieManager
 var battle_active: bool = false
 var boss_phase: int = 1
 var manual_command_open: bool = false
@@ -76,7 +76,7 @@ var phase_banner_timer: float = 0.0
 var command_buttons: Array[Button] = []
 
 func _ready() -> void:
-	lie_manager = preload("res://scripts/battle/lie_manager.gd").new()
+	lie_manager = LieManager.new()
 	add_child(lie_manager)
 	battle_context = SceneRouter.battle_context
 	_bind_buttons()
@@ -225,7 +225,7 @@ func _begin_player_turn(actor: ActorBase) -> void:
 
 func _process_enemy_turn(actor: ActorBase) -> void:
 	actor.phase_hint = boss_phase
-	var action := actor.call("choose_action", battle_context, CombatState)
+	var action: Dictionary = actor.call("choose_action", battle_context, CombatState)
 	match action.get("type", "attack"):
 		"apply_lie":
 			lie_manager.apply_lie(action.get("lie_id", "if_you_release_you_lose"))
@@ -234,17 +234,17 @@ func _process_enemy_turn(actor: ActorBase) -> void:
 			target_hint_label.text = "Counter with Truth actions, Prayer, or Release techs."
 			_flash_lie_applied()
 		"attack":
-			var target := _get_party_target(action.get("target_index", 0))
+			var target: ActorBase = _get_party_target(int(action.get("target_index", 0)))
 			if target != null:
 				target.take_damage(_enemy_damage(actor, 10))
 				command_label.text = "%s strikes %s." % [actor.display_name, target.display_name]
 		"heavy_attack":
-			var target := _get_party_target(action.get("target_index", 0))
+			var target: ActorBase = _get_party_target(int(action.get("target_index", 0)))
 			if target != null:
 				target.take_damage(_enemy_damage(actor, 18))
 				command_label.text = "%s lashes out with crushing force." % actor.display_name
 		"support_attack":
-			var target := _get_party_target(action.get("target_index", 1))
+			var target: ActorBase = _get_party_target(int(action.get("target_index", 1)))
 			if target != null:
 				target.take_damage(_enemy_damage(actor, 12))
 				CombatState.reduce_assurance(10)
@@ -405,7 +405,7 @@ func _on_pray_pressed() -> void:
 		boosted_prayer = true
 		command_label.text = "%s prays at the truth-root. The Garden answers with clarity." % active_actor.display_name
 		if CombatState.active_lie_id == "if_you_release_you_lose":
-			var broke := lie_manager.apply_truth_counter(["beloved", "release", "truth", "worship"], 2)
+			var broke: bool = lie_manager.apply_truth_counter(["beloved", "release", "truth", "worship"], 2)
 			if broke and not enemy_actors.is_empty():
 				_clear_active_lie()
 				enemy_actors[0].take_damage(70)
@@ -559,7 +559,7 @@ func _on_enemy_target_selected(target: ActorBase) -> void:
 			var ability: Dictionary = pending_target_action.get("ability", {})
 			var broke := false
 			if CombatState.active_lie_id == "if_you_release_you_lose":
-				broke = lie_manager.apply_truth_counter(ability.get("truth_tags", []), ability.get("break_value", 1))
+				broke = lie_manager.apply_truth_counter(ability.get("truth_tags", []), int(ability.get("break_value", 1)))
 			command_label.text = "%s uses %s to resist the Lie." % [active_actor.display_name, ability.get("name", "Tech")]
 			if broke:
 				_clear_active_lie()
@@ -569,7 +569,7 @@ func _on_enemy_target_selected(target: ActorBase) -> void:
 		"tech_truth":
 			var ability: Dictionary = pending_target_action.get("ability", {})
 			if CombatState.active_lie_id == "if_you_release_you_lose":
-				var broke := lie_manager.apply_truth_counter(ability.get("truth_tags", []), ability.get("break_value", 1))
+				var broke: bool = lie_manager.apply_truth_counter(ability.get("truth_tags", []), int(ability.get("break_value", 1)))
 				command_label.text = "%s invokes %s against the Lie." % [active_actor.display_name, ability.get("name", "Tech")]
 				if broke:
 					_clear_active_lie()
@@ -596,7 +596,7 @@ func _on_enemy_target_selected(target: ActorBase) -> void:
 			elif pending_synergy_helper_id == "micah":
 				damage = 42
 				if CombatState.active_lie_id == "if_you_release_you_lose":
-					var broke := lie_manager.apply_truth_counter(["beloved", "truth", "witness"], 2)
+					var broke: bool = lie_manager.apply_truth_counter(["beloved", "truth", "witness"], 2)
 					if broke:
 						_clear_active_lie()
 						CombatState.add_assurance(25)
@@ -615,7 +615,7 @@ func _clear_active_lie() -> void:
 func _get_party_target(target_index: int) -> ActorBase:
 	if party_actors.is_empty():
 		return null
-	var clamped_index := clamp(target_index, 0, party_actors.size() - 1)
+	var clamped_index := clampi(target_index, 0, party_actors.size() - 1)
 	return party_actors[clamped_index]
 
 func _enemy_damage(actor: ActorBase, base_damage: int) -> int:

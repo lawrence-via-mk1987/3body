@@ -215,7 +215,6 @@ func _refresh_world_state() -> void:
 	var keeper_seen := DialogueState.has_seen_scene("keeper_briefing")
 	var love_restored := GameState.has_flag("fruit_love_restored")
 	var elior_wound_active := QuestState.is_quest_active("elior_beloved_wound")
-	var elior_wound_stage: String = str(QuestState.active_quests.get("elior_beloved_wound", ""))
 
 	$EnvironmentRoot/Backdrop.color = Color(0.12, 0.18, 0.28, 1.0) if love_restored else Color(0.1, 0.14, 0.22, 1.0)
 	$EnvironmentRoot/Starway.color = Color(0.42, 0.5, 0.62, 1.0) if keeper_seen else Color(0.32, 0.38, 0.48, 1.0)
@@ -226,7 +225,7 @@ func _refresh_world_state() -> void:
 	$NPCRoot/KeeperMarker.modulate = Color(1.0, 1.0, 1.0, 0.75) if keeper_seen else Color(1, 1, 1, 1)
 
 	_refresh_junia_campfire_state()
-	_refresh_elior_campfire_state(elior_wound_active, elior_wound_stage)
+	_refresh_elior_campfire_state()
 
 	$EnvironmentRoot/WitnessPool.color = Color(0.42, 0.62, 0.82, 1.0) if elior_wound_active else Color(0.28, 0.48, 0.68, 1.0)
 	$EnvironmentRoot/WitnessPoolGlow.color = Color(0.72, 0.88, 1.0, 0.5) if elior_wound_active else (Color(0.65, 0.82, 0.98, 0.38) if keeper_seen else Color(0.55, 0.78, 0.95, 0.35))
@@ -245,7 +244,7 @@ func _refresh_junia_campfire_state() -> void:
 	$TriggerRoot/CampfireTrigger.monitoring = campfire_available
 	$NPCRoot/JuniaMarker.modulate = Color(1.15, 1.0, 0.85, 1.0) if campfire_available else Color(1, 1, 1, 0.65)
 
-func _refresh_elior_campfire_state(elior_wound_active: bool, elior_wound_stage: String) -> void:
+func _refresh_elior_campfire_state() -> void:
 	var elior_campfire_available := JournalState.is_campfire_available("elior_beloved_wound")
 	var elior_campfire_seen := JournalState.has_seen_campfire("elior_beloved_wound")
 	$EnvironmentRoot/EliorCampfireRing.color = Color(1.0, 0.88, 0.55, 1.0) if elior_campfire_available else Color(0.48, 0.52, 0.62, 1.0)

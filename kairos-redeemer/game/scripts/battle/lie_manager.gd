@@ -1,3 +1,4 @@
+class_name LieManager
 extends Node
 
 func apply_lie(lie_id: String) -> void:
@@ -7,7 +8,7 @@ func apply_lie(lie_id: String) -> void:
 		_:
 			CombatState.set_active_lie(lie_id, 3)
 
-func apply_truth_counter(truth_tags: Array[String], base_value: int = 1) -> bool:
+func apply_truth_counter(truth_tags: Array, base_value: int = 1) -> bool:
 	if CombatState.active_lie_id.is_empty():
 		return false
 
