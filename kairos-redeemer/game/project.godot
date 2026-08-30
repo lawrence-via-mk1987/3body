@@ -22,6 +22,7 @@ JournalState="*res://systems/autoload/journal_state.gd"
 JournalData="*res://systems/autoload/journal_data.gd"
 SaveState="*res://systems/autoload/save_state.gd"
 SceneRouter="*res://systems/autoload/scene_router.gd"
+DebugMenu="*res://systems/autoload/debug_menu.gd"
 
 [display]
 

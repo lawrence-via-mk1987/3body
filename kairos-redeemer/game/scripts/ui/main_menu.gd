@@ -1,6 +1,7 @@
 extends Control
 
 @onready var continue_button: Button = %ContinueButton
+@onready var new_game_button: Button = %NewGameButton
 @onready var save_summary_label: Label = %SaveSummaryLabel
 
 func _ready() -> void:
@@ -10,6 +11,11 @@ func _ready() -> void:
 		save_summary_label.text = SaveState.get_save_summary()
 	else:
 		save_summary_label.text = "No saved journey yet."
+
+	if has_save:
+		continue_button.grab_focus()
+	else:
+		new_game_button.grab_focus()
 
 func _on_new_game_pressed() -> void:
 	SaveState.start_new_game()

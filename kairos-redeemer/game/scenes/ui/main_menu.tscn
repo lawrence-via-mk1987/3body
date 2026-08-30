@@ -57,6 +57,13 @@ theme_override_colors/font_color = Color(0.75, 0.78, 0.85, 1)
 text = "Vertical Slice — Prologue"
 horizontal_alignment = 1
 
+[node name="HintLabel" type="Label" parent="CenterPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.63, 0.72, 1)
+theme_override_font_sizes/font_size = 12
+text = "Click or use Arrow keys + Enter · F3 = debug menu in game"
+horizontal_alignment = 1
+
 [node name="SaveSummaryLabel" type="Label" parent="CenterPanel/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -65,6 +72,7 @@ text = "No saved journey yet."
 horizontal_alignment = 1
 
 [node name="NewGameButton" type="Button" parent="CenterPanel/Margin/VBox"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "New Game"
 
