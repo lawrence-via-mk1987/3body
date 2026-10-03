@@ -4,7 +4,7 @@ A first-person browser survival demo set on a Trisolarian world: three chaotical
 
 **Stack:** Three.js · Vite · TypeScript · Web Audio API
 
-**Play online:** [https://lawrence-via-mk1987.github.io/3body/](https://lawrence-via-mk1987.github.io/3body/) *(after GitHub Pages is enabled — see Deploy below)*
+**Play online:** [https://lawrence-via-mk1987.github.io/3body/](https://lawrence-via-mk1987.github.io/3body/)
 
 ## Disclaimer
 
@@ -24,7 +24,7 @@ npm install
 npm run dev
 ```
 
-Open the local URL shown in the terminal. Click **Enter the wasteland** to start first-person exploration.
+Open the local URL shown in the terminal. Choose **Continue from checkpoint** or **New cycle** to start first-person exploration.
 
 ```bash
 npm run build        # production build to dist/ (relative paths)
@@ -34,9 +34,7 @@ npm run preview      # preview production build
 
 ## Deploy to GitHub Pages
 
-1. In the repository **Settings → Pages**, set **Source** to **GitHub Actions**.
-2. Merge to `main`. The workflow in `.github/workflows/deploy.yml` builds and deploys automatically.
-3. The demo will be available at `https://<username>.github.io/3body/`.
+Pages uses **GitHub Actions** (`build_type: workflow`). Each push to `main` runs `.github/workflows/deploy.yml` and publishes to `https://lawrence-via-mk1987.github.io/3body/`.
 
 ## Status
 
