@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>3body — Trisolarian Survival</title>
     <link rel="stylesheet" href="/src/style.css" />
   </head>
@@ -51,7 +51,7 @@
         <details class="menu-details">
           <summary id="controls-disclaimer-summary">Controls &amp; fan disclaimer</summary>
           <p id="menu-disclaimer" class="disclaimer"></p>
-          <p class="controls">
+          <p id="menu-controls-hint" class="controls">
             WASD move · Shift sprint · mouse look (click game) · F read · T talk · J journal · Tab compact HUD · R drink (Stable grove) · E dehydrate (pit ring) · P or Esc pause
           </p>
         </details>
@@ -235,6 +235,23 @@
       <div id="hud-look-hint" class="hud-look-hint hidden">Click the game view to look around</div>
       <div id="game-toast" class="game-toast hidden" role="status"></div>
       <div class="hud-crosshair" aria-hidden="true"></div>
+    </div>
+
+    <div id="mobile-controls" class="mobile-controls hidden" aria-hidden="true">
+      <div id="mobile-look-zone" class="mobile-look-zone" aria-label="Drag to look around"></div>
+      <p id="mobile-look-hint" class="mobile-look-hint">Drag the right side to look</p>
+      <div id="mobile-stick-base" class="mobile-stick-base" aria-label="Move">
+        <div id="mobile-stick-knob" class="mobile-stick-knob"></div>
+      </div>
+      <div class="mobile-action-bar">
+        <button id="mobile-btn-sprint" type="button" class="mobile-btn">Run</button>
+        <button id="mobile-btn-use" type="button" class="mobile-btn mobile-btn-accent">Use</button>
+        <button id="mobile-btn-interact" type="button" class="mobile-btn mobile-btn-primary">Read</button>
+      </div>
+      <div class="mobile-action-bar mobile-action-bar-secondary">
+        <button id="mobile-btn-journal" type="button" class="mobile-btn mobile-btn-small">Journal</button>
+        <button id="mobile-btn-pause" type="button" class="mobile-btn mobile-btn-small">Pause</button>
+      </div>
     </div>
 
     <canvas id="game-canvas"></canvas>

@@ -21,6 +21,9 @@ export class FirstPersonController {
   private readonly right = new THREE.Vector3();
   private isGrounded = false;
   private movementEnabled = true;
+  private touchMode = false;
+  private touchEngaged = false;
+  private readonly virtualKeys = new Set<string>();
 
   constructor(
     domElement: HTMLElement,
@@ -48,11 +51,56 @@ export class FirstPersonController {
     });
   }
 
+  enableTouchMode(): void {
+    this.touchMode = true;
+    this.touchEngaged = true;
+    if (this.controls.isLocked) {
+      this.controls.unlock();
+    }
+  }
+
+  isTouchMode(): boolean {
+    return this.touchMode;
+  }
+
+  applyLookDelta(yawDelta: number, pitchDelta: number): void {
+    const euler = new THREE.Euler(0, 0, 0, 'YXZ');
+    euler.setFromQuaternion(this.camera.quaternion);
+    euler.y -= yawDelta;
+    euler.x -= pitchDelta;
+    euler.x = THREE.MathUtils.clamp(euler.x, -Math.PI / 2 + 0.02, Math.PI / 2 - 0.02);
+    this.camera.quaternion.setFromEuler(euler);
+  }
+
+  setVirtualKey(code: string, active: boolean): void {
+    if (active) {
+      this.virtualKeys.add(code);
+    } else {
+      this.virtualKeys.delete(code);
+    }
+  }
+
+  pulseVirtualKey(code: string): void {
+    this.pressedKeys.add(code);
+  }
+
+  private isKeyActive(code: string): boolean {
+    return this.keys.has(code) || this.virtualKeys.has(code);
+  }
+
   lock(): void {
+    if (this.touchMode) {
+      this.touchEngaged = true;
+      return;
+    }
     this.controls.lock();
   }
 
   tryLock(): void {
+    if (this.touchMode) {
+      this.touchEngaged = true;
+      return;
+    }
     if (this.controls.isLocked) {
       return;
     }
@@ -60,10 +108,17 @@ export class FirstPersonController {
   }
 
   unlock(): void {
+    if (this.touchMode) {
+      this.touchEngaged = false;
+      return;
+    }
     this.controls.unlock();
   }
 
   isLocked(): boolean {
+    if (this.touchMode) {
+      return this.touchEngaged;
+    }
     return this.controls.isLocked;
   }
 
@@ -83,7 +138,10 @@ export class FirstPersonController {
   }
 
   isSprinting(): boolean {
-    return this.movementEnabled && (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight'));
+    return this.movementEnabled && (
+      this.isKeyActive('ShiftLeft')
+      || this.isKeyActive('ShiftRight')
+    );
   }
 
   getPosition(): THREE.Vector3 {
@@ -123,16 +181,16 @@ export class FirstPersonController {
 
     this.moveDirection.set(0, 0, 0);
 
-    if (this.keys.has('KeyW') || this.keys.has('ArrowUp')) {
+    if (this.isKeyActive('KeyW') || this.isKeyActive('ArrowUp')) {
       this.moveDirection.add(this.forward);
     }
-    if (this.keys.has('KeyS') || this.keys.has('ArrowDown')) {
+    if (this.isKeyActive('KeyS') || this.isKeyActive('ArrowDown')) {
       this.moveDirection.sub(this.forward);
     }
-    if (this.keys.has('KeyA') || this.keys.has('ArrowLeft')) {
+    if (this.isKeyActive('KeyA') || this.isKeyActive('ArrowLeft')) {
       this.moveDirection.sub(this.right);
     }
-    if (this.keys.has('KeyD') || this.keys.has('ArrowRight')) {
+    if (this.isKeyActive('KeyD') || this.isKeyActive('ArrowRight')) {
       this.moveDirection.add(this.right);
     }
 
@@ -145,7 +203,7 @@ export class FirstPersonController {
       this.velocity.z = THREE.MathUtils.damp(this.velocity.z, 0, 12, delta);
     }
 
-    if (this.isGrounded && this.keys.has('Space')) {
+    if (this.isGrounded && this.isKeyActive('Space')) {
       this.velocity.y = 8.5;
       this.isGrounded = false;
     }

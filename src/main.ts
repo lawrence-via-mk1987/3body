@@ -15,6 +15,8 @@ import { StoryOverlay } from './ui/StoryOverlay';
 import { Toast } from './ui/Toast';
 import { CheckpointSave } from './save/CheckpointSave';
 import { MetaProgress } from './narrative/MetaProgress';
+import { applyDeviceProfileToDocument, detectDeviceProfile } from './platform/deviceProfile';
+import type { MobileChromeElements } from './ui/mobileChrome';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
 const overlay = document.querySelector<HTMLDivElement>('#overlay');
@@ -90,6 +92,43 @@ const deathObjective = document.querySelector<HTMLParagraphElement>('#death-obje
 const deathCycle = document.querySelector<HTMLParagraphElement>('#death-cycle');
 const epilogueBody = document.querySelector<HTMLParagraphElement>('#epilogue-body');
 const hudOmen = document.querySelector<HTMLDivElement>('#hud-omen');
+const menuControlsHint = document.querySelector<HTMLParagraphElement>('#menu-controls-hint');
+const mobileControlsRoot = document.querySelector<HTMLDivElement>('#mobile-controls');
+const mobileLookZone = document.querySelector<HTMLDivElement>('#mobile-look-zone');
+const mobileStickBase = document.querySelector<HTMLDivElement>('#mobile-stick-base');
+const mobileStickKnob = document.querySelector<HTMLDivElement>('#mobile-stick-knob');
+const mobileLookHint = document.querySelector<HTMLParagraphElement>('#mobile-look-hint');
+const mobileBtnSprint = document.querySelector<HTMLButtonElement>('#mobile-btn-sprint');
+const mobileBtnUse = document.querySelector<HTMLButtonElement>('#mobile-btn-use');
+const mobileBtnInteract = document.querySelector<HTMLButtonElement>('#mobile-btn-interact');
+const mobileBtnJournal = document.querySelector<HTMLButtonElement>('#mobile-btn-journal');
+const mobileBtnPause = document.querySelector<HTMLButtonElement>('#mobile-btn-pause');
+
+const deviceProfile = detectDeviceProfile();
+applyDeviceProfileToDocument(deviceProfile);
+
+function applyMenuControlsHint(locale: 'en' | 'zh'): void {
+  if (deviceProfile.prefersTouchControls) {
+    if (menuControlsHint) {
+      menuControlsHint.textContent = locale === 'zh'
+        ? '触屏：左摇杆移动 · 右侧拖动视角 · 按钮：阅读/交谈、折叠/饮水 · 日志 · 暂停'
+        : 'Touch: left stick — move · drag right side — look · buttons — read/talk, fold/drink · Journal · Pause';
+    }
+    if (mobileLookHint) {
+      mobileLookHint.textContent = locale === 'zh' ? '右侧拖动视角' : 'Drag the right side to look';
+    }
+    if (mobileBtnSprint) {
+      mobileBtnSprint.textContent = locale === 'zh' ? '奔跑' : 'Run';
+    }
+    if (mobileBtnJournal) {
+      mobileBtnJournal.textContent = locale === 'zh' ? '日志' : 'Journal';
+    }
+    if (mobileBtnPause) {
+      mobileBtnPause.textContent = locale === 'zh' ? '暂停' : 'Pause';
+    }
+  }
+}
+applyMenuControlsHint('en');
 const logTitle = document.querySelector<HTMLHeadingElement>('#log-title');
 const logBody = document.querySelector<HTMLParagraphElement>('#log-body');
 const worldIntroBody = document.querySelector<HTMLDivElement>('#world-intro-body');
@@ -281,6 +320,31 @@ let game: Game;
 let localeMenu: LocaleMenu;
 let introCinematic: IntroCinematic;
 
+const mobileChrome: MobileChromeElements | null = deviceProfile.prefersTouchControls
+  && mobileControlsRoot
+  && mobileLookZone
+  && mobileStickBase
+  && mobileStickKnob
+  && mobileLookHint
+  && mobileBtnSprint
+  && mobileBtnUse
+  && mobileBtnInteract
+  && mobileBtnJournal
+  && mobileBtnPause
+  ? {
+    root: mobileControlsRoot,
+    lookZone: mobileLookZone,
+    stickBase: mobileStickBase,
+    stickKnob: mobileStickKnob,
+    lookHint: mobileLookHint,
+    sprintButton: mobileBtnSprint,
+    useButton: mobileBtnUse,
+    interactButton: mobileBtnInteract,
+    journalButton: mobileBtnJournal,
+    pauseButton: mobileBtnPause,
+  }
+  : null;
+
 const showMainMenu = (): void => {
   overlay.classList.remove('hidden');
   hud.classList.add('hidden');
@@ -368,6 +432,8 @@ game = new Game(
   () => localeMenu!.getLocale(),
   narration,
   storyOverlay,
+  deviceProfile,
+  mobileChrome,
 );
 
 introCinematic = new IntroCinematic(
@@ -401,6 +467,7 @@ localeMenu = new LocaleMenu(
   menuNarrationLabel,
   (locale) => {
     introCinematic.setLocale(locale);
+    applyMenuControlsHint(locale);
   },
   () => {
     void game.ensureAudio().then(() => {
@@ -486,6 +553,10 @@ if (worldIntroDetails) {
 }
 
 document.addEventListener('pointerlockchange', () => {
+  if (document.body.classList.contains('touch-ui')) {
+    return;
+  }
+
   if (document.pointerLockElement === canvas) {
     return;
   }

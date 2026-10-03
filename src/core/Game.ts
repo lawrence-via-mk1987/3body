@@ -49,7 +49,10 @@ import {
   omenForPhaseEnter,
   shouldWarnLethal,
 } from '../narrative/skyOmens';
+import type { DeviceProfile } from '../platform/deviceProfile';
 import type { EraPhase } from '../orbital/types';
+import { MobileControls } from '../ui/MobileControls';
+import type { MobileChromeElements } from '../ui/mobileChrome';
 import { PitRegistrarState } from '../narrative/PitRegistrarState';
 import { resolveInteractionPrompt } from '../ui/InteractionPrompt';
 import { SettlementNpcs } from '../world/SettlementNpcs';
@@ -157,6 +160,15 @@ export class Game {
   private readonly storyBeatState = new StoryBeatState();
   private readonly storyDirector: StoryDirector;
   private lastSurvivalStatus: 'active' | 'dehydrated' | 'dead' = 'active';
+  private readonly deviceProfile: DeviceProfile;
+  private readonly mobileControls: MobileControls | null;
+  private mobileUi = {
+    hasNearbyLog: false,
+    nearPit: false,
+    nearWater: false,
+    nearNpc: false,
+    stableEra: false,
+  };
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -179,7 +191,11 @@ export class Game {
     private readonly getLocale: () => Locale,
     private readonly narration: NarrationDirector,
     private readonly storyOverlay: StoryOverlay,
+    deviceProfile: DeviceProfile,
+    mobileChrome: MobileChromeElements | null,
   ) {
+    this.deviceProfile = deviceProfile;
+    this.mobileControls = null;
     this.storyDirector = new StoryDirector(
       this.storyBeatState,
       getLocale,
@@ -237,6 +253,40 @@ export class Game {
       this.shelterZones,
       window.innerWidth / window.innerHeight,
     );
+    if (deviceProfile.prefersTouchControls) {
+      this.player.enableTouchMode();
+    }
+
+    if (mobileChrome && deviceProfile.prefersTouchControls) {
+      this.mobileControls = new MobileControls(
+        mobileChrome.root,
+        mobileChrome.lookZone,
+        mobileChrome.stickBase,
+        mobileChrome.stickKnob,
+        mobileChrome.interactButton,
+        mobileChrome.useButton,
+        mobileChrome.journalButton,
+        mobileChrome.pauseButton,
+        mobileChrome.sprintButton,
+        mobileChrome.lookHint,
+        this.player,
+        {
+          isGameplayActive: () => this.isMobileGameplayActive(),
+          onInteract: () => this.mobileInteract(),
+          onUse: () => this.mobileUse(),
+          onJournal: () => this.toggleJournal(),
+          onPause: () => {
+            if (this.isPaused()) {
+              this.resume();
+            } else {
+              this.pause();
+            }
+          },
+          getInteractLabel: () => this.getMobileInteractLabel(),
+          getUseLabel: () => this.getMobileUseLabel(),
+        },
+      );
+    }
 
     const hasFinalLog = () => this.meta.hasSeenFinalLog(this.logDiscovery);
     this.orbital = new OrbitalDirector(
@@ -344,6 +394,9 @@ export class Game {
     });
 
     canvas.addEventListener('click', () => {
+      if (this.deviceProfile.prefersTouchControls) {
+        return;
+      }
       if (
         !this.running
         || this.paused
@@ -552,7 +605,16 @@ export class Game {
     this.dialoguePanel.close();
     this.overlays.death.classList.add('hidden');
     this.epilogue.hide();
-    this.player.lock();
+    if (this.deviceProfile.prefersTouchControls) {
+      this.hudCompact = true;
+      this.hud.root.classList.add('compact');
+      this.mobileControls?.show();
+      this.player.enableTouchMode();
+      this.player.lock();
+    } else {
+      this.mobileControls?.hide();
+      this.player.lock();
+    }
     this.clock.start();
     this.animate();
     window.setTimeout(() => {
@@ -569,6 +631,7 @@ export class Game {
     cancelAnimationFrame(this.animationId);
     this.narration.cancel();
     this.audio.stop();
+    this.mobileControls?.hide();
     this.player.unlock();
   }
 
@@ -590,6 +653,70 @@ export class Game {
 
   isJournalOpen(): boolean {
     return this.journal.isOpen();
+  }
+
+  isMobileGameplayActive(): boolean {
+    return this.running
+      && !this.paused
+      && !this.logReader.isOpen()
+      && !this.journal.isOpen()
+      && !this.dialoguePanel.isOpen()
+      && !this.storyOverlay.isOpen()
+      && this.survival.status !== 'dead';
+  }
+
+  mobileInteract(): void {
+    if (!this.isMobileGameplayActive()) {
+      return;
+    }
+    const stableEra = this.orbital.getEraKind() === 'stable';
+    const nearbyLog = this.logMarkers.update(this.anchor, stableEra);
+    if (nearbyLog) {
+      this.tryReadNearbyLog(stableEra);
+      return;
+    }
+    this.tryTalkToNearbyNpc();
+  }
+
+  mobileUse(): void {
+    if (!this.isMobileGameplayActive()) {
+      return;
+    }
+    const stableEra = this.orbital.getEraKind() === 'stable';
+    const nearbyLog = this.logMarkers.update(this.anchor, stableEra);
+    const nearPit = this.shelterZones.isNearDehydrationPit(this.anchor);
+    const nearWater = this.waterSource.isNear(this.anchor);
+    if (nearPit && !nearbyLog) {
+      this.survival.toggleDehydration(nearPit);
+      this.syncMovementState();
+      return;
+    }
+    if (nearWater && stableEra) {
+      this.survival.refillHydration(WATER_REFILL_AMOUNT);
+      this.setStatusOverride('Condensate from the grove. Your body remembers water.', 4);
+    }
+  }
+
+  getMobileInteractLabel(): string {
+    const zh = this.getLocale() === 'zh';
+    if (this.mobileUi.hasNearbyLog) {
+      return zh ? '阅读' : 'Read';
+    }
+    if (this.mobileUi.nearNpc) {
+      return zh ? '交谈' : 'Talk';
+    }
+    return zh ? '阅读/交谈' : 'Read / Talk';
+  }
+
+  getMobileUseLabel(): string {
+    const zh = this.getLocale() === 'zh';
+    if (this.mobileUi.nearWater && this.mobileUi.stableEra) {
+      return zh ? '饮水' : 'Drink';
+    }
+    if (this.mobileUi.nearPit) {
+      return zh ? '折叠' : 'Fold';
+    }
+    return zh ? '使用' : 'Use';
   }
 
   toggleJournal(): void {
@@ -642,6 +769,9 @@ export class Game {
   }
 
   onPointerLockLost(): void {
+    if (this.deviceProfile.prefersTouchControls) {
+      return;
+    }
     if (
       !this.running
       || this.paused
@@ -709,6 +839,7 @@ export class Game {
 
     const delta = Math.min(this.clock.getDelta(), 0.05);
     this.npcPulseTime += delta;
+    this.mobileControls?.update(delta);
     const stableEra = this.orbital.getEraKind() === 'stable';
 
     this.hud.lookHint.classList.toggle(
@@ -746,6 +877,15 @@ export class Game {
     const nearbyLog = this.logMarkers.update(this.anchor, stableEra);
     const nearPit = this.shelterZones.isNearDehydrationPit(this.anchor);
     const nearWater = this.waterSource.isNear(this.anchor);
+    this.mobileUi = {
+      hasNearbyLog: Boolean(nearbyLog),
+      nearPit,
+      nearWater,
+      nearNpc: this.wayfinding.isNearRegistrar(this.anchor)
+        || this.settlementNpcs.isNearPredictor(this.anchor)
+        || (stableEra && this.settlementNpcs.isNearGroveKeeper(this.anchor)),
+      stableEra,
+    };
 
     if (this.paused || this.journal.isOpen() || this.dialoguePanel.isOpen() || this.storyOverlay.isOpen()) {
       this.wayfinding.update(
