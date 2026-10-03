@@ -8,6 +8,11 @@ const SPRINT_MULTIPLIER = 1.65;
 const GRAVITY = 28;
 const PLAYER_HEIGHT = 1.7;
 const PLAYER_RADIUS = 0.35;
+/**
+ * Face +Z on spawn. The spawn sits where two trenches cross; +Z looks down the open trench
+ * floor towards the rising Thaw sun instead of straight into a 10 m wall.
+ */
+const SPAWN_YAW = Math.PI;
 
 export class FirstPersonController {
   readonly camera: THREE.PerspectiveCamera;
@@ -33,6 +38,7 @@ export class FirstPersonController {
   ) {
     this.camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 800);
     this.camera.position.set(0, 12, 24);
+    this.setFacing(SPAWN_YAW);
 
     this.controls = new PointerLockControls(this.camera, domElement);
     this.bindInput();
@@ -150,6 +156,12 @@ export class FirstPersonController {
 
   resetToSpawn(): void {
     this.setPosition(0, 12, 24);
+    this.setFacing(SPAWN_YAW);
+  }
+
+  /** Yaw in radians (0 = -Z), pitch reset to level. */
+  setFacing(yaw: number): void {
+    this.camera.quaternion.setFromEuler(new THREE.Euler(0, yaw, 0, 'YXZ'));
   }
 
   setPosition(x: number, y: number, z: number): void {
