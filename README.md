@@ -53,4 +53,5 @@ Pages uses **GitHub Actions** (`build_type: workflow`). Each push to `main` runs
 ### Controls
 
 - **WASD** — move · **Shift** — sprint · **Space** — jump
-- **F** — read log · **J** — journal · **R** — drink at grove (Stable Era) · **E** — dehydrate at pit ring · **P / Esc** — pause (save & volume in pause menu)
+- **F** — read log · **T** — talk (Registrar at pit) · **J** — journal · **R** — drink at grove (Stable Era) · **E** — dehydrate at pit ring · **P / Esc** — pause
+- Amber **beacons** and HUD arrow point toward the dehydration pit or Stable grove when you need them

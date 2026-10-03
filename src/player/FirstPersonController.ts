@@ -223,4 +223,11 @@ export class FirstPersonController {
     const { x, z } = this.camera.position;
     return `${x.toFixed(0)}, ${z.toFixed(0)}`;
   }
+
+  /** Y-axis rotation in radians (0 ≈ looking toward world −Z). */
+  getHorizontalYaw(): number {
+    const euler = new THREE.Euler(0, 0, 0, 'YXZ');
+    euler.setFromQuaternion(this.camera.quaternion);
+    return euler.y;
+  }
 }

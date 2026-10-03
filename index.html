@@ -42,7 +42,7 @@
             <em>Remembrance of Earth's Past</em> series, or any rights holders.
           </p>
           <p class="controls">
-            WASD move · Shift sprint · mouse look (click game) · F read · J journal · R drink (Stable grove) · E dehydrate (pit ring) · P or Esc pause
+            WASD move · Shift sprint · mouse look (click game) · F read · T talk · J journal · R drink (Stable grove) · E dehydrate (pit ring) · P or Esc pause
           </p>
         </details>
       </div>
@@ -71,6 +71,16 @@
         <button id="pause-delete-checkpoint" type="button" class="secondary-btn danger-secondary hidden">Delete checkpoint</button>
         <button id="pause-quit" type="button" class="secondary-btn">Quit to menu</button>
         <p id="pause-toast" class="overlay-toast hidden" role="status"></p>
+      </div>
+    </div>
+
+    <div id="dialogue-overlay" class="hidden">
+      <div class="panel dialogue-panel">
+        <p class="eyebrow">Counsel</p>
+        <h2 id="dialogue-speaker"></h2>
+        <p id="dialogue-body"></p>
+        <div id="dialogue-choices" class="dialogue-choices"></div>
+        <button id="dialogue-close" type="button">Close (Esc)</button>
       </div>
     </div>
 
@@ -172,6 +182,10 @@
       <div class="hud-block hud-position">
         <span class="hud-label">Position</span>
         <span id="hud-position">0, 0</span>
+      </div>
+      <div id="hud-wayfinder" class="hud-wayfinder hidden" aria-live="polite">
+        <span id="hud-wayfinder-label" class="hud-wayfinder-label">Landmark</span>
+        <span id="hud-wayfinder-arrow" class="hud-wayfinder-arrow" aria-hidden="true">➤</span>
       </div>
       <div id="forecast-strip" class="forecast-strip" aria-label="Sky forecast"></div>
       <div id="hud-look-hint" class="hud-look-hint hidden">Click the game view to look around</div>

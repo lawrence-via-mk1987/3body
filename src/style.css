@@ -542,6 +542,111 @@ h1 {
   display: none;
 }
 
+.hud-wayfinder {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.75rem;
+  background: rgba(10, 8, 6, 0.72);
+  border: 1px solid rgba(242, 230, 216, 0.2);
+  pointer-events: none;
+}
+
+.hud-wayfinder.hidden {
+  display: none;
+}
+
+.hud-wayfinder-label {
+  font-size: 0.82rem;
+  color: #d8c7b2;
+  max-width: 140px;
+  line-height: 1.3;
+}
+
+.hud-wayfinder-arrow {
+  display: inline-block;
+  font-size: 1.1rem;
+  color: #e2b07f;
+  transition: transform 0.12s ease-out;
+}
+
+.hud-wayfinder[data-target='grove'] {
+  border-color: rgba(224, 184, 120, 0.45);
+}
+
+.hud-wayfinder[data-target='grove'] .hud-wayfinder-arrow {
+  color: #e8d8a0;
+}
+
+#dialogue-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 6, 5, 0.84);
+  z-index: 27;
+  pointer-events: auto;
+}
+
+#dialogue-overlay.hidden {
+  display: none;
+}
+
+.dialogue-panel h2 {
+  font-size: 1.45rem;
+  font-weight: 500;
+  margin-bottom: 0.85rem;
+  color: #e2b07f;
+}
+
+#dialogue-body {
+  line-height: 1.65;
+  color: #d8c7b2;
+  margin-bottom: 1rem;
+}
+
+.dialogue-choices {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.dialogue-choice {
+  width: 100%;
+  border: 1px solid rgba(242, 230, 216, 0.22);
+  padding: 0.75rem 0.85rem;
+  font: inherit;
+  font-size: 0.95rem;
+  color: #f2e6d8;
+  background: rgba(0, 0, 0, 0.2);
+  text-align: left;
+  cursor: pointer;
+}
+
+.dialogue-choice:hover {
+  background: rgba(242, 230, 216, 0.08);
+}
+
+.dialogue-end-hint {
+  font-size: 0.85rem;
+  color: #9f8d7b;
+  font-style: italic;
+}
+
+#dialogue-close {
+  width: 100%;
+  border: 0;
+  padding: 0.85rem 1rem;
+  font: inherit;
+  font-size: 1rem;
+  color: #1a120d;
+  background: linear-gradient(180deg, #e2b07f, #c07a45);
+  cursor: pointer;
+}
+
 #pause-resume {
   width: 100%;
   border: 0;

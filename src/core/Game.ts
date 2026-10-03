@@ -17,8 +17,17 @@ import { LogReader } from '../ui/LogReader';
 import { PauseMenu } from '../ui/PauseMenu';
 import { StableEraBanner } from '../ui/StableEraBanner';
 import { Toast } from '../ui/Toast';
+import { DialoguePanel } from '../ui/DialoguePanel';
+import { horizontalBearing, HudCompass } from '../ui/HudCompass';
+import { PIT_REGISTRAR_DIALOGUE } from '../narrative/pitRegistrarDialogue';
+import { PitRegistrarState } from '../narrative/PitRegistrarState';
 import { CaveShelter } from '../world/CaveShelter';
 import { nearestLandmarkHint } from '../world/LandmarkHints';
+import { LandmarkWayfinding } from '../world/LandmarkWayfinding';
+import {
+  resolveWayfindingTarget,
+  wayfindingCoords,
+} from '../world/WayfindingObjective';
 import { Ruins } from '../world/Ruins';
 import { Sky } from '../world/Sky';
 import { StableEraParticles } from '../world/StableEraParticles';
@@ -66,6 +75,10 @@ export class Game {
   private readonly ruins: Ruins;
   private readonly stableParticles: StableEraParticles;
   private readonly waterSource: WaterSource;
+  private readonly wayfinding: LandmarkWayfinding;
+  private readonly pitRegistrarState = new PitRegistrarState();
+  private readonly dialoguePanel: DialoguePanel;
+  private readonly hudCompass: HudCompass;
   private readonly audio = new AudioDirector();
   private readonly stableBanner: StableEraBanner;
   private readonly logReader: LogReader;
@@ -99,6 +112,8 @@ export class Game {
     epilogue: EpilogueOverlay,
     pauseMenu: PauseMenu,
     journal: Journal,
+    dialoguePanel: DialoguePanel,
+    hudCompass: HudCompass,
     gameToast: Toast,
     pauseToast: Toast,
     onQuitToMenu: () => void,
@@ -114,6 +129,8 @@ export class Game {
     this.epilogue = epilogue;
     this.pauseMenu = pauseMenu;
     this.journal = journal;
+    this.dialoguePanel = dialoguePanel;
+    this.hudCompass = hudCompass;
     this.gameToast = gameToast;
     this.pauseToast = pauseToast;
     this.onQuitToMenu = onQuitToMenu;
@@ -166,6 +183,7 @@ export class Game {
     this.ruins = new Ruins(this.terrain);
     this.stableParticles = new StableEraParticles(this.terrain);
     this.waterSource = new WaterSource(this.terrain);
+    this.wayfinding = new LandmarkWayfinding(this.terrain);
 
     this.scene.add(this.sky.mesh);
     this.scene.add(this.terrain.mesh);
@@ -173,6 +191,7 @@ export class Game {
     this.scene.add(this.logMarkers.group);
     this.scene.add(this.stableParticles.points);
     this.scene.add(this.waterSource.mesh);
+    this.scene.add(this.wayfinding.group);
     this.addLandmarks();
     this.scene.add(new CaveShelter(this.terrain, this.shelterZones).group);
 
@@ -209,12 +228,37 @@ export class Game {
       this.syncMovementState();
     });
 
+    this.dialoguePanel.onOpen(() => {
+      this.player.unlock();
+    });
+
+    this.dialoguePanel.onClose(() => {
+      this.syncMovementState();
+      if (this.running && !this.paused && !this.logReader.isOpen() && !this.journal.isOpen()) {
+        this.player.tryLock();
+      }
+    });
+
+    this.dialoguePanel.onChoice((choice) => {
+      if (choice.sideEffect === 'fold_lesson') {
+        this.pitRegistrarState.markFoldLesson();
+      }
+      if (choice.sideEffect === 'mark_spoke') {
+        this.pitRegistrarState.markSpoke();
+      }
+      const next = PIT_REGISTRAR_DIALOGUE[choice.nextId];
+      if (next) {
+        this.dialoguePanel.open(next);
+      }
+    });
+
     canvas.addEventListener('click', () => {
       if (
         !this.running
         || this.paused
         || this.logReader.isOpen()
         || this.journal.isOpen()
+        || this.dialoguePanel.isOpen()
         || this.pauseMenu.isOpen()
       ) {
         return;
@@ -232,7 +276,7 @@ export class Game {
     });
 
     window.addEventListener('keydown', (event) => {
-      if (!this.running || this.logReader.isOpen() || this.journal.isOpen()) {
+      if (!this.running || this.logReader.isOpen() || this.journal.isOpen() || this.dialoguePanel.isOpen()) {
         return;
       }
       if (event.code === 'Escape') {
@@ -296,17 +340,6 @@ export class Game {
     pit.position.set(-42, pitY + 0.05, 18);
     this.scene.add(pit);
 
-    const pitMarker = new THREE.Mesh(
-      new THREE.TorusGeometry(10.5, 0.12, 8, 64),
-      new THREE.MeshBasicMaterial({
-        color: '#8f6a4a',
-        transparent: true,
-        opacity: 0.35,
-      }),
-    );
-    pitMarker.rotation.x = Math.PI / 2;
-    pitMarker.position.set(-42, pitY + 0.1, 18);
-    this.scene.add(pitMarker);
   }
 
   async startNewGame(): Promise<void> {
@@ -394,6 +427,7 @@ export class Game {
     this.paused = false;
     this.pauseMenu.hide();
     this.journal.close();
+    this.dialoguePanel.close();
     this.overlays.death.classList.add('hidden');
     this.epilogue.hide();
     this.player.lock();
@@ -431,7 +465,7 @@ export class Game {
   }
 
   toggleJournal(): void {
-    if (!this.running || this.paused || this.logReader.isOpen()) {
+    if (!this.running || this.paused || this.logReader.isOpen() || this.dialoguePanel.isOpen()) {
       return;
     }
     this.journal.toggle(this.runJournal, this.logDiscovery);
@@ -439,7 +473,13 @@ export class Game {
   }
 
   pause(): void {
-    if (!this.running || this.paused || this.logReader.isOpen() || this.journal.isOpen()) {
+    if (
+      !this.running
+      || this.paused
+      || this.logReader.isOpen()
+      || this.journal.isOpen()
+      || this.dialoguePanel.isOpen()
+    ) {
       return;
     }
     this.paused = true;
@@ -467,6 +507,7 @@ export class Game {
       || this.paused
       || this.logReader.isOpen()
       || this.journal.isOpen()
+      || this.dialoguePanel.isOpen()
       || this.pauseMenu.isOpen()
     ) {
       return;
@@ -480,6 +521,7 @@ export class Game {
     this.orbital.reset();
     this.player.resetToSpawn();
     this.logReader.close();
+    this.dialoguePanel.close();
     this.pauseMenu.hide();
     this.paused = false;
     this.stableBanner.hide();
@@ -515,12 +557,17 @@ export class Game {
 
     this.hud.lookHint.classList.toggle(
       'hidden',
-      this.player.isLocked() || this.paused || this.logReader.isOpen() || this.journal.isOpen(),
+      this.player.isLocked()
+        || this.paused
+        || this.logReader.isOpen()
+        || this.journal.isOpen()
+        || this.dialoguePanel.isOpen(),
     );
 
     if (
       !this.logReader.isOpen()
       && !this.journal.isOpen()
+      && !this.dialoguePanel.isOpen()
       && !this.paused
       && this.player.consumePressedKey('KeyP')
     ) {
@@ -529,6 +576,7 @@ export class Game {
 
     if (
       !this.logReader.isOpen()
+      && !this.dialoguePanel.isOpen()
       && !this.paused
       && this.player.consumePressedKey('KeyJ')
     ) {
@@ -540,10 +588,21 @@ export class Game {
     const nearPit = this.shelterZones.isNearDehydrationPit(this.anchor);
     const nearWater = this.waterSource.isNear(this.anchor);
 
-    if (this.paused || this.journal.isOpen()) {
+    if (this.paused || this.journal.isOpen() || this.dialoguePanel.isOpen()) {
+      this.wayfinding.update(
+        delta,
+        this.orbital.getEraKind(),
+        this.anchor,
+        nearPit,
+        this.waterSource.mesh.visible,
+      );
       this.renderer.render(this.scene, this.player.camera);
       this.animationId = requestAnimationFrame(this.animate);
       return;
+    }
+
+    if (!this.logReader.isOpen() && this.player.consumePressedKey('KeyT')) {
+      this.tryTalkToRegistrar();
     }
 
     if (!this.logReader.isOpen() && this.player.consumePressedKey('KeyE')) {
@@ -614,6 +673,13 @@ export class Game {
     );
 
     this.forecastStrip.render(this.orbital.getForecast());
+    this.wayfinding.update(
+      delta,
+      this.orbital.getEraKind(),
+      this.anchor,
+      nearPit,
+      this.waterSource.mesh.visible,
+    );
     this.updateHud(nearbyLog, stableEra, nearPit, nearWater);
 
     if (this.survival.status === 'dead') {
@@ -650,6 +716,14 @@ export class Game {
     }
   }
 
+  private tryTalkToRegistrar(): void {
+    if (!this.wayfinding.isNearRegistrar(this.anchor)) {
+      return;
+    }
+    this.dialoguePanel.open(PIT_REGISTRAR_DIALOGUE.greet);
+    this.syncMovementState();
+  }
+
   private tryReadNearbyLog(stableEra: boolean): void {
     const nearbyLog = this.logMarkers.update(this.anchor, stableEra);
     if (!nearbyLog) {
@@ -675,6 +749,7 @@ export class Game {
   private syncMovementState(): void {
     const canMove = !this.logReader.isOpen()
       && !this.journal.isOpen()
+      && !this.dialoguePanel.isOpen()
       && this.survival.status !== 'dehydrated'
       && this.survival.status !== 'dead';
     this.player.setMovementEnabled(canMove);
@@ -725,7 +800,9 @@ export class Game {
     } else if (stableEra && nearWater) {
       statusMessage = 'Stable Era — press R at the grove pool to drink condensate.';
     } else if (stableEra) {
-      statusMessage = 'Stable Era — the grove lives. Find the pool or the final tablets.';
+      statusMessage = 'Stable Era — the grove lives. Follow the green trail to the pool or final tablets.';
+    } else if (this.wayfinding.isNearRegistrar(position)) {
+      statusMessage = 'Press T to speak with the Registrar of the Pit.';
     } else if (this.journal.isOpen()) {
       statusMessage = 'Reviewing your cycle journal.';
     } else if (this.logReader.isOpen()) {
@@ -749,6 +826,23 @@ export class Game {
     document.body.dataset.survival = snapshot.status;
     document.body.dataset.era = stableEra ? 'stable' : 'chaotic';
     this.hud.era.parentElement?.classList.toggle('stable-era', stableEra);
+
+    const wayTarget = resolveWayfindingTarget({
+      era: this.orbital.getEraKind(),
+      hydration: snapshot.hydration,
+      temperature,
+      nearGroveWater: nearWater,
+      hasFinalLog: this.meta.hasSeenFinalLog(this.logDiscovery),
+      playerX: position.x,
+      playerZ: position.z,
+    });
+    if (wayTarget) {
+      const coords = wayfindingCoords(wayTarget);
+      const bearing = horizontalBearing(position.x, position.z, coords.x, coords.z);
+      this.hudCompass.update(wayTarget, this.player.getHorizontalYaw(), bearing);
+    } else {
+      this.hudCompass.update(null, 0, null);
+    }
   }
 
   private onResize = (): void => {
@@ -766,6 +860,7 @@ export class Game {
     this.orbital.dispose();
     this.terrain.dispose();
     this.sky.dispose();
+    this.wayfinding.dispose();
     this.renderer.dispose();
   }
 }

@@ -1,6 +1,8 @@
 import { Game } from './core/Game';
 import { EpilogueOverlay } from './ui/EpilogueOverlay';
 import { ForecastStrip } from './ui/ForecastStrip';
+import { DialoguePanel } from './ui/DialoguePanel';
+import { HudCompass } from './ui/HudCompass';
 import { Journal } from './ui/Journal';
 import { LogReader } from './ui/LogReader';
 import { PauseMenu } from './ui/PauseMenu';
@@ -19,6 +21,14 @@ const stableBanner = document.querySelector<HTMLDivElement>('#stable-banner');
 const stableBannerSubtitle = document.querySelector<HTMLParagraphElement>('#stable-banner-subtitle');
 const logReaderOverlay = document.querySelector<HTMLDivElement>('#log-reader');
 const journalOverlay = document.querySelector<HTMLDivElement>('#journal');
+const dialogueOverlay = document.querySelector<HTMLDivElement>('#dialogue-overlay');
+const dialogueSpeaker = document.querySelector<HTMLHeadingElement>('#dialogue-speaker');
+const dialogueBody = document.querySelector<HTMLParagraphElement>('#dialogue-body');
+const dialogueChoices = document.querySelector<HTMLDivElement>('#dialogue-choices');
+const dialogueCloseButton = document.querySelector<HTMLButtonElement>('#dialogue-close');
+const hudWayfinder = document.querySelector<HTMLDivElement>('#hud-wayfinder');
+const hudWayfinderLabel = document.querySelector<HTMLSpanElement>('#hud-wayfinder-label');
+const hudWayfinderArrow = document.querySelector<HTMLSpanElement>('#hud-wayfinder-arrow');
 const forecastStripEl = document.querySelector<HTMLDivElement>('#forecast-strip');
 const startButton = document.querySelector<HTMLButtonElement>('#start-btn');
 const continueButton = document.querySelector<HTMLButtonElement>('#continue-btn');
@@ -75,6 +85,14 @@ if (
   || !stableBannerSubtitle
   || !logReaderOverlay
   || !journalOverlay
+  || !dialogueOverlay
+  || !dialogueSpeaker
+  || !dialogueBody
+  || !dialogueChoices
+  || !dialogueCloseButton
+  || !hudWayfinder
+  || !hudWayfinderLabel
+  || !hudWayfinderArrow
   || !forecastStripEl
   || !startButton
   || !continueButton
@@ -168,6 +186,14 @@ const journal = new Journal(
   journalLogCount,
   journalCloseButton,
 );
+const dialoguePanel = new DialoguePanel(
+  dialogueOverlay,
+  dialogueSpeaker,
+  dialogueBody,
+  dialogueChoices,
+  dialogueCloseButton,
+);
+const hudCompass = new HudCompass(hudWayfinder, hudWayfinderLabel, hudWayfinderArrow);
 const stableEraBanner = new StableEraBanner(stableBanner, stableBannerSubtitle);
 const forecastStrip = new ForecastStrip(forecastStripEl);
 const gameToast = new Toast(gameToastEl);
@@ -239,6 +265,8 @@ game = new Game(
   epilogue,
   pauseMenu,
   journal,
+  dialoguePanel,
+  hudCompass,
   gameToast,
   pauseToast,
   showMainMenu,
@@ -296,6 +324,10 @@ document.addEventListener('pointerlockchange', () => {
   }
 
   if (journal.isOpen()) {
+    return;
+  }
+
+  if (dialoguePanel.isOpen()) {
     return;
   }
 
