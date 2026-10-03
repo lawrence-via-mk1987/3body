@@ -40,7 +40,7 @@ npm run preview      # preview production build
 
 ## Status
 
-**Milestone 5 complete** — procedural ambience (wind, solar drone, stable pad), Stable Era banner/chime/particles/golden vignette, hydration recovery during Stable Eras, and GitHub Pages CI deploy.
+**Milestone 5 + flow polish** — audio, Stable Era presentation, GitHub Pages deploy, and demo-friendly onboarding.
 
 | Milestone | Features |
 |---|---|
@@ -49,8 +49,9 @@ npm run preview      # preview production build
 | 3 | Survival, shelters, dehydration |
 | 4 | Ruins, text logs, era terrain |
 | 5 | Audio, Stable Era polish, GitHub Pages deploy |
+| Flow | Stable Era boost until Final Log, forecast strip, grove water, epilogue |
 
 ### Controls
 
 - **WASD** — move · **Shift** — sprint · **Space** — jump
-- **F** — read nearby log · **E** — dehydrate at pit · **Esc** — release mouse
+- **F** — read log · **R** — drink at grove (Stable Era) · **E** — dehydrate at pit ring · **Esc** — menu
