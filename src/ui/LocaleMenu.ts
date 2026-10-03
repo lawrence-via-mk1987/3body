@@ -28,7 +28,7 @@ export class LocaleMenu {
   ) {
     this.locale = loadLocale();
     this.apply(this.locale);
-    menuNarrationCheckbox.checked = loadNarrationEnabled();
+    this.menuNarrationCheckbox.checked = loadNarrationEnabled();
 
     localeEnButton.addEventListener('click', () => {
       this.setLocale('en');
@@ -41,9 +41,9 @@ export class LocaleMenu {
       this.onReplayCinematic();
     });
 
-    menuNarrationCheckbox.addEventListener('change', () => {
-      saveNarrationEnabled(menuNarrationCheckbox.checked);
-      this.onNarrationChange(menuNarrationCheckbox.checked);
+    this.menuNarrationCheckbox.addEventListener('change', () => {
+      saveNarrationEnabled(this.menuNarrationCheckbox.checked);
+      this.onNarrationChange(this.menuNarrationCheckbox.checked);
     });
   }
 
