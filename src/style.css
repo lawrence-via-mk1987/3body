@@ -4,6 +4,10 @@
   padding: 0;
 }
 
+.hidden {
+  display: none !important;
+}
+
 html,
 body {
   width: 100%;
@@ -1388,7 +1392,9 @@ body.touch-ui .menu-panel {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
-  z-index: 14;
+  z-index: 18;
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 
 .hud-mobile-sheet {
@@ -1396,9 +1402,31 @@ body.touch-ui .menu-panel {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 15;
+  z-index: 19;
   max-height: 55vh;
   border-radius: 12px 12px 0 0;
+  pointer-events: auto;
+  touch-action: manipulation;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+.mobile-hud-sheet-close {
+  width: 100%;
+  min-height: 48px;
+  font-size: 1rem;
+}
+
+body.mobile-hud-sheet-open .mobile-controls {
+  pointer-events: none;
+}
+
+body.mobile-hud-sheet-open .mobile-controls * {
+  pointer-events: none;
+}
+
+body.mobile-hud-sheet-open .hud-mobile-backdrop,
+body.mobile-hud-sheet-open .hud-mobile-sheet,
+body.mobile-hud-sheet-open .hud-mobile-sheet * {
   pointer-events: auto;
 }
 

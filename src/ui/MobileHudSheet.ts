@@ -7,8 +7,20 @@ export class MobileHudSheet {
     closeButton: HTMLButtonElement,
     openButton: HTMLButtonElement | null,
   ) {
-    closeButton.addEventListener('click', () => this.close());
+    const dismiss = (event: Event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.close();
+    };
+
+    closeButton.addEventListener('click', dismiss);
+    closeButton.addEventListener('touchend', dismiss, { passive: false });
     backdrop.addEventListener('click', () => this.close());
+    backdrop.addEventListener('touchend', (event) => {
+      event.preventDefault();
+      this.close();
+    }, { passive: false });
+
     openButton?.addEventListener('click', (event) => {
       event.stopPropagation();
       this.toggle();
@@ -33,12 +45,18 @@ export class MobileHudSheet {
     }
     this.sheet.classList.add('hidden');
     this.backdrop.classList.add('hidden');
+    this.sheet.setAttribute('aria-hidden', 'true');
+    this.backdrop.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('mobile-hud-sheet-open');
     this.open = false;
   }
 
   private openSheet(): void {
     this.sheet.classList.remove('hidden');
     this.backdrop.classList.remove('hidden');
+    this.sheet.setAttribute('aria-hidden', 'false');
+    this.backdrop.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('mobile-hud-sheet-open');
     this.open = true;
   }
 }

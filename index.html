@@ -206,20 +206,6 @@
         </div>
         <p id="mobile-hud-objective" class="mobile-hud-objective" aria-live="polite"></p>
       </div>
-      <div id="hud-mobile-backdrop" class="hud-mobile-backdrop hidden"></div>
-      <div id="hud-mobile-sheet" class="hud-mobile-sheet panel hidden">
-        <p class="eyebrow">Sky &amp; status</p>
-        <ul class="mobile-sheet-list">
-          <li><span>Phase</span><span id="sheet-phase"></span></li>
-          <li><span>Temperature</span><span id="sheet-temperature"></span></li>
-          <li><span>Outlook</span><span id="sheet-forecast"></span></li>
-          <li><span>Landmark</span><span id="sheet-landmark"></span></li>
-          <li><span>Logs</span><span id="sheet-logs"></span></li>
-          <li><span>Position</span><span id="sheet-position"></span></li>
-        </ul>
-        <p id="sheet-status" class="sheet-status"></p>
-        <button id="hud-mobile-sheet-close" type="button">Close</button>
-      </div>
 
       <div class="hud-block hud-era">
         <span class="hud-label">Era</span>
@@ -279,6 +265,21 @@
       <div id="hud-look-hint" class="hud-look-hint hidden">Click the game view to look around</div>
       <div id="game-toast" class="game-toast hidden" role="status"></div>
       <div class="hud-crosshair" aria-hidden="true"></div>
+    </div>
+
+    <div id="hud-mobile-backdrop" class="hud-mobile-backdrop hidden" aria-hidden="true"></div>
+    <div id="hud-mobile-sheet" class="hud-mobile-sheet panel hidden" role="dialog" aria-modal="true" aria-labelledby="mobile-hud-sheet-title">
+      <p id="mobile-hud-sheet-title" class="eyebrow">Sky &amp; status</p>
+      <ul class="mobile-sheet-list">
+        <li><span>Phase</span><span id="sheet-phase"></span></li>
+        <li><span>Temperature</span><span id="sheet-temperature"></span></li>
+        <li><span>Outlook</span><span id="sheet-forecast"></span></li>
+        <li><span>Landmark</span><span id="sheet-landmark"></span></li>
+        <li><span>Logs</span><span id="sheet-logs"></span></li>
+        <li><span>Position</span><span id="sheet-position"></span></li>
+      </ul>
+      <p id="sheet-status" class="sheet-status"></p>
+      <button id="hud-mobile-sheet-close" type="button" class="mobile-hud-sheet-close mobile-btn mobile-btn-primary">Close</button>
     </div>
 
     <div id="mobile-controls" class="mobile-controls hidden" aria-hidden="true">
