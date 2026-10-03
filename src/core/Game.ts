@@ -58,7 +58,8 @@ import type { EraPhase } from '../orbital/types';
 import { MobileControls } from '../ui/MobileControls';
 import type { MobileChromeElements } from '../ui/mobileChrome';
 import { PitRegistrarState } from '../narrative/PitRegistrarState';
-import { resolveInteractionPrompt } from '../ui/InteractionPrompt';
+import { resolveInteractionPrompt, resolveNearbyActionStatus } from '../ui/InteractionPrompt';
+import type { InputMode, InteractionContext } from '../ui/InteractionPrompt';
 import { SettlementNpcs } from '../world/SettlementNpcs';
 import { GROVE_KEEPER, LAST_PREDICTOR, PIT_REGISTRAR } from '../world/landmarks';
 import { CaveShelter } from '../world/CaveShelter';
@@ -765,11 +766,13 @@ export class Game {
     }
     const stableEra = this.orbital.getEraKind() === 'stable';
     const nearbyLog = this.logMarkers.update(this.anchor, stableEra);
-    if (nearbyLog) {
-      this.tryReadNearbyLog(stableEra);
+    if (this.mobileUi.nearNpc) {
+      this.tryTalkToNearbyNpc();
       return;
     }
-    this.tryTalkToNearbyNpc();
+    if (nearbyLog) {
+      this.tryReadNearbyLog(stableEra);
+    }
   }
 
   mobileUse(): void {
@@ -793,11 +796,11 @@ export class Game {
 
   getMobileInteractLabel(): string {
     const zh = this.getLocale() === 'zh';
-    if (this.mobileUi.hasNearbyLog) {
-      return zh ? '阅读' : 'Read';
-    }
     if (this.mobileUi.nearNpc) {
       return zh ? '交谈' : 'Talk';
+    }
+    if (this.mobileUi.hasNearbyLog) {
+      return zh ? '阅读' : 'Read';
     }
     return zh ? '阅读/交谈' : 'Read / Talk';
   }
@@ -1493,35 +1496,56 @@ export class Game {
     this.hud.hydration.textContent = `${Math.ceil(snapshot.hydration)}`;
     this.hud.hydrationBar.style.width = `${snapshot.hydration}%`;
 
+    const inputMode: InputMode = this.deviceProfile.prefersTouchControls ? 'touch' : 'keyboard';
+    const interactionCtx: InteractionContext = {
+      stableEra,
+      nearbyLog,
+      nearPit,
+      nearWater,
+      nearRegistrar: this.wayfinding.isNearRegistrar(position),
+      nearPredictor: this.settlementNpcs.isNearPredictor(position),
+      nearGroveKeeper: this.settlementNpcs.isNearGroveKeeper(position),
+      uiBlocking: this.logReader.isOpen()
+        || this.dialoguePanel.isOpen()
+        || this.journal.isOpen()
+        || this.storyOverlay.isOpen()
+        || this.paused,
+      input: inputMode,
+      locale: this.getLocale(),
+      forecastCalibrated: this.forecastMeta.isCalibrated(),
+    };
+
     let statusMessage = snapshot.statusMessage;
     if (this.statusOverride) {
       statusMessage = this.statusOverride;
-    } else if (stableEra && nearWater) {
-      statusMessage = 'Stable Era — press R at the grove pool to drink condensate.';
-    } else if (stableEra) {
+    } else if (stableEra && !nearWater && !interactionCtx.nearGroveKeeper && !nearbyLog) {
       statusMessage = 'Stable Era — the grove lives. Follow the green trail to the pool or final tablets.';
-    } else if (this.settlementNpcs.isNearGroveKeeper(position) && stableEra) {
-      statusMessage = 'Press T to speak with the Grove Keeper.';
-    } else if (this.settlementNpcs.isNearPredictor(position)) {
-      statusMessage = this.forecastMeta.isCalibrated()
-        ? 'Press T to speak with the Last Predictor.'
-        : 'Press T — the Last Predictor can calibrate your forecast.';
-    } else if (this.wayfinding.isNearRegistrar(position)) {
-      statusMessage = 'Press T to speak with the Registrar of the Pit.';
     } else if (this.journal.isOpen()) {
-      statusMessage = 'Reviewing your cycle journal.';
+      statusMessage = inputMode === 'touch'
+        ? (this.getLocale() === 'zh' ? '正在查看循环日志。' : 'Reviewing your cycle journal.')
+        : 'Reviewing your cycle journal.';
     } else if (this.logReader.isOpen()) {
       statusMessage = 'Reading recovered text.';
-    } else if (nearbyLog && nearPit) {
-      statusMessage = `F — read ${nearbyLog.log.title.toLowerCase()}. E — dehydrate on the ring only (step away from the stone).`;
-    } else if (nearbyLog) {
-      statusMessage = nearbyLog.discovered
-        ? `Press F to re-read ${nearbyLog.log.title.toLowerCase()}.`
-        : `Press F to read ${nearbyLog.log.title.toLowerCase()}.`;
-    } else if (!this.meta.hasSeenFinalLog(this.logDiscovery)) {
+    } else {
+      const actionHint = resolveNearbyActionStatus(interactionCtx);
+      if (actionHint) {
+        statusMessage = actionHint;
+      }
+    }
+
+    if (
+      !this.statusOverride
+      && !this.journal.isOpen()
+      && !this.logReader.isOpen()
+      && !resolveNearbyActionStatus(interactionCtx)
+      && !this.meta.hasSeenFinalLog(this.logDiscovery)
+    ) {
       statusMessage = `${statusMessage} A Stable Era will come — the sky cannot rage forever.`;
     } else if (this.logDiscovery.getDiscoveredCount() > 0) {
-      statusMessage = `${statusMessage} Press J for your journal.`;
+      const journalHint = inputMode === 'touch'
+        ? (this.getLocale() === 'zh' ? ' 点 Journal 打开日志。' : ' Tap Journal for your log.')
+        : ' Press J for your journal.';
+      statusMessage = `${statusMessage}${journalHint}`;
     }
 
     this.hud.status.textContent = statusMessage;
@@ -1545,20 +1569,7 @@ export class Game {
       this.mobileHud.sheetStatus.textContent = statusMessage;
     }
 
-    const interaction = resolveInteractionPrompt({
-      stableEra,
-      nearbyLog,
-      nearPit,
-      nearWater,
-      nearRegistrar: this.wayfinding.isNearRegistrar(position),
-      nearPredictor: this.settlementNpcs.isNearPredictor(position),
-      nearGroveKeeper: this.settlementNpcs.isNearGroveKeeper(position),
-      uiBlocking: this.logReader.isOpen()
-        || this.dialoguePanel.isOpen()
-        || this.journal.isOpen()
-        || this.storyOverlay.isOpen()
-        || this.paused,
-    });
+    const interaction = resolveInteractionPrompt(interactionCtx);
     if (interaction) {
       this.hud.interaction.textContent = interaction;
       this.hud.interaction.classList.remove('hidden');
