@@ -146,6 +146,99 @@ h1 {
   color: #e2b07f;
 }
 
+.locale-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.locale-btn {
+  border: 1px solid rgba(242, 230, 216, 0.25);
+  padding: 0.55rem 0.65rem;
+  font: inherit;
+  font-size: 0.9rem;
+  color: #d8c7b2;
+  background: transparent;
+  cursor: pointer;
+}
+
+.locale-btn.active {
+  color: #1a120d;
+  background: linear-gradient(180deg, #e2b07f, #c07a45);
+  border-color: transparent;
+}
+
+.menu-narration-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  color: #c9b59d;
+  line-height: 1.45;
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+}
+
+.menu-replay-intro {
+  margin-bottom: 0.25rem;
+}
+
+#intro-cinematic {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(5, 4, 3, 0.94);
+  z-index: 32;
+  pointer-events: auto;
+}
+
+#intro-cinematic.hidden {
+  display: none;
+}
+
+.intro-cinematic-panel h2 {
+  font-size: 1.75rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+
+.intro-cinematic-body {
+  line-height: 1.65;
+  color: #d8c7b2;
+  margin-bottom: 1.25rem;
+  min-height: 5.5rem;
+}
+
+.intro-narration-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  color: #b79a7d;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+
+.intro-cinematic-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.intro-cinematic-actions .primary-btn,
+.intro-cinematic-actions .secondary-btn {
+  margin-bottom: 0;
+}
+
+.intro-cinematic-hint {
+  margin-top: 0.85rem;
+  font-size: 0.78rem;
+  color: #9f8d7b;
+  text-align: center;
+}
+
 .menu-details summary {
   cursor: pointer;
   font-size: 0.85rem;

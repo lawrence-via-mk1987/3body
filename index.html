@@ -31,49 +31,47 @@
         <div class="menu-settings">
           <label class="volume-label" for="master-volume">Master volume</label>
           <input id="master-volume" type="range" min="0" max="100" value="55" />
+          <p id="language-label" class="volume-label">Language</p>
+          <div class="locale-toggle" role="group" aria-labelledby="language-label">
+            <button id="locale-en" type="button" class="locale-btn active" aria-pressed="true">English</button>
+            <button id="locale-zh" type="button" class="locale-btn" aria-pressed="false">简体中文</button>
+          </div>
+          <label class="menu-narration-label" for="menu-narration-enabled">
+            <input id="menu-narration-enabled" type="checkbox" checked />
+            <span id="menu-narration-label">Spoken narration (browser voice)</span>
+          </label>
+          <button id="replay-cinematic-btn" type="button" class="secondary-btn menu-replay-intro">Replay opening intro</button>
         </div>
 
         <details id="world-intro-details" class="menu-details menu-lore" open>
-          <summary>The world (inspired by the Three Body Problem)</summary>
-          <div class="world-intro">
-            <p>
-              On <strong>Trisolaris</strong>, three suns move in unstable orbits. Their gravity
-              never settles into a simple day and night—so the weather does not either. This demo
-              is fan-inspired by Liu Cixin’s <em>The Three Body Problem</em>; it is not the novel
-              or the TV drama, only a survival sketch built from its ideas.
-            </p>
-            <p>
-              Most of the time is a <strong>Chaotic Era (乱纪元)</strong>: heat that kills in
-              minutes, cold that follows, skies where one sun can swell into a lethal
-              <strong>flying star</strong>. Trisolarian life survives by hoarding water, hiding
-              underground, and sometimes <strong>dehydrating</strong>—folding into dry stasis until
-              the sky turns kinder.
-            </p>
-            <p>
-              Rare windows called a <strong>Stable Era (恒纪元)</strong> bring calm: gentler
-              temperature, green returning, time to repair and read what earlier civilizations
-              left in the ruins. Stable Eras always end. Each cycle hopes the next will endure
-              longer than the last.
-            </p>
-            <p class="world-intro-you">
-              In this demo you endure one such cycle: follow the beacons, learn from tablets and
-              counselors, and try to reach the <strong>Final Log</strong> beneath a stable sky.
-            </p>
-          </div>
+          <summary id="world-intro-summary">The world (inspired by the Three Body Problem)</summary>
+          <div id="world-intro-body" class="world-intro"></div>
         </details>
 
         <details class="menu-details">
-          <summary>Controls &amp; fan disclaimer</summary>
-          <p class="disclaimer">
-            <strong>Disclaimer:</strong> This is a fan-inspired game inspired by the
-            original <em>Three Body Problem</em> by Liu Cixin. Unofficial,
-            non-commercial fan work — not affiliated with Liu Cixin, the
-            <em>Remembrance of Earth's Past</em> series, or any rights holders.
-          </p>
+          <summary id="controls-disclaimer-summary">Controls &amp; fan disclaimer</summary>
+          <p id="menu-disclaimer" class="disclaimer"></p>
           <p class="controls">
             WASD move · Shift sprint · mouse look (click game) · F read · T talk · J journal · Tab compact HUD · R drink (Stable grove) · E dehydrate (pit ring) · P or Esc pause
           </p>
         </details>
+      </div>
+    </div>
+
+    <div id="intro-cinematic" class="hidden">
+      <div class="panel intro-cinematic-panel">
+        <p id="intro-cinematic-eyebrow" class="eyebrow"></p>
+        <h2 id="intro-cinematic-title"></h2>
+        <p id="intro-cinematic-body" class="intro-cinematic-body"></p>
+        <label class="intro-narration-label" for="intro-narration-enabled">
+          <input id="intro-narration-enabled" type="checkbox" checked />
+          <span id="intro-narration-label">Spoken narration (browser voice)</span>
+        </label>
+        <div class="intro-cinematic-actions">
+          <button id="intro-cinematic-skip" type="button" class="secondary-btn">Skip intro</button>
+          <button id="intro-cinematic-next" type="button" class="primary-btn">Continue</button>
+        </div>
+        <p class="intro-cinematic-hint">Enter · Space · Esc</p>
       </div>
     </div>
 

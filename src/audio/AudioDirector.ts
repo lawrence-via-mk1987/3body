@@ -106,6 +106,17 @@ export class AudioDirector {
     });
   }
 
+  setCinematicBed(active: boolean): void {
+    if (!this.context || !this.stableLayer || !this.windLayer) {
+      return;
+    }
+    const now = this.context.currentTime;
+    const stableTarget = active ? 0.2 : 0;
+    const windTarget = active ? 0.08 : 0.14;
+    this.stableLayer.gain.gain.setTargetAtTime(stableTarget, now, 0.5);
+    this.windLayer.gain.gain.setTargetAtTime(windTarget, now, 0.5);
+  }
+
   playLogDiscover(): void {
     if (!this.context || !this.masterGain) {
       return;

@@ -1,5 +1,9 @@
+import { NarrationDirector } from './audio/NarrationDirector';
 import { Game } from './core/Game';
+import { cinematicSeen } from './i18n/locale';
 import { EpilogueOverlay } from './ui/EpilogueOverlay';
+import { IntroCinematic } from './ui/IntroCinematic';
+import { LocaleMenu } from './ui/LocaleMenu';
 import { ForecastStrip } from './ui/ForecastStrip';
 import { DialoguePanel } from './ui/DialoguePanel';
 import { HudCompass } from './ui/HudCompass';
@@ -76,6 +80,24 @@ const deathLogs = document.querySelector<HTMLParagraphElement>('#death-logs');
 const deathObjective = document.querySelector<HTMLParagraphElement>('#death-objective');
 const logTitle = document.querySelector<HTMLHeadingElement>('#log-title');
 const logBody = document.querySelector<HTMLParagraphElement>('#log-body');
+const worldIntroBody = document.querySelector<HTMLDivElement>('#world-intro-body');
+const worldIntroSummary = document.querySelector<HTMLElement>('#world-intro-summary');
+const controlsDisclaimerSummary = document.querySelector<HTMLElement>('#controls-disclaimer-summary');
+const menuDisclaimer = document.querySelector<HTMLParagraphElement>('#menu-disclaimer');
+const localeEnButton = document.querySelector<HTMLButtonElement>('#locale-en');
+const localeZhButton = document.querySelector<HTMLButtonElement>('#locale-zh');
+const languageLabel = document.querySelector<HTMLParagraphElement>('#language-label');
+const replayCinematicButton = document.querySelector<HTMLButtonElement>('#replay-cinematic-btn');
+const menuNarrationCheckbox = document.querySelector<HTMLInputElement>('#menu-narration-enabled');
+const menuNarrationLabel = document.querySelector<HTMLSpanElement>('#menu-narration-label');
+const introCinematicOverlay = document.querySelector<HTMLDivElement>('#intro-cinematic');
+const introCinematicEyebrow = document.querySelector<HTMLParagraphElement>('#intro-cinematic-eyebrow');
+const introCinematicTitle = document.querySelector<HTMLHeadingElement>('#intro-cinematic-title');
+const introCinematicBody = document.querySelector<HTMLParagraphElement>('#intro-cinematic-body');
+const introCinematicSkip = document.querySelector<HTMLButtonElement>('#intro-cinematic-skip');
+const introCinematicNext = document.querySelector<HTMLButtonElement>('#intro-cinematic-next');
+const introNarrationCheckbox = document.querySelector<HTMLInputElement>('#intro-narration-enabled');
+const introNarrationLabel = document.querySelector<HTMLSpanElement>('#intro-narration-label');
 
 if (
   !canvas
@@ -143,8 +165,40 @@ if (
   || !deathObjective
   || !logTitle
   || !logBody
+  || !worldIntroBody
+  || !worldIntroSummary
+  || !controlsDisclaimerSummary
+  || !menuDisclaimer
+  || !localeEnButton
+  || !localeZhButton
+  || !languageLabel
+  || !replayCinematicButton
+  || !menuNarrationCheckbox
+  || !menuNarrationLabel
+  || !introCinematicOverlay
+  || !introCinematicEyebrow
+  || !introCinematicTitle
+  || !introCinematicBody
+  || !introCinematicSkip
+  || !introCinematicNext
+  || !introNarrationCheckbox
+  || !introNarrationLabel
 ) {
   throw new Error('Missing required DOM elements.');
+}
+
+const narration = new NarrationDirector();
+narration.warmUp();
+if (typeof window !== 'undefined' && window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = () => {
+    narration.warmUp();
+  };
+}
+
+function syncNarrationEnabled(enabled: boolean): void {
+  narration.setEnabled(enabled);
+  menuNarrationCheckbox!.checked = enabled;
+  introNarrationCheckbox!.checked = enabled;
 }
 
 function syncVolumeSliders(volume: number): void {
@@ -206,6 +260,8 @@ const gameToast = new Toast(gameToastEl);
 const pauseToast = new Toast(pauseToastEl);
 
 let game: Game;
+let localeMenu: LocaleMenu;
+let introCinematic: IntroCinematic;
 
 const showMainMenu = (): void => {
   overlay.classList.remove('hidden');
@@ -283,26 +339,100 @@ game = new Game(
   refreshCheckpointMenu,
   syncVolumeSliders,
   masterVolumeSlider,
+  () => localeMenu!.getLocale(),
+  narration,
 );
+
+introCinematic = new IntroCinematic(
+  introCinematicOverlay,
+  introCinematicEyebrow,
+  introCinematicTitle,
+  introCinematicBody,
+  introCinematicSkip,
+  introCinematicNext,
+  introNarrationCheckbox,
+  introNarrationLabel,
+  narration,
+  (enabled) => {
+    syncNarrationEnabled(enabled);
+  },
+  (active) => {
+    game.setCinematicBed(active);
+  },
+);
+
+localeMenu = new LocaleMenu(
+  worldIntroBody,
+  worldIntroSummary,
+  controlsDisclaimerSummary,
+  localeEnButton,
+  localeZhButton,
+  languageLabel,
+  replayCinematicButton,
+  menuDisclaimer,
+  menuNarrationCheckbox,
+  menuNarrationLabel,
+  (locale) => {
+    introCinematic.setLocale(locale);
+  },
+  () => {
+    void game.ensureAudio().then(() => {
+      introCinematic.setNarrationVolume(MetaProgress.loadMasterVolume());
+      introCinematic.play(localeMenu.getLocale(), () => {
+        game.setCinematicBed(false);
+      });
+    });
+  },
+  (enabled) => {
+    syncNarrationEnabled(enabled);
+  },
+);
+
+syncNarrationEnabled(menuNarrationCheckbox.checked);
 
 const beginGame = (): void => {
   overlay.classList.add('hidden');
   hud.classList.remove('hidden');
 };
 
+async function launchGame(
+  mode: 'new' | 'continue',
+  options?: { forceCinematic?: boolean },
+): Promise<void> {
+  const startSession = async (): Promise<void> => {
+    beginGame();
+    if (mode === 'new') {
+      await game.startNewGame();
+    } else {
+      await game.continueFromCheckpoint();
+    }
+  };
+
+  const showCinematic = mode === 'new' && (options?.forceCinematic || !cinematicSeen());
+  await game.ensureAudio();
+  introCinematic.setNarrationVolume(MetaProgress.loadMasterVolume());
+
+  if (showCinematic) {
+    introCinematic.play(localeMenu.getLocale(), () => {
+      void startSession();
+    });
+    return;
+  }
+
+  await startSession();
+}
+
 startButton.addEventListener('click', () => {
   if (CheckpointSave.load()) {
     freshStartConfirm!.classList.remove('hidden');
     return;
   }
-  beginGame();
-  void game.startNewGame();
+  void launchGame('new');
 });
 
 freshStartConfirmButton.addEventListener('click', () => {
   freshStartConfirm!.classList.add('hidden');
-  beginGame();
-  void game.startNewGame();
+  void launchGame('new');
 });
 
 freshStartCancelButton.addEventListener('click', () => {
@@ -310,8 +440,7 @@ freshStartCancelButton.addEventListener('click', () => {
 });
 
 continueButton.addEventListener('click', () => {
-  beginGame();
-  void game.continueFromCheckpoint();
+  void launchGame('continue');
 });
 
 refreshCheckpointMenu();
@@ -355,6 +484,10 @@ document.addEventListener('pointerlockchange', () => {
   }
 
   if (pauseMenu.isOpen()) {
+    return;
+  }
+
+  if (introCinematic.isOpen()) {
     return;
   }
 

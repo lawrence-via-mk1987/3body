@@ -28,6 +28,9 @@ import {
   buildPredictorCalibrationNode,
   PREDICTOR_DIALOGUE,
 } from '../narrative/predictorDialogue';
+import { NarrationDirector } from '../audio/NarrationDirector';
+import { STABLE_ERA_NARRATION } from '../i18n/introContent';
+import { loadNarrationEnabled, type Locale } from '../i18n/locale';
 import { buildDeathObjective } from '../narrative/deathObjective';
 import { PitRegistrarState } from '../narrative/PitRegistrarState';
 import { resolveInteractionPrompt } from '../ui/InteractionPrompt';
@@ -99,6 +102,7 @@ export class Game {
   private activeDialogue: DialogueTree = PIT_REGISTRAR_DIALOGUE;
   private npcPulseTime = 0;
   private hudCompact = false;
+  private stableNarrationPlayed = false;
   private readonly dialoguePanel: DialoguePanel;
   private readonly hudCompass: HudCompass;
   private readonly audio = new AudioDirector();
@@ -142,6 +146,8 @@ export class Game {
     onCheckpointMenuChange: () => void,
     syncMenuVolume: (volume: number) => void,
     masterVolumeSlider: HTMLInputElement,
+    private readonly getLocale: () => Locale,
+    private readonly narration: NarrationDirector,
   ) {
     this.hud = hud;
     this.overlays = overlays;
@@ -161,6 +167,7 @@ export class Game {
 
     const initialVolume = MetaProgress.loadMasterVolume();
     masterVolumeSlider.value = String(Math.round(initialVolume * 100));
+    this.narration.setEnabled(loadNarrationEnabled());
 
     this.renderer = new THREE.WebGLRenderer({
       canvas,
@@ -362,6 +369,16 @@ export class Game {
 
   }
 
+  async ensureAudio(): Promise<void> {
+    const volume = MetaProgress.loadMasterVolume();
+    await this.audio.start(volume);
+    this.audio.setMasterVolume(volume);
+  }
+
+  setCinematicBed(active: boolean): void {
+    this.audio.setCinematicBed(active);
+  }
+
   async startNewGame(): Promise<void> {
     if (this.running) {
       this.stop();
@@ -371,6 +388,7 @@ export class Game {
     this.meta.resetRun();
     this.orbital.reset();
     this.player.resetToSpawn();
+    this.stableNarrationPlayed = false;
     await this.beginSession(false);
   }
 
@@ -460,6 +478,7 @@ export class Game {
     this.paused = false;
     this.pauseMenu.hide();
     cancelAnimationFrame(this.animationId);
+    this.narration.cancel();
     this.audio.stop();
     this.player.unlock();
   }
@@ -741,6 +760,15 @@ export class Game {
       this.stableBanner.show();
       this.audio.playStableEraChime();
       this.saveCheckpoint('Stable Era (auto)');
+      if (!this.stableNarrationPlayed && loadNarrationEnabled()) {
+        this.stableNarrationPlayed = true;
+        const locale = this.getLocale();
+        this.narration.speak(
+          STABLE_ERA_NARRATION[locale],
+          locale,
+          MetaProgress.loadMasterVolume(),
+        );
+      }
     }
 
     if (transition.leftStable) {
