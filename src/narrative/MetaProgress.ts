@@ -36,21 +36,20 @@ export class MetaProgress {
     this.enteredStableThisRun = state.enteredStableThisRun;
   }
 
-  getStableEraEnterChance(hasFinalLog: boolean): number {
-    if (hasFinalLog) {
-      return 0.08;
-    }
-    return 0.18;
+  getStableEraEnterChance(hasFinalLog: boolean, counselBonus = 0): number {
+    const base = hasFinalLog ? 0.08 : 0.18;
+    return THREE.MathUtils.clamp(base + counselBonus, 0.05, 0.32);
   }
 
-  shouldForceStableEra(hasFinalLog: boolean): boolean {
+  shouldForceStableEra(hasFinalLog: boolean, thresholdOffset = 0): boolean {
     if (hasFinalLog) {
       return false;
     }
     if (this.enteredStableThisRun) {
       return false;
     }
-    return this.chaoticTransitionsThisRun >= 8;
+    const threshold = THREE.MathUtils.clamp(8 + thresholdOffset, 5, 12);
+    return this.chaoticTransitionsThisRun >= threshold;
   }
 
   static loadMasterVolume(): number {

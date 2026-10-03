@@ -4,7 +4,13 @@ export type DialogueSideEffect =
   | 'predictor_calibrated'
   | 'predictor_mark_spoke'
   | 'grove_mark_spoke'
-  | 'grove_hint_logged';
+  | 'grove_hint_logged'
+  | 'counsel_registrar_survivors'
+  | 'counsel_registrar_memorial'
+  | 'counsel_predictor_numbers'
+  | 'counsel_predictor_endurance'
+  | 'counsel_grove_hope'
+  | 'counsel_grove_caution';
 
 export interface DialogueChoice {
   id: string;

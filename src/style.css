@@ -218,6 +218,30 @@ h1 {
   display: none;
 }
 
+.hud-omen {
+  grid-column: 1 / -1;
+  font-size: 0.78rem;
+  font-style: italic;
+  line-height: 1.4;
+  color: #ff9a7a;
+  padding: 0.3rem 0.5rem;
+  border-left: 2px solid rgba(255, 90, 64, 0.55);
+  background: rgba(40, 12, 8, 0.45);
+}
+
+.hud-omen.hidden {
+  display: none;
+}
+
+#hud.compact .hud-omen {
+  display: none;
+}
+
+#death-cycle {
+  color: #e8c9a0;
+  margin-bottom: 0.75rem;
+}
+
 .journal-letter-btn {
   font-style: italic;
 }

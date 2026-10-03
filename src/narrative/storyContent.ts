@@ -207,6 +207,30 @@ export function getStoryBeat(locale: Locale, id: StoryBeatId): StoryBeatCopy | n
   return BEATS[locale].find((beat) => beat.id === id) ?? null;
 }
 
+export function witnessBeatForCycle(locale: Locale, cycle: number): StoryBeatCopy | null {
+  const base = getStoryBeat(locale, 'letter_witness');
+  if (!base) {
+    return null;
+  }
+  if (locale === 'zh') {
+    return {
+      ...base,
+      body:
+        `你是文明 #${cycle} 的展开者。若你仍舒展地读着这些字，我或已折叠，或已成灰。`
+        + '我曾是智者，后来不再预测，只学会倾听。天空并非邪恶——只是冷漠。'
+        + '向东找路石，校准破碎的天文台，忍耐至金色回归，并为再下一个循环留下记录。',
+    };
+  }
+  return {
+    ...base,
+    body:
+      `You unfold as Civilization #${cycle}. If you are reading this with lungs full of air, I am already folded or ash. `
+      + 'I was a sage who stopped predicting and started listening. The sky is not evil — it is indifferent. '
+      + 'Find the waystone east. Calibrate the broken observatory. Endure until gold returns. '
+      + 'Leave a record for the cycle after yours.',
+  };
+}
+
 export function getUnlockedBeats(locale: Locale, ids: readonly StoryBeatId[]): StoryBeatCopy[] {
   const map = new Map(BEATS[locale].map((beat) => [beat.id, beat]));
   return ids.map((id) => map.get(id)).filter((beat): beat is StoryBeatCopy => Boolean(beat));

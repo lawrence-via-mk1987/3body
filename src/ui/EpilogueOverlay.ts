@@ -1,6 +1,7 @@
 export class EpilogueOverlay {
   constructor(
     private readonly overlay: HTMLElement,
+    private readonly bodyEl: HTMLElement,
     restartButton: HTMLButtonElement,
     private onRestart: () => void,
   ) {
@@ -10,7 +11,8 @@ export class EpilogueOverlay {
     });
   }
 
-  show(): void {
+  show(bodyText: string): void {
+    this.bodyEl.textContent = bodyText;
     this.overlay.classList.remove('hidden');
   }
 

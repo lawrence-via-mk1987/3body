@@ -1,7 +1,12 @@
 import type { Locale } from '../i18n/locale';
 import type { LogDiscovery } from './LogDiscovery';
 import type { StoryBeatId } from './storyContent';
-import { getStoryBeat, resolveStoryObjective, type StoryObjectiveContext } from './storyContent';
+import {
+  getStoryBeat,
+  resolveStoryObjective,
+  witnessBeatForCycle,
+  type StoryObjectiveContext,
+} from './storyContent';
 import { StoryBeatState } from './StoryBeatState';
 
 export type StoryBeatListener = (id: StoryBeatId) => void;
@@ -15,6 +20,7 @@ export class StoryDirector {
   constructor(
     private readonly state: StoryBeatState,
     private getLocale: () => Locale,
+    private getCivilizationCycle: () => number,
   ) {}
 
   onBeat(listener: StoryBeatListener): void {
@@ -121,6 +127,9 @@ export class StoryDirector {
   }
 
   getBeatCopy(id: StoryBeatId) {
+    if (id === 'letter_witness') {
+      return witnessBeatForCycle(this.getLocale(), this.getCivilizationCycle());
+    }
     return getStoryBeat(this.getLocale(), id);
   }
 

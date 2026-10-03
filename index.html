@@ -159,6 +159,7 @@
       <div class="panel death-panel">
         <p class="eyebrow">Civilization ended</p>
         <h2>Another cycle falls</h2>
+        <p id="death-cycle" class="death-meta"></p>
         <p id="death-message"></p>
         <p id="death-logs" class="death-meta"></p>
         <p id="death-objective" class="death-objective"></p>
@@ -170,10 +171,7 @@
       <div class="panel epilogue-panel">
         <p class="eyebrow">This cycle endured</p>
         <h2>The Final Log</h2>
-        <p>
-          You read the last tablet beneath a gentle sun. The three-body sky will turn again —
-          but hope is not a prediction. It is a discipline carried into the next civilization.
-        </p>
+        <p id="epilogue-body"></p>
         <button id="epilogue-restart" type="button">Walk into the next cycle</button>
       </div>
     </div>
@@ -218,6 +216,7 @@
         <span id="hud-landmark">Open wasteland</span>
       </div>
       <div id="hud-chapter" class="hud-chapter" aria-live="polite"></div>
+      <div id="hud-omen" class="hud-omen hidden" aria-live="polite"></div>
       <div class="hud-block hud-status">
         <span class="hud-label">Status</span>
         <span id="hud-status">Look up. The suns are rising.</span>

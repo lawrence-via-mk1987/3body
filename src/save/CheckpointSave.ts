@@ -25,6 +25,7 @@ export interface CheckpointData {
     chaoticTransitionsThisRun: number;
     enteredStableThisRun: boolean;
   };
+  civilizationCycle?: number;
 }
 
 export class CheckpointSave {

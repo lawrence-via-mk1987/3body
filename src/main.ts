@@ -87,6 +87,9 @@ const hudLogs = document.querySelector<HTMLSpanElement>('#hud-logs');
 const deathMessage = document.querySelector<HTMLParagraphElement>('#death-message');
 const deathLogs = document.querySelector<HTMLParagraphElement>('#death-logs');
 const deathObjective = document.querySelector<HTMLParagraphElement>('#death-objective');
+const deathCycle = document.querySelector<HTMLParagraphElement>('#death-cycle');
+const epilogueBody = document.querySelector<HTMLParagraphElement>('#epilogue-body');
+const hudOmen = document.querySelector<HTMLDivElement>('#hud-omen');
 const logTitle = document.querySelector<HTMLHeadingElement>('#log-title');
 const logBody = document.querySelector<HTMLParagraphElement>('#log-body');
 const worldIntroBody = document.querySelector<HTMLDivElement>('#world-intro-body');
@@ -285,9 +288,14 @@ const showMainMenu = (): void => {
   refreshCheckpointMenu();
 };
 
-const epilogue = new EpilogueOverlay(epilogueOverlay, epilogueRestartButton, () => {
-  game.beginAgainFromEpilogue();
-});
+const epilogue = new EpilogueOverlay(
+  epilogueOverlay,
+  epilogueBody!,
+  epilogueRestartButton,
+  () => {
+    game.beginAgainFromEpilogue();
+  },
+);
 
 const pauseMenu = new PauseMenu(
   pauseOverlay,
@@ -333,12 +341,14 @@ game = new Game(
     interaction: hudInteraction,
     compactHint: hudCompactHint,
     chapter: hudChapter!,
+    omen: hudOmen!,
   },
   {
     death: deathOverlay,
     deathMessage,
     deathLogs,
     deathObjective,
+    deathCycle: deathCycle!,
     restartButton,
   },
   logReader,

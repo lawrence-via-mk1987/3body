@@ -21,7 +21,6 @@ import { DialoguePanel } from '../ui/DialoguePanel';
 import { horizontalBearing, HudCompass } from '../ui/HudCompass';
 import type { DialogueChoice, DialogueNode, DialogueTree } from '../narrative/dialogueTypes';
 import { ForecastMeta } from '../narrative/ForecastMeta';
-import { GROVE_KEEPER_DIALOGUE } from '../narrative/groveKeeperDialogue';
 import { GroveKeeperState } from '../narrative/GroveKeeperState';
 import { PIT_REGISTRAR_DIALOGUE } from '../narrative/pitRegistrarDialogue';
 import {
@@ -36,6 +35,21 @@ import { StoryBeatState } from '../narrative/StoryBeatState';
 import { StoryDirector } from '../narrative/StoryDirector';
 import type { StoryBeatId } from '../narrative/storyContent';
 import { StoryOverlay } from '../ui/StoryOverlay';
+import { CivilizationCounter } from '../narrative/CivilizationCounter';
+import { CounselChoices } from '../narrative/CounselChoices';
+import { buildEpilogueBody } from '../narrative/epilogueContent';
+import {
+  buildGroveDialogue,
+  buildPredictorDialogue,
+  buildRegistrarDialogue,
+  type NpcDialogueContext,
+} from '../narrative/npcDialogue';
+import {
+  omenForLethalTemperature,
+  omenForPhaseEnter,
+  shouldWarnLethal,
+} from '../narrative/skyOmens';
+import type { EraPhase } from '../orbital/types';
 import { PitRegistrarState } from '../narrative/PitRegistrarState';
 import { resolveInteractionPrompt } from '../ui/InteractionPrompt';
 import { SettlementNpcs } from '../world/SettlementNpcs';
@@ -71,6 +85,7 @@ interface HudElements {
   interaction: HTMLElement;
   compactHint: HTMLElement;
   chapter: HTMLElement;
+  omen: HTMLElement;
 }
 
 interface OverlayElements {
@@ -78,6 +93,7 @@ interface OverlayElements {
   deathMessage: HTMLElement;
   deathLogs: HTMLElement;
   deathObjective: HTMLElement;
+  deathCycle: HTMLElement;
   restartButton: HTMLButtonElement;
 }
 
@@ -104,7 +120,13 @@ export class Game {
   private readonly pitRegistrarState = new PitRegistrarState();
   private readonly forecastMeta = new ForecastMeta();
   private readonly groveKeeperState = new GroveKeeperState();
+  private readonly counselChoices = new CounselChoices();
+  private readonly civilizationCounter = new CivilizationCounter();
+  private civilizationCycle = 187;
+  private omenTimer = 0;
+  private lethalWarnedPhase: EraPhase | null = null;
   private activeDialogue: DialogueTree = PIT_REGISTRAR_DIALOGUE;
+  private activeDialogueNpc: 'registrar' | 'predictor' | 'grove' | null = null;
   private npcPulseTime = 0;
   private hudCompact = false;
   private stableNarrationPlayed = false;
@@ -158,7 +180,11 @@ export class Game {
     private readonly narration: NarrationDirector,
     private readonly storyOverlay: StoryOverlay,
   ) {
-    this.storyDirector = new StoryDirector(this.storyBeatState, getLocale);
+    this.storyDirector = new StoryDirector(
+      this.storyBeatState,
+      getLocale,
+      () => this.civilizationCycle,
+    );
     this.storyDirector.setJournalRecorder((id) => {
       const beat = this.storyDirector.getBeatCopy(id);
       if (beat) {
@@ -218,8 +244,14 @@ export class Game {
       this.sky,
       this.fog,
       () => ({
-        chance: this.meta.getStableEraEnterChance(hasFinalLog()),
-        force: this.meta.shouldForceStableEra(hasFinalLog()),
+        chance: this.meta.getStableEraEnterChance(
+          hasFinalLog(),
+          this.counselChoices.getStableChanceBonus(),
+        ),
+        force: this.meta.shouldForceStableEra(
+          hasFinalLog(),
+          this.counselChoices.getForceStableThresholdOffset(),
+        ),
       }),
       () => this.meta.onChaoticPhaseEnded(),
       () => this.meta.onStableEntered(),
@@ -455,6 +487,7 @@ export class Game {
       survival: this.survival.exportState(),
       orbital: this.orbital.getEraSnapshot(),
       meta: this.meta.exportRunState(),
+      civilizationCycle: this.civilizationCycle,
     });
     this.runJournal.recordCheckpoint(label);
     this.setStatusOverride(`Checkpoint saved — ${label}`, 4);
@@ -495,8 +528,18 @@ export class Game {
     this.audio.setMasterVolume(volume);
     this.syncMenuVolume(volume);
     this.audio.resume();
+    const checkpoint = fromCheckpoint ? CheckpointSave.load() : null;
+    this.civilizationCycle = this.civilizationCounter.beginRun(
+      fromCheckpoint,
+      checkpoint?.civilizationCycle,
+    );
+    this.lethalWarnedPhase = null;
+    this.omenTimer = 0;
+    this.hud.omen.classList.add('hidden');
+
     this.runJournal.clear();
     this.runJournal.recordCycleStart(fromCheckpoint);
+    this.runJournal.recordCounsel(this.civilizationCounter.formatLabel(this.getLocale()));
     this.storyDirector.resetRun();
     this.storyDirector.setPredictorCalibrated(this.forecastMeta.isCalibrated());
     this.storyDirector.syncFromDiscovery(this.logDiscovery);
@@ -614,6 +657,10 @@ export class Game {
   }
 
   private restart(): void {
+    this.civilizationCycle = this.civilizationCounter.beginRun(false);
+    this.runJournal.recordCounsel(
+      `${this.civilizationCounter.formatLabel(this.getLocale())} begins.`,
+    );
     this.survival.reset();
     this.meta.resetRun();
     this.orbital.reset();
@@ -641,7 +688,13 @@ export class Game {
     this.running = false;
     this.audio.stop();
     this.player.unlock();
-    this.epilogue.show();
+    this.epilogue.show(
+      buildEpilogueBody(
+        this.getLocale(),
+        this.counselChoices.getSnapshot(),
+        this.civilizationCycle,
+      ),
+    );
   }
 
   beginAgainFromEpilogue(): void {
@@ -764,6 +817,13 @@ export class Game {
       }
     }
 
+    if (this.omenTimer > 0) {
+      this.omenTimer -= delta;
+      if (this.omenTimer <= 0) {
+        this.hud.omen.classList.add('hidden');
+      }
+    }
+
     this.exposureTarget = stableEra ? 1.28 : 1.12;
     this.renderer.toneMappingExposure = THREE.MathUtils.lerp(
       this.renderer.toneMappingExposure,
@@ -826,10 +886,38 @@ export class Game {
     this.statusOverrideTimer = seconds;
   }
 
+  private showSkyOmen(message: string, seconds: number): void {
+    this.hud.omen.textContent = message;
+    this.hud.omen.classList.remove('hidden');
+    this.omenTimer = seconds;
+  }
+
+  private buildNpcContext(): NpcDialogueContext {
+    return {
+      locale: this.getLocale(),
+      logCount: this.logDiscovery.getDiscoveredCount(),
+      storyBeats: this.storyDirector.getUnlockedForJournal(),
+      civilizationCycle: this.civilizationCycle,
+      forecastCalibrated: this.forecastMeta.isCalibrated(),
+      pitFlags: this.pitRegistrarState.getFlags(),
+      groveHopeHint: this.groveKeeperState.hasHopeHint(),
+      counsel: this.counselChoices.getSnapshot(),
+    };
+  }
+
   private handleEraTransitions(): void {
     const transition = this.orbital.consumeTransition();
     if (!transition) {
       return;
+    }
+
+    if (transition.phaseChanged) {
+      const phase = this.orbital.getPhase();
+      const omen = omenForPhaseEnter(phase, this.getLocale());
+      if (omen) {
+        this.showSkyOmen(omen, 9);
+      }
+      this.lethalWarnedPhase = null;
     }
 
     if (transition.enteredStable) {
@@ -866,7 +954,10 @@ export class Game {
       const distance = Math.hypot(pos.x - PIT_REGISTRAR.x, pos.z - PIT_REGISTRAR.z);
       options.push({
         distance,
-        talk: () => this.openDialogue(PIT_REGISTRAR_DIALOGUE, PIT_REGISTRAR_DIALOGUE.greet),
+        talk: () => {
+          const tree = buildRegistrarDialogue(this.buildNpcContext());
+          this.openDialogue('registrar', tree, tree.greet);
+        },
       });
     }
 
@@ -875,10 +966,11 @@ export class Game {
       options.push({
         distance,
         talk: () => {
+          const tree = buildPredictorDialogue(this.buildNpcContext());
           if (this.forecastMeta.isCalibrated()) {
-            this.openDialogue(PREDICTOR_DIALOGUE, PREDICTOR_DIALOGUE.already_calibrated);
+            this.openDialogue('predictor', tree, tree.already_calibrated);
           } else {
-            this.openDialogue(PREDICTOR_DIALOGUE, PREDICTOR_DIALOGUE.greet);
+            this.openDialogue('predictor', tree, tree.greet);
           }
         },
       });
@@ -888,7 +980,10 @@ export class Game {
       const distance = Math.hypot(pos.x - GROVE_KEEPER.x, pos.z - GROVE_KEEPER.z);
       options.push({
         distance,
-        talk: () => this.openDialogue(GROVE_KEEPER_DIALOGUE, GROVE_KEEPER_DIALOGUE.greet),
+        talk: () => {
+          const tree = buildGroveDialogue(this.buildNpcContext());
+          this.openDialogue('grove', tree, tree.greet);
+        },
       });
     }
 
@@ -901,9 +996,25 @@ export class Game {
     this.syncMovementState();
   }
 
-  private openDialogue(tree: DialogueTree, node: DialogueNode): void {
+  private openDialogue(
+    npc: 'registrar' | 'predictor' | 'grove',
+    tree: DialogueTree,
+    node: DialogueNode,
+  ): void {
+    this.activeDialogueNpc = npc;
     this.activeDialogue = tree;
     this.dialoguePanel.open(node);
+  }
+
+  private refreshActiveDialogueTree(): void {
+    const ctx = this.buildNpcContext();
+    if (this.activeDialogueNpc === 'registrar') {
+      this.activeDialogue = buildRegistrarDialogue(ctx);
+    } else if (this.activeDialogueNpc === 'predictor') {
+      this.activeDialogue = buildPredictorDialogue(ctx);
+    } else if (this.activeDialogueNpc === 'grove') {
+      this.activeDialogue = buildGroveDialogue(ctx);
+    }
   }
 
   private handleDialogueChoice(choice: DialogueChoice): void {
@@ -930,6 +1041,36 @@ export class Game {
       this.groveKeeperState.markHopeHint();
       this.runJournal.recordCounsel('Grove Keeper shared counsel on water and the Final Log.');
     }
+    if (choice.sideEffect === 'counsel_registrar_survivors') {
+      this.counselChoices.setRegistrar('survivors');
+      this.runJournal.recordCounsel('Registrar counsel: count survivors — the sky may soften sooner.');
+      this.gameToast.show('Counsel set: survivors. Stable Eras may arrive slightly sooner.');
+    }
+    if (choice.sideEffect === 'counsel_registrar_memorial') {
+      this.counselChoices.setRegistrar('memorial');
+      this.runJournal.recordCounsel('Registrar counsel: memorialize the dead — pity gold may come earlier.');
+      this.gameToast.show('Counsel set: memorial. A Stable Era may be forced sooner after long chaos.');
+    }
+    if (choice.sideEffect === 'counsel_predictor_numbers') {
+      this.counselChoices.setPredictor('numbers');
+      this.runJournal.recordCounsel('Predictor counsel: trust numbers — narrow the cone.');
+      this.gameToast.show('Counsel set: numbers. Forecast luck nudges upward.');
+    }
+    if (choice.sideEffect === 'counsel_predictor_endurance') {
+      this.counselChoices.setPredictor('endurance');
+      this.runJournal.recordCounsel('Predictor counsel: trust endurance — keep walking.');
+      this.gameToast.show('Counsel set: endurance. Long chaos may end in pity gold sooner.');
+    }
+    if (choice.sideEffect === 'counsel_grove_hope') {
+      this.counselChoices.setGrove('hope');
+      this.runJournal.recordCounsel('Grove counsel: plant hope — epilogue will remember green.');
+      this.gameToast.show('Counsel set: hope. Your epilogue will emphasize green.');
+    }
+    if (choice.sideEffect === 'counsel_grove_caution') {
+      this.counselChoices.setGrove('caution');
+      this.runJournal.recordCounsel('Grove counsel: plant caution — epilogue will remember water.');
+      this.gameToast.show('Counsel set: caution. Your epilogue will emphasize discipline.');
+    }
 
     if (choice.nextId === 'calibrate_dynamic') {
       const node = buildPredictorCalibrationNode(this.orbital.getPhase());
@@ -938,6 +1079,7 @@ export class Game {
       return;
     }
 
+    this.refreshActiveDialogueTree();
     const next = this.activeDialogue[choice.nextId];
     if (next) {
       this.dialoguePanel.open(next);
@@ -1029,6 +1171,7 @@ export class Game {
     CheckpointSave.clear();
     this.audio.stop();
     this.player.unlock();
+    this.overlays.deathCycle.textContent = this.civilizationCounter.formatLabel(this.getLocale());
     this.overlays.deathMessage.textContent = this.survival.getDeathMessage();
     const total = this.logDiscovery.getAllLogs().length;
     const found = this.logDiscovery.getDiscoveredCount();
@@ -1069,6 +1212,18 @@ export class Game {
     this.hud.position.textContent = this.player.getPositionText();
     this.hud.logs.textContent = `${this.logDiscovery.getDiscoveredCount()} / ${this.logDiscovery.getAllLogs().length}`;
     this.hud.chapter.textContent = this.storyDirector.getObjectiveText(this.logDiscovery);
+
+    const temperatureSample = this.orbital.getTemperature();
+    const currentPhase = this.orbital.getPhase();
+    if (
+      shouldWarnLethal(temperatureSample, this.lethalWarnedPhase === currentPhase)
+    ) {
+      const lethalOmen = omenForLethalTemperature(this.getLocale());
+      if (lethalOmen) {
+        this.showSkyOmen(lethalOmen, 8);
+        this.lethalWarnedPhase = currentPhase;
+      }
+    }
 
     const landmark = nearestLandmarkHint(position);
     this.hud.landmark.textContent = landmark ?? 'Open wasteland';
