@@ -42,7 +42,7 @@
             <em>Remembrance of Earth's Past</em> series, or any rights holders.
           </p>
           <p class="controls">
-            WASD move · Shift sprint · mouse look (click game) · F read · T talk · J journal · R drink (Stable grove) · E dehydrate (pit ring) · P or Esc pause
+            WASD move · Shift sprint · mouse look (click game) · F read · T talk · J journal · Tab compact HUD · R drink (Stable grove) · E dehydrate (pit ring) · P or Esc pause
           </p>
         </details>
       </div>
@@ -120,6 +120,7 @@
         <h2>Another cycle falls</h2>
         <p id="death-message"></p>
         <p id="death-logs" class="death-meta"></p>
+        <p id="death-objective" class="death-objective"></p>
         <button id="restart-btn" type="button">Begin again</button>
       </div>
     </div>
@@ -141,11 +142,11 @@
         <span class="hud-label">Era</span>
         <span id="hud-era">Chaotic</span>
       </div>
-      <div class="hud-block hud-phase">
+      <div class="hud-block hud-phase hud-detail">
         <span class="hud-label">Phase</span>
         <span id="hud-phase">Thaw</span>
       </div>
-      <div class="hud-block hud-temperature">
+      <div class="hud-block hud-temperature hud-detail">
         <span class="hud-label">Temperature</span>
         <span id="hud-temperature" data-status="safe">Survivable (0.0)</span>
       </div>
@@ -163,15 +164,15 @@
         </div>
         <span id="hud-hydration" class="meter-value">100</span>
       </div>
-      <div class="hud-block hud-forecast">
+      <div class="hud-block hud-forecast hud-detail">
         <span class="hud-label">Outlook</span>
         <span id="hud-forecast">Conditions uncertain</span>
       </div>
-      <div class="hud-block hud-logs">
+      <div class="hud-block hud-logs hud-detail">
         <span class="hud-label">Logs found</span>
         <span id="hud-logs">0 / 8</span>
       </div>
-      <div class="hud-block hud-landmark">
+      <div class="hud-block hud-landmark hud-detail">
         <span class="hud-label">Nearest landmark</span>
         <span id="hud-landmark">Open wasteland</span>
       </div>
@@ -179,7 +180,7 @@
         <span class="hud-label">Status</span>
         <span id="hud-status">Look up. The suns are rising.</span>
       </div>
-      <div class="hud-block hud-position">
+      <div class="hud-block hud-position hud-detail">
         <span class="hud-label">Position</span>
         <span id="hud-position">0, 0</span>
       </div>
@@ -187,6 +188,8 @@
         <span id="hud-wayfinder-label" class="hud-wayfinder-label">Landmark</span>
         <span id="hud-wayfinder-arrow" class="hud-wayfinder-arrow" aria-hidden="true">➤</span>
       </div>
+      <div id="hud-interaction" class="hud-interaction hidden" aria-live="polite"></div>
+      <p id="hud-compact-hint" class="hud-compact-hint">Tab — compact HUD</p>
       <div id="forecast-strip" class="forecast-strip" aria-label="Sky forecast"></div>
       <div id="hud-look-hint" class="hud-look-hint hidden">Click the game view to look around</div>
       <div id="game-toast" class="game-toast hidden" role="status"></div>

@@ -1,7 +1,13 @@
 import * as THREE from 'three';
 import type { EraKind } from '../orbital/types';
 import type { Terrain } from './Terrain';
-import { GROVE_LANDMARK, PIT_LANDMARK, PIT_REGISTRAR, SPAWN_HINT } from './landmarks';
+import {
+  GROVE_LANDMARK,
+  OBSERVATORY_LANDMARK,
+  PIT_LANDMARK,
+  PIT_REGISTRAR,
+  SPAWN_HINT,
+} from './landmarks';
 
 export class LandmarkWayfinding {
   readonly group = new THREE.Group();
@@ -12,6 +18,8 @@ export class LandmarkWayfinding {
   private readonly pitRingPulse: THREE.Mesh;
   private readonly trailPit: THREE.InstancedMesh;
   private readonly trailGrove: THREE.InstancedMesh;
+  private readonly trailObservatory: THREE.InstancedMesh;
+  private readonly observatoryBeacon: THREE.Mesh;
   private readonly grovePoolGlow: THREE.Mesh;
   private pulseTime = 0;
 
@@ -52,9 +60,15 @@ export class LandmarkWayfinding {
     this.grovePoolGlow.position.set(GROVE_LANDMARK.x, groveY + 0.2, GROVE_LANDMARK.z);
     this.group.add(this.grovePoolGlow);
 
+    const observatoryY = terrain.getHeightAt(OBSERVATORY_LANDMARK.x, OBSERVATORY_LANDMARK.z);
+    this.observatoryBeacon = this.createBeacon(0x5a88b8, 0x8ec8ff, 36);
+    this.observatoryBeacon.position.set(OBSERVATORY_LANDMARK.x, observatoryY, OBSERVATORY_LANDMARK.z);
+    this.group.add(this.observatoryBeacon);
+
     this.trailPit = this.buildTrail(SPAWN_HINT, PIT_LANDMARK, 0xb8956a, 18);
     this.trailGrove = this.buildTrail(SPAWN_HINT, GROVE_LANDMARK, 0x7aa86a, 22);
-    this.group.add(this.trailPit, this.trailGrove);
+    this.trailObservatory = this.buildTrail(SPAWN_HINT, OBSERVATORY_LANDMARK, 0x6aa8d8, 16);
+    this.group.add(this.trailPit, this.trailGrove, this.trailObservatory);
 
     this.buildRegistrar();
     this.group.add(this.registrarGroup);
@@ -140,6 +154,7 @@ export class LandmarkWayfinding {
     playerPosition: THREE.Vector3,
     nearPit: boolean,
     grovePoolVisible: boolean,
+    forecastCalibrated: boolean,
   ): void {
     this.pulseTime += delta;
 
@@ -161,6 +176,14 @@ export class LandmarkWayfinding {
 
     this.trailPit.visible = era !== 'stable' || playerPosition.distanceTo(this.pitBeacon.position) > 35;
     this.trailGrove.visible = groveActive;
+
+    const showObservatoryGuide = era !== 'stable' && !forecastCalibrated;
+    this.trailObservatory.visible = showObservatoryGuide;
+    const obsMat = this.observatoryBeacon.material as THREE.MeshStandardMaterial;
+    obsMat.emissiveIntensity = showObservatoryGuide
+      ? 0.5 + Math.sin(this.pulseTime * 2.2) * 0.18
+      : 0.12;
+    obsMat.opacity = showObservatoryGuide ? 0.7 : 0.22;
 
     const glowMat = this.grovePoolGlow.material as THREE.MeshBasicMaterial;
     glowMat.opacity = grovePoolVisible

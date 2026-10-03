@@ -209,6 +209,61 @@ h1 {
 .hud-status { top: 29rem; max-width: 280px; }
 .hud-position { top: 33.5rem; }
 
+#hud.compact .hud-detail {
+  display: none;
+}
+
+#hud.compact .hud-vitals {
+  top: 4.5rem;
+}
+
+#hud.compact .hud-hydration {
+  top: 8rem;
+}
+
+#hud.compact .hud-status {
+  top: 11.5rem;
+  max-width: 240px;
+}
+
+.hud-compact-hint {
+  position: absolute;
+  left: 1rem;
+  bottom: 1.25rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: #9f8d7b;
+  pointer-events: none;
+}
+
+.hud-interaction {
+  position: absolute;
+  left: 50%;
+  bottom: 6.75rem;
+  transform: translateX(-50%);
+  padding: 0.6rem 1rem;
+  background: rgba(10, 8, 6, 0.82);
+  border: 1px solid rgba(224, 184, 120, 0.45);
+  font-size: 0.95rem;
+  color: #f0dfb8;
+  text-align: center;
+  max-width: min(92vw, 420px);
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.hud-interaction.hidden {
+  display: none;
+}
+
+.death-objective {
+  color: #d8c7b2;
+  margin-bottom: 1.25rem;
+  line-height: 1.55;
+  border-left: 2px solid rgba(194, 138, 90, 0.45);
+  padding-left: 0.75rem;
+}
+
 #hud-landmark {
   font-size: 0.85rem;
   color: #c9b59d;
@@ -579,6 +634,14 @@ h1 {
 
 .hud-wayfinder[data-target='grove'] .hud-wayfinder-arrow {
   color: #e8d8a0;
+}
+
+.hud-wayfinder[data-target='observatory'] {
+  border-color: rgba(142, 200, 255, 0.45);
+}
+
+.hud-wayfinder[data-target='observatory'] .hud-wayfinder-arrow {
+  color: #a8d4ff;
 }
 
 #dialogue-overlay {

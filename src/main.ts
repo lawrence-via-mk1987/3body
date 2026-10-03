@@ -14,6 +14,8 @@ import { MetaProgress } from './narrative/MetaProgress';
 const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
 const overlay = document.querySelector<HTMLDivElement>('#overlay');
 const hud = document.querySelector<HTMLDivElement>('#hud');
+const hudInteraction = document.querySelector<HTMLDivElement>('#hud-interaction');
+const hudCompactHint = document.querySelector<HTMLParagraphElement>('#hud-compact-hint');
 const deathOverlay = document.querySelector<HTMLDivElement>('#death-overlay');
 const epilogueOverlay = document.querySelector<HTMLDivElement>('#epilogue-overlay');
 const pauseOverlay = document.querySelector<HTMLDivElement>('#pause-overlay');
@@ -71,6 +73,7 @@ const hudStatus = document.querySelector<HTMLSpanElement>('#hud-status');
 const hudLogs = document.querySelector<HTMLSpanElement>('#hud-logs');
 const deathMessage = document.querySelector<HTMLParagraphElement>('#death-message');
 const deathLogs = document.querySelector<HTMLParagraphElement>('#death-logs');
+const deathObjective = document.querySelector<HTMLParagraphElement>('#death-objective');
 const logTitle = document.querySelector<HTMLHeadingElement>('#log-title');
 const logBody = document.querySelector<HTMLParagraphElement>('#log-body');
 
@@ -78,6 +81,8 @@ if (
   !canvas
   || !overlay
   || !hud
+  || !hudInteraction
+  || !hudCompactHint
   || !deathOverlay
   || !epilogueOverlay
   || !pauseOverlay
@@ -135,6 +140,7 @@ if (
   || !hudLogs
   || !deathMessage
   || !deathLogs
+  || !deathObjective
   || !logTitle
   || !logBody
 ) {
@@ -239,6 +245,7 @@ const pauseMenu = new PauseMenu(
 game = new Game(
   canvas,
   {
+    root: hud,
     era: hudEra,
     phase: hudPhase,
     temperature: hudTemperature,
@@ -252,11 +259,14 @@ game = new Game(
     logs: hudLogs,
     landmark: hudLandmark,
     lookHint: hudLookHint,
+    interaction: hudInteraction,
+    compactHint: hudCompactHint,
   },
   {
     death: deathOverlay,
     deathMessage,
     deathLogs,
+    deathObjective,
     restartButton,
   },
   logReader,

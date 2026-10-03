@@ -53,5 +53,6 @@ Pages uses **GitHub Actions** (`build_type: workflow`). Each push to `main` runs
 ### Controls
 
 - **WASD** — move · **Shift** — sprint · **Space** — jump
-- **F** — read log · **T** — talk (Registrar / Last Predictor / Grove Keeper in Stable Era) · **J** — journal · **R** — drink at grove (Stable Era) · **E** — dehydrate at pit ring · **P / Esc** — pause
-- Amber **beacons** and HUD arrow point toward the dehydration pit or Stable grove when you need them
+- **F** — read log · **T** — talk (Registrar / Last Predictor / Grove Keeper in Stable Era) · **J** — journal · **Tab** — compact HUD · **R** — drink at grove (Stable Era) · **E** — dehydrate at pit ring · **P / Esc** — pause
+- **Beacons & HUD arrow:** amber → pit, cyan → observatory (until forecast calibrated), green → grove in Stable Era
+- **Interaction chip** appears center-bottom when you can talk, read, drink, or dehydrate

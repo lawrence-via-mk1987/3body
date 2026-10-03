@@ -28,7 +28,9 @@ import {
   buildPredictorCalibrationNode,
   PREDICTOR_DIALOGUE,
 } from '../narrative/predictorDialogue';
+import { buildDeathObjective } from '../narrative/deathObjective';
 import { PitRegistrarState } from '../narrative/PitRegistrarState';
+import { resolveInteractionPrompt } from '../ui/InteractionPrompt';
 import { SettlementNpcs } from '../world/SettlementNpcs';
 import { GROVE_KEEPER, LAST_PREDICTOR, PIT_REGISTRAR } from '../world/landmarks';
 import { CaveShelter } from '../world/CaveShelter';
@@ -45,6 +47,7 @@ import { Terrain } from '../world/Terrain';
 import { WATER_REFILL_AMOUNT, WaterSource } from '../world/WaterSource';
 
 interface HudElements {
+  root: HTMLElement;
   era: HTMLElement;
   phase: HTMLElement;
   temperature: HTMLElement;
@@ -58,12 +61,15 @@ interface HudElements {
   logs: HTMLElement;
   landmark: HTMLElement;
   lookHint: HTMLElement;
+  interaction: HTMLElement;
+  compactHint: HTMLElement;
 }
 
 interface OverlayElements {
   death: HTMLElement;
   deathMessage: HTMLElement;
   deathLogs: HTMLElement;
+  deathObjective: HTMLElement;
   restartButton: HTMLButtonElement;
 }
 
@@ -92,6 +98,7 @@ export class Game {
   private readonly groveKeeperState = new GroveKeeperState();
   private activeDialogue: DialogueTree = PIT_REGISTRAR_DIALOGUE;
   private npcPulseTime = 0;
+  private hudCompact = false;
   private readonly dialoguePanel: DialoguePanel;
   private readonly hudCompass: HudCompass;
   private readonly audio = new AudioDirector();
@@ -286,6 +293,10 @@ export class Game {
 
     window.addEventListener('keydown', (event) => {
       if (!this.running || this.logReader.isOpen() || this.journal.isOpen() || this.dialoguePanel.isOpen()) {
+        return;
+      }
+      if (event.code === 'Tab') {
+        event.preventDefault();
         return;
       }
       if (event.code === 'Escape') {
@@ -605,11 +616,21 @@ export class Game {
         this.anchor,
         nearPit,
         this.waterSource.mesh.visible,
+        this.forecastMeta.isCalibrated(),
       );
       this.settlementNpcs.update(this.orbital.getEraKind(), this.anchor, this.npcPulseTime);
       this.renderer.render(this.scene, this.player.camera);
       this.animationId = requestAnimationFrame(this.animate);
       return;
+    }
+
+    if (
+      !this.logReader.isOpen()
+      && !this.dialoguePanel.isOpen()
+      && !this.journal.isOpen()
+      && this.player.consumePressedKey('Tab')
+    ) {
+      this.toggleHudCompact();
     }
 
     if (!this.logReader.isOpen() && this.player.consumePressedKey('KeyT')) {
@@ -690,6 +711,7 @@ export class Game {
       this.anchor,
       nearPit,
       this.waterSource.mesh.visible,
+      this.forecastMeta.isCalibrated(),
     );
     this.settlementNpcs.update(this.orbital.getEraKind(), this.anchor, this.npcPulseTime);
     this.updateHud(nearbyLog, stableEra, nearPit, nearWater);
@@ -854,7 +876,21 @@ export class Game {
     const total = this.logDiscovery.getAllLogs().length;
     const found = this.logDiscovery.getDiscoveredCount();
     this.overlays.deathLogs.textContent = `Civilization memory preserved: ${found} / ${total} logs remain known to you across cycles.`;
+    this.overlays.deathObjective.textContent = buildDeathObjective({
+      hasFinalLog: this.meta.hasSeenFinalLog(this.logDiscovery),
+      forecastCalibrated: this.forecastMeta.isCalibrated(),
+      logsFound: found,
+      logsTotal: total,
+    });
     this.overlays.death.classList.remove('hidden');
+  }
+
+  private toggleHudCompact(): void {
+    this.hudCompact = !this.hudCompact;
+    this.hud.root.classList.toggle('compact', this.hudCompact);
+    this.hud.compactHint.textContent = this.hudCompact
+      ? 'Tab — expand HUD'
+      : 'Tab — compact HUD';
   }
 
   private updateHud(
@@ -917,6 +953,26 @@ export class Game {
 
     this.hud.status.textContent = statusMessage;
 
+    const interaction = resolveInteractionPrompt({
+      stableEra,
+      nearbyLog,
+      nearPit,
+      nearWater,
+      nearRegistrar: this.wayfinding.isNearRegistrar(position),
+      nearPredictor: this.settlementNpcs.isNearPredictor(position),
+      nearGroveKeeper: this.settlementNpcs.isNearGroveKeeper(position),
+      uiBlocking: this.logReader.isOpen()
+        || this.dialoguePanel.isOpen()
+        || this.journal.isOpen()
+        || this.paused,
+    });
+    if (interaction) {
+      this.hud.interaction.textContent = interaction;
+      this.hud.interaction.classList.remove('hidden');
+    } else {
+      this.hud.interaction.classList.add('hidden');
+    }
+
     this.hud.healthBar.parentElement?.classList.toggle('critical', snapshot.health < 30);
     this.hud.hydrationBar.parentElement?.classList.toggle('critical', snapshot.hydration < 25);
     document.body.dataset.survival = snapshot.status;
@@ -929,6 +985,7 @@ export class Game {
       temperature,
       nearGroveWater: nearWater,
       hasFinalLog: this.meta.hasSeenFinalLog(this.logDiscovery),
+      forecastCalibrated: this.forecastMeta.isCalibrated(),
       playerX: position.x,
       playerZ: position.z,
     });
