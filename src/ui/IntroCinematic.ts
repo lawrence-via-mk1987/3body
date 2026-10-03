@@ -106,8 +106,7 @@ export class IntroCinematic {
     if (!card) {
       return;
     }
-    const line = `${card.title}. ${card.body}`;
-    this.narration.speak(line, this.locale, this.narrationVolume);
+    this.narration.speakParts([card.title, card.body], this.locale, this.narrationVolume);
   }
 
   private advance(): void {

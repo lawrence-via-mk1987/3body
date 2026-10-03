@@ -189,11 +189,6 @@ if (
 
 const narration = new NarrationDirector();
 narration.warmUp();
-if (typeof window !== 'undefined' && window.speechSynthesis) {
-  window.speechSynthesis.onvoiceschanged = () => {
-    narration.warmUp();
-  };
-}
 
 function syncNarrationEnabled(enabled: boolean): void {
   narration.setEnabled(enabled);
