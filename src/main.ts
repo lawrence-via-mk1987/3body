@@ -11,6 +11,7 @@ import { Journal } from './ui/Journal';
 import { LogReader } from './ui/LogReader';
 import { PauseMenu } from './ui/PauseMenu';
 import { StableEraBanner } from './ui/StableEraBanner';
+import { StoryOverlay } from './ui/StoryOverlay';
 import { Toast } from './ui/Toast';
 import { CheckpointSave } from './save/CheckpointSave';
 import { MetaProgress } from './narrative/MetaProgress';
@@ -58,8 +59,16 @@ const logNextButton = document.querySelector<HTMLButtonElement>('#log-next');
 const logNavIndicator = document.querySelector<HTMLSpanElement>('#log-nav-indicator');
 const journalEraList = document.querySelector<HTMLUListElement>('#journal-era-list');
 const journalLogList = document.querySelector<HTMLUListElement>('#journal-log-list');
+const journalLetterList = document.querySelector<HTMLUListElement>('#journal-letter-list');
+const journalLettersHeading = document.querySelector<HTMLHeadingElement>('#journal-letters-heading');
 const journalLogCount = document.querySelector<HTMLSpanElement>('#journal-log-count');
 const journalCloseButton = document.querySelector<HTMLButtonElement>('#journal-close');
+const storyBeatOverlay = document.querySelector<HTMLDivElement>('#story-beat-overlay');
+const storyBeatEyebrow = document.querySelector<HTMLParagraphElement>('#story-beat-eyebrow');
+const storyBeatTitle = document.querySelector<HTMLHeadingElement>('#story-beat-title');
+const storyBeatBody = document.querySelector<HTMLParagraphElement>('#story-beat-body');
+const storyBeatContinue = document.querySelector<HTMLButtonElement>('#story-beat-continue');
+const hudChapter = document.querySelector<HTMLDivElement>('#hud-chapter');
 const masterVolumeSlider = document.querySelector<HTMLInputElement>('#master-volume');
 const gameToastEl = document.querySelector<HTMLDivElement>('#game-toast');
 const hudEra = document.querySelector<HTMLSpanElement>('#hud-era');
@@ -239,6 +248,8 @@ const journal = new Journal(
   journalEraList,
   journalLogList,
   journalLogCount,
+  journalLetterList!,
+  journalLettersHeading!,
   journalCloseButton,
 );
 const dialoguePanel = new DialoguePanel(
@@ -253,6 +264,15 @@ const stableEraBanner = new StableEraBanner(stableBanner, stableBannerSubtitle);
 const forecastStrip = new ForecastStrip(forecastStripEl);
 const gameToast = new Toast(gameToastEl);
 const pauseToast = new Toast(pauseToastEl);
+const storyOverlay = new StoryOverlay(
+  storyBeatOverlay!,
+  storyBeatEyebrow!,
+  storyBeatTitle!,
+  storyBeatBody!,
+  storyBeatContinue!,
+  narration,
+  () => MetaProgress.loadMasterVolume(),
+);
 
 let game: Game;
 let localeMenu: LocaleMenu;
@@ -312,6 +332,7 @@ game = new Game(
     lookHint: hudLookHint,
     interaction: hudInteraction,
     compactHint: hudCompactHint,
+    chapter: hudChapter!,
   },
   {
     death: deathOverlay,
@@ -336,6 +357,7 @@ game = new Game(
   masterVolumeSlider,
   () => localeMenu!.getLocale(),
   narration,
+  storyOverlay,
 );
 
 introCinematic = new IntroCinematic(

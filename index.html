@@ -58,6 +58,16 @@
       </div>
     </div>
 
+    <div id="story-beat-overlay" class="hidden">
+      <div class="panel intro-cinematic-panel story-beat-panel">
+        <p id="story-beat-eyebrow" class="eyebrow"></p>
+        <h2 id="story-beat-title"></h2>
+        <p id="story-beat-body" class="intro-cinematic-body"></p>
+        <button id="story-beat-continue" type="button" class="primary-btn">Continue</button>
+        <p class="intro-cinematic-hint">Enter · Space · Esc</p>
+      </div>
+    </div>
+
     <div id="intro-cinematic" class="hidden">
       <div class="panel intro-cinematic-panel">
         <p id="intro-cinematic-eyebrow" class="eyebrow"></p>
@@ -115,6 +125,10 @@
       <div class="panel journal-panel">
         <p class="eyebrow">Survivor journal</p>
         <h2>Cycle record</h2>
+        <section class="journal-section">
+          <h3 id="journal-letters-heading">Letters from the prior sage</h3>
+          <ul id="journal-letter-list" class="journal-list journal-log-list"></ul>
+        </section>
         <section class="journal-section">
           <h3>Sky chronicle</h3>
           <ul id="journal-era-list" class="journal-list"></ul>
@@ -203,6 +217,7 @@
         <span class="hud-label">Nearest landmark</span>
         <span id="hud-landmark">Open wasteland</span>
       </div>
+      <div id="hud-chapter" class="hud-chapter" aria-live="polite"></div>
       <div class="hud-block hud-status">
         <span class="hud-label">Status</span>
         <span id="hud-status">Look up. The suns are rising.</span>

@@ -1,18 +1,24 @@
+import type { Locale } from '../i18n/locale';
 import type { LogDiscovery } from '../narrative/LogDiscovery';
 import type { RunJournal } from '../narrative/RunJournal';
 import type { TextLog } from '../narrative/logs';
+import type { StoryBeatId } from '../narrative/storyContent';
+import { getStoryBeat } from '../narrative/storyContent';
 
 export class Journal {
   private openState = false;
   private onOpenCallback: (() => void) | null = null;
   private onCloseCallback: (() => void) | null = null;
   private onReadLogCallback: ((log: TextLog, gallery: TextLog[]) => void) | null = null;
+  private onReadLetterCallback: ((id: StoryBeatId) => void) | null = null;
 
   constructor(
     private readonly overlay: HTMLElement,
     private readonly eraList: HTMLUListElement,
     private readonly logList: HTMLUListElement,
     private readonly logCount: HTMLElement,
+    private readonly letterList: HTMLUListElement,
+    private readonly lettersHeading: HTMLElement,
     closeButton: HTMLButtonElement,
   ) {
     closeButton.addEventListener('click', (event) => {
@@ -50,6 +56,10 @@ export class Journal {
     this.onReadLogCallback = callback;
   }
 
+  onReadLetter(callback: (id: StoryBeatId) => void): void {
+    this.onReadLetterCallback = callback;
+  }
+
   isOpen(): boolean {
     return this.openState;
   }
@@ -57,12 +67,14 @@ export class Journal {
   toggle(
     runJournal: RunJournal,
     discovery: LogDiscovery,
+    letterIds: readonly StoryBeatId[],
+    locale: Locale,
   ): void {
     if (this.openState) {
       this.close();
       return;
     }
-    this.render(runJournal, discovery);
+    this.render(runJournal, discovery, letterIds, locale);
     this.overlay.classList.remove('hidden');
     this.openState = true;
     this.onOpenCallback?.();
@@ -77,17 +89,55 @@ export class Journal {
     this.onCloseCallback?.();
   }
 
-  private render(runJournal: RunJournal, discovery: LogDiscovery): void {
+  private render(
+    runJournal: RunJournal,
+    discovery: LogDiscovery,
+    letterIds: readonly StoryBeatId[],
+    locale: Locale,
+  ): void {
+    this.lettersHeading.textContent = locale === 'zh'
+      ? '上一循环智者的信'
+      : 'Letters from the prior sage';
+
     const total = discovery.getAllLogs().length;
     const found = discovery.getDiscoveredCount();
     this.logCount.textContent = `${found} / ${total}`;
+
+    this.letterList.replaceChildren();
+    if (letterIds.length === 0) {
+      const empty = document.createElement('li');
+      empty.className = 'journal-empty';
+      empty.textContent = locale === 'zh'
+        ? '旅程中会解锁信件。'
+        : 'Letters unlock as you survive and discover the wasteland.';
+      this.letterList.append(empty);
+    } else {
+      for (const id of letterIds) {
+        const beat = getStoryBeat(locale, id);
+        if (!beat) {
+          continue;
+        }
+        const item = document.createElement('li');
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'journal-log-btn journal-letter-btn';
+        button.textContent = beat.journalTitle;
+        button.addEventListener('click', () => {
+          this.onReadLetterCallback?.(id);
+        });
+        item.append(button);
+        this.letterList.append(item);
+      }
+    }
 
     this.eraList.replaceChildren();
     const eraEntries = runJournal.getEntries();
     if (eraEntries.length === 0) {
       const empty = document.createElement('li');
       empty.className = 'journal-empty';
-      empty.textContent = 'No sky events recorded yet this cycle.';
+      empty.textContent = locale === 'zh'
+        ? '本循环尚无天空记录。'
+        : 'No sky events recorded yet this cycle.';
       this.eraList.append(empty);
     } else {
       for (const entry of eraEntries) {
@@ -115,7 +165,9 @@ export class Journal {
     if (discovered.length === 0) {
       const empty = document.createElement('li');
       empty.className = 'journal-empty';
-      empty.textContent = 'No texts recovered yet. Press F at glowing markers.';
+      empty.textContent = locale === 'zh'
+        ? '尚未找回文字。在发光标记处按 F。'
+        : 'No texts recovered yet. Press F at glowing markers.';
       this.logList.append(empty);
     } else {
       for (const log of discovered) {

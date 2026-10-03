@@ -32,6 +32,10 @@ import { NarrationDirector } from '../audio/NarrationDirector';
 import { STABLE_ERA_NARRATION } from '../i18n/introContent';
 import { loadNarrationEnabled, type Locale } from '../i18n/locale';
 import { buildDeathObjective } from '../narrative/deathObjective';
+import { StoryBeatState } from '../narrative/StoryBeatState';
+import { StoryDirector } from '../narrative/StoryDirector';
+import type { StoryBeatId } from '../narrative/storyContent';
+import { StoryOverlay } from '../ui/StoryOverlay';
 import { PitRegistrarState } from '../narrative/PitRegistrarState';
 import { resolveInteractionPrompt } from '../ui/InteractionPrompt';
 import { SettlementNpcs } from '../world/SettlementNpcs';
@@ -66,6 +70,7 @@ interface HudElements {
   lookHint: HTMLElement;
   interaction: HTMLElement;
   compactHint: HTMLElement;
+  chapter: HTMLElement;
 }
 
 interface OverlayElements {
@@ -127,6 +132,9 @@ export class Game {
   private statusOverride: string | null = null;
   private statusOverrideTimer = 0;
   private pendingEpilogue = false;
+  private readonly storyBeatState = new StoryBeatState();
+  private readonly storyDirector: StoryDirector;
+  private lastSurvivalStatus: 'active' | 'dehydrated' | 'dead' = 'active';
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -148,7 +156,16 @@ export class Game {
     masterVolumeSlider: HTMLInputElement,
     private readonly getLocale: () => Locale,
     private readonly narration: NarrationDirector,
+    private readonly storyOverlay: StoryOverlay,
   ) {
+    this.storyDirector = new StoryDirector(this.storyBeatState, getLocale);
+    this.storyDirector.setJournalRecorder((id) => {
+      const beat = this.storyDirector.getBeatCopy(id);
+      if (beat) {
+        this.runJournal.recordCounsel(`Prior sage — ${beat.journalTitle}`);
+      }
+    });
+
     this.hud = hud;
     this.overlays = overlays;
     this.logReader = logReader;
@@ -233,14 +250,20 @@ export class Game {
 
     this.logReader.onClose(() => {
       this.syncMovementState();
-      if (this.pendingEpilogue) {
-        this.pendingEpilogue = false;
-        this.showEpilogue();
+      const afterStory = () => {
+        if (this.pendingEpilogue) {
+          this.pendingEpilogue = false;
+          this.showEpilogue();
+          return;
+        }
+        if (this.running && !this.paused && !this.journal.isOpen() && !this.storyOverlay.isOpen()) {
+          this.player.tryLock();
+        }
+      };
+      if (this.tryPresentPendingStoryBeat(afterStory)) {
         return;
       }
-      if (this.running && !this.paused && !this.journal.isOpen()) {
-        this.player.tryLock();
-      }
+      afterStory();
     });
 
     this.journal.onOpen(() => {
@@ -258,6 +281,19 @@ export class Game {
       this.journal.close();
       this.logReader.openFromJournal(log, gallery);
       this.syncMovementState();
+    });
+
+    this.journal.onReadLetter((id) => {
+      this.openStoryLetter(id, () => {
+        if (this.running && !this.paused) {
+          this.journal.toggle(
+            this.runJournal,
+            this.logDiscovery,
+            this.storyDirector.getUnlockedForJournal(),
+            this.getLocale(),
+          );
+        }
+      });
     });
 
     this.dialoguePanel.onOpen(() => {
@@ -461,6 +497,11 @@ export class Game {
     this.audio.resume();
     this.runJournal.clear();
     this.runJournal.recordCycleStart(fromCheckpoint);
+    this.storyDirector.resetRun();
+    this.storyDirector.setPredictorCalibrated(this.forecastMeta.isCalibrated());
+    this.storyDirector.syncFromDiscovery(this.logDiscovery);
+    this.storyDirector.onRunStart();
+    this.lastSurvivalStatus = 'active';
     this.running = true;
     this.paused = false;
     this.pauseMenu.hide();
@@ -471,6 +512,11 @@ export class Game {
     this.player.lock();
     this.clock.start();
     this.animate();
+    window.setTimeout(() => {
+      if (this.running && !this.paused) {
+        this.tryPresentPendingStoryBeat();
+      }
+    }, 1400);
   }
 
   stop(): void {
@@ -504,10 +550,21 @@ export class Game {
   }
 
   toggleJournal(): void {
-    if (!this.running || this.paused || this.logReader.isOpen() || this.dialoguePanel.isOpen()) {
+    if (
+      !this.running
+      || this.paused
+      || this.logReader.isOpen()
+      || this.dialoguePanel.isOpen()
+      || this.storyOverlay.isOpen()
+    ) {
       return;
     }
-    this.journal.toggle(this.runJournal, this.logDiscovery);
+    this.journal.toggle(
+      this.runJournal,
+      this.logDiscovery,
+      this.storyDirector.getUnlockedForJournal(),
+      this.getLocale(),
+    );
     this.syncMovementState();
   }
 
@@ -518,6 +575,7 @@ export class Game {
       || this.logReader.isOpen()
       || this.journal.isOpen()
       || this.dialoguePanel.isOpen()
+      || this.storyOverlay.isOpen()
     ) {
       return;
     }
@@ -548,6 +606,7 @@ export class Game {
       || this.journal.isOpen()
       || this.dialoguePanel.isOpen()
       || this.pauseMenu.isOpen()
+      || this.storyOverlay.isOpen()
     ) {
       return;
     }
@@ -567,6 +626,10 @@ export class Game {
     this.epilogue.hide();
     this.overlays.death.classList.add('hidden');
     this.statusOverride = null;
+    this.storyDirector.resetRun();
+    this.storyDirector.setPredictorCalibrated(this.forecastMeta.isCalibrated());
+    this.storyDirector.syncFromDiscovery(this.logDiscovery);
+    this.lastSurvivalStatus = 'active';
     this.audio.resume();
     this.player.lock();
     this.running = true;
@@ -601,13 +664,15 @@ export class Game {
         || this.paused
         || this.logReader.isOpen()
         || this.journal.isOpen()
-        || this.dialoguePanel.isOpen(),
+        || this.dialoguePanel.isOpen()
+        || this.storyOverlay.isOpen(),
     );
 
     if (
       !this.logReader.isOpen()
       && !this.journal.isOpen()
       && !this.dialoguePanel.isOpen()
+      && !this.storyOverlay.isOpen()
       && !this.paused
       && this.player.consumePressedKey('KeyP')
     ) {
@@ -617,6 +682,7 @@ export class Game {
     if (
       !this.logReader.isOpen()
       && !this.dialoguePanel.isOpen()
+      && !this.storyOverlay.isOpen()
       && !this.paused
       && this.player.consumePressedKey('KeyJ')
     ) {
@@ -628,7 +694,7 @@ export class Game {
     const nearPit = this.shelterZones.isNearDehydrationPit(this.anchor);
     const nearWater = this.waterSource.isNear(this.anchor);
 
-    if (this.paused || this.journal.isOpen() || this.dialoguePanel.isOpen()) {
+    if (this.paused || this.journal.isOpen() || this.dialoguePanel.isOpen() || this.storyOverlay.isOpen()) {
       this.wayfinding.update(
         delta,
         this.orbital.getEraKind(),
@@ -715,6 +781,13 @@ export class Game {
         this.player.isSprinting(),
         stableEra,
       );
+      if (
+        this.survival.status === 'dehydrated'
+        && this.lastSurvivalStatus !== 'dehydrated'
+      ) {
+        this.storyDirector.onFirstDehydrate();
+      }
+      this.lastSurvivalStatus = this.survival.status;
     }
 
     this.audio.update(
@@ -740,6 +813,10 @@ export class Game {
       return;
     }
 
+    if (!this.logReader.isOpen() && !this.storyOverlay.isOpen()) {
+      this.tryPresentPendingStoryBeat();
+    }
+
     this.renderer.render(this.scene, this.player.camera);
     this.animationId = requestAnimationFrame(this.animate);
   };
@@ -757,6 +834,8 @@ export class Game {
 
     if (transition.enteredStable) {
       this.runJournal.recordEnteredStable();
+      this.storyDirector.onEnteredStableEra();
+      this.storyDirector.syncFromDiscovery(this.logDiscovery);
       this.stableBanner.show();
       this.audio.playStableEraChime();
       this.saveCheckpoint('Stable Era (auto)');
@@ -839,6 +918,7 @@ export class Game {
       this.orbital.refreshForecastNow();
       this.runJournal.recordCounsel('Last Predictor aligned the forecast — confidence improved.');
       this.gameToast.show('Predictor calibrated — forecast confidence improved.');
+      this.storyDirector.onPredictorCalibrated();
     }
     if (choice.sideEffect === 'predictor_mark_spoke') {
       // reserved for future meta flags
@@ -881,6 +961,7 @@ export class Game {
       if (nearbyLog.log.id === 'final_log') {
         this.pendingEpilogue = true;
       }
+      this.storyDirector.syncFromDiscovery(this.logDiscovery);
     }
     this.logReader.open(nearbyLog.log);
     this.syncMovementState();
@@ -890,12 +971,60 @@ export class Game {
     const canMove = !this.logReader.isOpen()
       && !this.journal.isOpen()
       && !this.dialoguePanel.isOpen()
+      && !this.storyOverlay.isOpen()
       && this.survival.status !== 'dehydrated'
       && this.survival.status !== 'dead';
     this.player.setMovementEnabled(canMove);
   }
 
+  private openStoryLetter(id: StoryBeatId, onClose?: () => void): void {
+    const beat = this.storyDirector.getBeatCopy(id);
+    if (!beat) {
+      return;
+    }
+    this.player.unlock();
+    this.storyOverlay.show(beat, this.getLocale(), () => {
+      this.syncMovementState();
+      onClose?.();
+    });
+    this.syncMovementState();
+  }
+
+  private tryPresentPendingStoryBeat(onClose?: () => void): boolean {
+    if (this.storyOverlay.isOpen()) {
+      return false;
+    }
+    const id = this.storyDirector.peekPendingBeat();
+    if (!id) {
+      return false;
+    }
+    const beat = this.storyDirector.getBeatCopy(id);
+    if (!beat) {
+      return false;
+    }
+    this.player.unlock();
+    this.storyOverlay.show(beat, this.getLocale(), () => {
+      this.storyDirector.confirmBeatShown(id);
+      this.syncMovementState();
+      onClose?.();
+      if (this.running && !this.paused && !this.logReader.isOpen()) {
+        this.tryPresentPendingStoryBeat();
+      }
+    });
+    this.syncMovementState();
+    return true;
+  }
+
   private handleDeath(): void {
+    this.storyDirector.onDeath();
+    this.storyDirector.syncFromDiscovery(this.logDiscovery);
+    if (this.tryPresentPendingStoryBeat(() => this.finishDeathScreen())) {
+      return;
+    }
+    this.finishDeathScreen();
+  }
+
+  private finishDeathScreen(): void {
     this.running = false;
     CheckpointSave.clear();
     this.audio.stop();
@@ -939,6 +1068,7 @@ export class Game {
     this.hud.forecast.textContent = this.orbital.getForecastSummary();
     this.hud.position.textContent = this.player.getPositionText();
     this.hud.logs.textContent = `${this.logDiscovery.getDiscoveredCount()} / ${this.logDiscovery.getAllLogs().length}`;
+    this.hud.chapter.textContent = this.storyDirector.getObjectiveText(this.logDiscovery);
 
     const landmark = nearestLandmarkHint(position);
     this.hud.landmark.textContent = landmark ?? 'Open wasteland';
@@ -992,6 +1122,7 @@ export class Game {
       uiBlocking: this.logReader.isOpen()
         || this.dialoguePanel.isOpen()
         || this.journal.isOpen()
+        || this.storyOverlay.isOpen()
         || this.paused,
     });
     if (interaction) {

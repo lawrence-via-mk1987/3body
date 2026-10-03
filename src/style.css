@@ -184,6 +184,44 @@ h1 {
   margin-bottom: 0.25rem;
 }
 
+#story-beat-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 6, 5, 0.72);
+  z-index: 31;
+  padding: 1rem;
+}
+
+#story-beat-overlay.hidden {
+  display: none;
+}
+
+.story-beat-panel .primary-btn {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.hud-chapter {
+  grid-column: 1 / -1;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #e8c9a0;
+  padding: 0.35rem 0.5rem;
+  border-left: 2px solid rgba(194, 138, 90, 0.65);
+  background: rgba(12, 10, 8, 0.55);
+  margin-bottom: 0.15rem;
+}
+
+#hud.compact .hud-chapter {
+  display: none;
+}
+
+.journal-letter-btn {
+  font-style: italic;
+}
+
 #intro-cinematic {
   position: fixed;
   inset: 0;
