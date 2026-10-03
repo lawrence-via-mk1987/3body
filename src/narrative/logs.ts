@@ -15,7 +15,7 @@ export const TEXT_LOGS: TextLog[] = [
     title: 'Waystone Etching',
     position: { x: 8, z: 22 },
     interactionRadius: 4,
-    body: 'Fourth cycle since the last Stable Era. We stopped counting the suns and started counting the dead. If you read this, walk toward the broken dome on the eastern ridge. The sky lies there, but so does a little truth.',
+    body: 'Fourth cycle since the last Stable Era. We stopped counting the suns and started counting the dead. Landmarks: east — buried shelter entrance near (-2, 10). Northwest — dehydration pit (-42, 18); read the tablets with F, dehydrate with E only on the ring, not the stone. Southwest grove (28, -32) wakes in a Stable Era. Southeast ridge — broken observatory dome.',
   },
   {
     id: 'observatory',

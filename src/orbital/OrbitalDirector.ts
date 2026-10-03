@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { buildForecast, summarizeForecast } from './ForecastModel';
-import { EraStateMachine } from './EraStateMachine';
+import { EraStateMachine, type StableEraRoll } from './EraStateMachine';
 import { SunPhaseController } from './SunPhaseController';
 import { SunBody } from './SunBody';
 import {
@@ -80,7 +80,7 @@ const SKY_PALETTES = {
 } as const;
 
 export class OrbitalDirector {
-  private readonly eraState = new EraStateMachine();
+  private readonly eraState: EraStateMachine;
   private readonly phaseController = new SunPhaseController();
   private readonly sunA = new SunBody('sun_a', true);
   private readonly sunB = new SunBody('sun_b', false);
@@ -103,7 +103,11 @@ export class OrbitalDirector {
     private readonly scene: THREE.Scene,
     private readonly sky: Sky,
     private readonly fog: THREE.FogExp2,
+    stableRoll: () => StableEraRoll = () => ({ chance: ORBITAL_CONFIG.stableEraChance, force: false }),
+    onChaoticPhaseEnded?: () => void,
+    onStableEntered?: () => void,
   ) {
+    this.eraState = new EraStateMachine(stableRoll, onChaoticPhaseEnded, onStableEntered);
     for (const sun of this.suns) {
       sun.addToScene(scene);
     }
@@ -192,6 +196,17 @@ export class OrbitalDirector {
 
   reset(): void {
     this.eraState.reset();
+    this.forecastTimer = 0;
+    this.pendingTransition = null;
+    this.refreshForecast();
+  }
+
+  getEraSnapshot() {
+    return this.eraState.getSnapshot();
+  }
+
+  restoreEraSnapshot(snapshot: ReturnType<EraStateMachine['getSnapshot']>): void {
+    this.eraState.applySnapshot(snapshot);
     this.forecastTimer = 0;
     this.pendingTransition = null;
     this.refreshForecast();

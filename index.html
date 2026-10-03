@@ -8,22 +8,43 @@
   </head>
   <body>
     <div id="overlay">
-      <div class="panel">
-        <p class="eyebrow">Web demo · Milestone 5</p>
+      <div class="panel menu-panel">
+        <p class="eyebrow">Web demo · Flow polish</p>
         <h1>Trisolarian Survival</h1>
         <p class="tagline">
           Three suns. Chaotic skies. Endure until the next Stable Era.
         </p>
-        <p class="disclaimer">
-          <strong>Disclaimer:</strong> This is a fan-inspired game inspired by the
-          original <em>Three Body Problem</em> by Liu Cixin. Unofficial,
-          non-commercial fan work — not affiliated with Liu Cixin, the
-          <em>Remembrance of Earth's Past</em> series, or any rights holders.
-        </p>
-        <button id="start-btn" type="button">Enter the wasteland</button>
-        <p class="controls">
-          WASD move · Shift sprint · F read logs · E dehydrate at pit · Esc release mouse · Audio starts on enter
-        </p>
+
+        <div class="menu-actions">
+          <p id="checkpoint-info" class="checkpoint-info hidden"></p>
+          <button id="continue-btn" type="button" class="primary-btn hidden">Continue from checkpoint</button>
+          <button id="start-btn" type="button" class="primary-btn">New cycle (fresh start)</button>
+          <div id="fresh-start-confirm" class="fresh-start-confirm hidden">
+            <p class="fresh-start-warning">Starting fresh clears your saved checkpoint on this browser.</p>
+            <div class="fresh-start-buttons">
+              <button id="fresh-start-confirm-btn" type="button" class="primary-btn">Confirm fresh start</button>
+              <button id="fresh-start-cancel-btn" type="button" class="secondary-btn">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-settings">
+          <label class="volume-label" for="master-volume">Master volume</label>
+          <input id="master-volume" type="range" min="0" max="100" value="55" />
+        </div>
+
+        <details class="menu-details">
+          <summary>Controls &amp; fan disclaimer</summary>
+          <p class="disclaimer">
+            <strong>Disclaimer:</strong> This is a fan-inspired game inspired by the
+            original <em>Three Body Problem</em> by Liu Cixin. Unofficial,
+            non-commercial fan work — not affiliated with Liu Cixin, the
+            <em>Remembrance of Earth's Past</em> series, or any rights holders.
+          </p>
+          <p class="controls">
+            WASD move · Shift sprint · mouse look (click game) · F read · J journal · R drink (Stable grove) · E dehydrate (pit ring) · P or Esc pause
+          </p>
+        </details>
       </div>
     </div>
 
@@ -35,12 +56,51 @@
       </div>
     </div>
 
+    <div id="pause-overlay" class="hidden">
+      <div class="panel pause-panel">
+        <p class="eyebrow">Paused</p>
+        <h2>Chaotic sky on hold</h2>
+        <p class="pause-copy">Simulation frozen. Resume to keep enduring.</p>
+        <p id="pause-checkpoint-line" class="pause-checkpoint-line">No checkpoint in this browser.</p>
+        <div class="pause-settings">
+          <label class="volume-label" for="pause-volume">Master volume</label>
+          <input id="pause-volume" type="range" min="0" max="100" value="55" />
+        </div>
+        <button id="pause-resume" type="button">Resume</button>
+        <button id="pause-save" type="button" class="secondary-btn">Save checkpoint</button>
+        <button id="pause-delete-checkpoint" type="button" class="secondary-btn danger-secondary hidden">Delete checkpoint</button>
+        <button id="pause-quit" type="button" class="secondary-btn">Quit to menu</button>
+        <p id="pause-toast" class="overlay-toast hidden" role="status"></p>
+      </div>
+    </div>
+
+    <div id="journal" class="hidden">
+      <div class="panel journal-panel">
+        <p class="eyebrow">Survivor journal</p>
+        <h2>Cycle record</h2>
+        <section class="journal-section">
+          <h3>Sky chronicle</h3>
+          <ul id="journal-era-list" class="journal-list"></ul>
+        </section>
+        <section class="journal-section">
+          <h3>Recovered texts (<span id="journal-log-count">0 / 8</span>)</h3>
+          <ul id="journal-log-list" class="journal-list journal-log-list"></ul>
+        </section>
+        <button id="journal-close" type="button">Close (J / Esc)</button>
+      </div>
+    </div>
+
     <div id="log-reader" class="hidden">
       <div class="panel log-panel">
         <p class="eyebrow">Recovered text</p>
         <h2 id="log-title"></h2>
         <p id="log-body"></p>
-        <button id="log-close" type="button">Close</button>
+        <div id="log-nav" class="log-nav hidden">
+          <button id="log-prev" type="button" class="secondary-btn log-nav-btn">Previous</button>
+          <span id="log-nav-indicator" class="log-nav-indicator"></span>
+          <button id="log-next" type="button" class="secondary-btn log-nav-btn">Next</button>
+        </div>
+        <button id="log-close" type="button">Close (Enter / Esc)</button>
       </div>
     </div>
 
@@ -49,7 +109,20 @@
         <p class="eyebrow">Civilization ended</p>
         <h2>Another cycle falls</h2>
         <p id="death-message"></p>
+        <p id="death-logs" class="death-meta"></p>
         <button id="restart-btn" type="button">Begin again</button>
+      </div>
+    </div>
+
+    <div id="epilogue-overlay" class="hidden">
+      <div class="panel epilogue-panel">
+        <p class="eyebrow">This cycle endured</p>
+        <h2>The Final Log</h2>
+        <p>
+          You read the last tablet beneath a gentle sun. The three-body sky will turn again —
+          but hope is not a prediction. It is a discipline carried into the next civilization.
+        </p>
+        <button id="epilogue-restart" type="button">Walk into the next cycle</button>
       </div>
     </div>
 
@@ -81,12 +154,16 @@
         <span id="hud-hydration" class="meter-value">100</span>
       </div>
       <div class="hud-block hud-forecast">
-        <span class="hud-label">Forecast</span>
+        <span class="hud-label">Outlook</span>
         <span id="hud-forecast">Conditions uncertain</span>
       </div>
       <div class="hud-block hud-logs">
         <span class="hud-label">Logs found</span>
         <span id="hud-logs">0 / 8</span>
+      </div>
+      <div class="hud-block hud-landmark">
+        <span class="hud-label">Nearest landmark</span>
+        <span id="hud-landmark">Open wasteland</span>
       </div>
       <div class="hud-block hud-status">
         <span class="hud-label">Status</span>
@@ -96,6 +173,9 @@
         <span class="hud-label">Position</span>
         <span id="hud-position">0, 0</span>
       </div>
+      <div id="forecast-strip" class="forecast-strip" aria-label="Sky forecast"></div>
+      <div id="hud-look-hint" class="hud-look-hint hidden">Click the game view to look around</div>
+      <div id="game-toast" class="game-toast hidden" role="status"></div>
       <div class="hud-crosshair" aria-hidden="true"></div>
     </div>
 

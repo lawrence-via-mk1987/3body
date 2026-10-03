@@ -153,6 +153,32 @@ export class SurvivalSystem {
     return this.dehydratedPrompt;
   }
 
+  refillHydration(amount: number): void {
+    if (this.status === 'dead' || this.status === 'dehydrated') {
+      return;
+    }
+    this.hydration = THREE.MathUtils.clamp(
+      this.hydration + amount,
+      0,
+      SURVIVAL_CONFIG.maxHydration,
+    );
+  }
+
+  exportState(): { health: number; hydration: number; status: SurvivalStatus } {
+    return {
+      health: this.health,
+      hydration: this.hydration,
+      status: this.status === 'dead' ? 'active' : this.status,
+    };
+  }
+
+  importState(state: { health: number; hydration: number; status: SurvivalStatus }): void {
+    this.health = state.health;
+    this.hydration = state.hydration;
+    this.status = state.status;
+    this.deathReason = 'unknown';
+  }
+
   reset(): void {
     this.health = SURVIVAL_CONFIG.maxHealth;
     this.hydration = SURVIVAL_CONFIG.maxHydration;

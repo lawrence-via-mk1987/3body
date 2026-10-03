@@ -12,15 +12,17 @@ export class AudioDirector {
   private solarLayer: AudioLayer | null = null;
   private stableLayer: AudioLayer | null = null;
   private started = false;
+  private masterVolume = 0.55;
 
-  async start(): Promise<void> {
+  async start(initialVolume = 0.55): Promise<void> {
     if (this.started) {
       return;
     }
 
+    this.masterVolume = initialVolume;
     this.context = new AudioContext();
     this.masterGain = this.context.createGain();
-    this.masterGain.gain.value = 0.55;
+    this.masterGain.gain.value = initialVolume;
     this.masterGain.connect(this.context.destination);
 
     this.windLayer = this.createWindLayer();
@@ -47,8 +49,20 @@ export class AudioDirector {
       return;
     }
 
-    this.masterGain.gain.setTargetAtTime(0.55, this.context.currentTime, 0.6);
+    this.masterGain.gain.setTargetAtTime(this.masterVolume, this.context.currentTime, 0.6);
     void this.context.resume();
+  }
+
+  setMasterVolume(volume: number): void {
+    this.masterVolume = volume;
+    if (!this.context || !this.masterGain) {
+      return;
+    }
+    this.masterGain.gain.setTargetAtTime(volume, this.context.currentTime, 0.08);
+  }
+
+  getMasterVolume(): number {
+    return this.masterVolume;
   }
 
   update(era: EraKind, phase: EraPhase, temperature: number): void {
