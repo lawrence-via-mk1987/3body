@@ -22,3 +22,9 @@
 ## What you do in *Trisolarian Survival*
 
 You are one survivor in the current cycle. Read the sky and forecast, manage heat and water, use the **dehydration pit** when the world burns, and when a **Stable Era** comes, reach the **grove** and the **Final Log**. NPCs and beacons in the demo are **original** characters—homage to the themes of the novels, not copies of their plot or cast.
+
+## In the demo UI
+
+- **Main menu:** English / **简体中文** toggles the world intro and disclaimer; optional **spoken narration** uses your browser’s text-to-speech (no recorded VO files).
+- **First new cycle:** A skippable **3-card intro cinematic** (Enter / Space / Continue, Esc / Skip). **Replay opening intro** on the menu replays it without starting a run.
+- **In-game:** The first **Stable Era** of a run may speak a short ambient line if narration is enabled.
