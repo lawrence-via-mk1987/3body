@@ -116,6 +116,34 @@ h1 {
 .menu-details {
   border-top: 1px solid rgba(242, 230, 216, 0.12);
   padding-top: 0.85rem;
+  margin-bottom: 0.65rem;
+}
+
+.menu-lore .world-intro {
+  max-height: 42vh;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.world-intro p {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: #d8c7b2;
+  margin-bottom: 0.85rem;
+}
+
+.world-intro p:last-child {
+  margin-bottom: 0;
+}
+
+.world-intro-you {
+  border-left: 2px solid rgba(224, 184, 120, 0.45);
+  padding-left: 0.75rem;
+  color: #e8dcc8;
+}
+
+.menu-lore summary {
+  color: #e2b07f;
 }
 
 .menu-details summary {

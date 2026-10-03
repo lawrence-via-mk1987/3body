@@ -15,6 +15,7 @@ This project is an unofficial, non-commercial fan work. It is not affiliated wit
 ## Documentation
 
 - [Game Design Document](./docs/GDD.md)
+- [World intro (Three Body Problem context)](./docs/WORLD_INTRO.md)
 - [Orbital System Specification](./docs/ORBITAL_SIM.md)
 
 ## Development

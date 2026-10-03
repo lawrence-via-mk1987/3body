@@ -316,6 +316,19 @@ continueButton.addEventListener('click', () => {
 
 refreshCheckpointMenu();
 
+const worldIntroDetails = document.querySelector<HTMLDetailsElement>('#world-intro-details');
+const WORLD_INTRO_COLLAPSED_KEY = '3body_world_intro_collapsed';
+if (worldIntroDetails) {
+  if (localStorage.getItem(WORLD_INTRO_COLLAPSED_KEY) === '1') {
+    worldIntroDetails.open = false;
+  }
+  worldIntroDetails.addEventListener('toggle', () => {
+    if (!worldIntroDetails.open) {
+      localStorage.setItem(WORLD_INTRO_COLLAPSED_KEY, '1');
+    }
+  });
+}
+
 document.addEventListener('pointerlockchange', () => {
   if (document.pointerLockElement === canvas) {
     return;
