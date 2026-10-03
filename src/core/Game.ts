@@ -3,17 +3,22 @@ import { AudioDirector } from '../audio/AudioDirector';
 import { canReadLog } from '../narrative/logs';
 import { LogDiscovery } from '../narrative/LogDiscovery';
 import { LogMarkers } from '../narrative/LogMarkers';
+import { MetaProgress } from '../narrative/MetaProgress';
 import { OrbitalDirector } from '../orbital/OrbitalDirector';
 import { FirstPersonController } from '../player/FirstPersonController';
 import { ShelterZones } from '../survival/ShelterZones';
 import { SurvivalSystem } from '../survival/SurvivalSystem';
+import { EpilogueOverlay } from '../ui/EpilogueOverlay';
+import { ForecastStrip } from '../ui/ForecastStrip';
 import { LogReader } from '../ui/LogReader';
 import { StableEraBanner } from '../ui/StableEraBanner';
 import { CaveShelter } from '../world/CaveShelter';
+import { nearestLandmarkHint } from '../world/LandmarkHints';
 import { Ruins } from '../world/Ruins';
 import { Sky } from '../world/Sky';
 import { StableEraParticles } from '../world/StableEraParticles';
 import { Terrain } from '../world/Terrain';
+import { WATER_REFILL_AMOUNT, WaterSource } from '../world/WaterSource';
 
 interface HudElements {
   era: HTMLElement;
@@ -27,11 +32,13 @@ interface HudElements {
   hydrationBar: HTMLElement;
   status: HTMLElement;
   logs: HTMLElement;
+  landmark: HTMLElement;
 }
 
 interface OverlayElements {
   death: HTMLElement;
   deathMessage: HTMLElement;
+  deathLogs: HTMLElement;
   restartButton: HTMLButtonElement;
 }
 
@@ -47,18 +54,25 @@ export class Game {
   private readonly shelterZones: ShelterZones;
   private readonly survival = new SurvivalSystem();
   private readonly logDiscovery = new LogDiscovery();
+  private readonly meta = new MetaProgress();
   private readonly logMarkers: LogMarkers;
   private readonly ruins: Ruins;
   private readonly stableParticles: StableEraParticles;
+  private readonly waterSource: WaterSource;
   private readonly audio = new AudioDirector();
   private readonly stableBanner: StableEraBanner;
   private readonly logReader: LogReader;
+  private readonly forecastStrip: ForecastStrip;
+  private readonly epilogue: EpilogueOverlay;
   private readonly hud: HudElements;
   private readonly overlays: OverlayElements;
   private readonly anchor = new THREE.Vector3();
   private animationId = 0;
   private running = false;
   private exposureTarget = 1.12;
+  private statusOverride: string | null = null;
+  private statusOverrideTimer = 0;
+  private pendingEpilogue = false;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -66,11 +80,19 @@ export class Game {
     overlays: OverlayElements,
     logReader: LogReader,
     stableBanner: StableEraBanner,
+    forecastStrip: ForecastStrip,
+    epilogue: EpilogueOverlay,
+    masterVolumeSlider: HTMLInputElement,
   ) {
     this.hud = hud;
     this.overlays = overlays;
     this.logReader = logReader;
     this.stableBanner = stableBanner;
+    this.forecastStrip = forecastStrip;
+    this.epilogue = epilogue;
+
+    const initialVolume = MetaProgress.loadMasterVolume();
+    masterVolumeSlider.value = String(Math.round(initialVolume * 100));
 
     this.renderer = new THREE.WebGLRenderer({
       canvas,
@@ -97,21 +119,46 @@ export class Game {
       this.shelterZones,
       window.innerWidth / window.innerHeight,
     );
-    this.orbital = new OrbitalDirector(this.scene, this.sky, this.fog);
+
+    const hasFinalLog = () => this.meta.hasSeenFinalLog(this.logDiscovery);
+    this.orbital = new OrbitalDirector(
+      this.scene,
+      this.sky,
+      this.fog,
+      () => ({
+        chance: this.meta.getStableEraEnterChance(hasFinalLog()),
+        force: this.meta.shouldForceStableEra(hasFinalLog()),
+      }),
+      () => this.meta.onChaoticPhaseEnded(),
+      () => this.meta.onStableEntered(),
+    );
+
     this.logMarkers = new LogMarkers(this.terrain, this.logDiscovery);
     this.ruins = new Ruins(this.terrain);
     this.stableParticles = new StableEraParticles(this.terrain);
+    this.waterSource = new WaterSource(this.terrain);
 
     this.scene.add(this.sky.mesh);
     this.scene.add(this.terrain.mesh);
     this.scene.add(this.ruins.group);
     this.scene.add(this.logMarkers.group);
     this.scene.add(this.stableParticles.points);
+    this.scene.add(this.waterSource.mesh);
     this.addLandmarks();
     this.scene.add(new CaveShelter(this.terrain, this.shelterZones).group);
 
     this.logReader.onClose(() => {
       this.syncMovementState();
+      if (this.pendingEpilogue) {
+        this.pendingEpilogue = false;
+        this.showEpilogue();
+      }
+    });
+
+    masterVolumeSlider.addEventListener('input', () => {
+      const volume = Number(masterVolumeSlider.value) / 100;
+      MetaProgress.saveMasterVolume(volume);
+      this.audio.setMasterVolume(volume);
     });
 
     this.overlays.restartButton.addEventListener('click', () => {
@@ -183,9 +230,12 @@ export class Game {
       return;
     }
 
-    await this.audio.start();
+    const volume = MetaProgress.loadMasterVolume();
+    await this.audio.start(volume);
+    this.audio.setMasterVolume(volume);
     this.running = true;
     this.overlays.death.classList.add('hidden');
+    this.epilogue.hide();
     this.player.lock();
     this.clock.start();
     this.animate();
@@ -200,16 +250,31 @@ export class Game {
 
   private restart(): void {
     this.survival.reset();
+    this.meta.resetRun();
     this.orbital.reset();
     this.player.resetToSpawn();
     this.logReader.close();
     this.stableBanner.hide();
+    this.epilogue.hide();
     this.overlays.death.classList.add('hidden');
+    this.statusOverride = null;
     this.audio.resume();
     this.player.lock();
     this.running = true;
     this.clock.start();
     this.animate();
+  }
+
+  private showEpilogue(): void {
+    this.running = false;
+    this.audio.stop();
+    this.player.unlock();
+    this.epilogue.show();
+  }
+
+  beginAgainFromEpilogue(): void {
+    this.epilogue.hide();
+    this.restart();
   }
 
   private animate = (): void => {
@@ -220,13 +285,24 @@ export class Game {
     const delta = Math.min(this.clock.getDelta(), 0.05);
     const stableEra = this.orbital.getEraKind() === 'stable';
 
+    this.anchor.copy(this.player.getPosition());
+    const nearbyLog = this.logMarkers.update(this.anchor, stableEra);
+    const nearPit = this.shelterZones.isNearDehydrationPit(this.anchor);
+    const nearWater = this.waterSource.isNear(this.anchor);
+
     if (!this.logReader.isOpen() && this.player.consumePressedKey('KeyE')) {
-      const nearPit = this.shelterZones.isNearDehydrationPit(this.player.getPosition());
-      this.survival.toggleDehydration(nearPit);
+      if (nearPit && !nearbyLog) {
+        this.survival.toggleDehydration(nearPit);
+      }
     }
 
     if (!this.logReader.isOpen() && this.player.consumePressedKey('KeyF')) {
       this.tryReadNearbyLog(stableEra);
+    }
+
+    if (!this.logReader.isOpen() && this.player.consumePressedKey('KeyR') && nearWater) {
+      this.survival.refillHydration(WATER_REFILL_AMOUNT);
+      this.setStatusOverride('Condensate from the grove. Your body remembers water.', 4);
     }
 
     this.syncMovementState();
@@ -235,7 +311,6 @@ export class Game {
       this.player.update(delta);
     }
 
-    this.anchor.copy(this.player.getPosition());
     this.sky.mesh.position.copy(this.anchor);
     this.orbital.update(delta, this.anchor);
     this.sky.update();
@@ -244,8 +319,16 @@ export class Game {
     this.terrain.setEraVisuals(this.orbital.getEraKind(), this.orbital.getPhase());
     this.terrain.updateVisuals(delta);
     this.ruins.setStableEraActive(stableEra);
+    this.waterSource.setStableEraActive(stableEra);
     this.stableParticles.setActive(stableEra, delta);
     this.stableBanner.update(delta);
+
+    if (this.statusOverrideTimer > 0) {
+      this.statusOverrideTimer -= delta;
+      if (this.statusOverrideTimer <= 0) {
+        this.statusOverride = null;
+      }
+    }
 
     this.exposureTarget = stableEra ? 1.28 : 1.12;
     this.renderer.toneMappingExposure = THREE.MathUtils.lerp(
@@ -254,11 +337,8 @@ export class Game {
       Math.min(delta * 2, 1),
     );
 
-    const nearbyLog = this.logMarkers.update(this.anchor, stableEra);
-
     if (this.survival.status !== 'dead' && !this.logReader.isOpen()) {
       const shelter = this.shelterZones.sample(this.anchor);
-      const nearPit = this.shelterZones.isNearDehydrationPit(this.anchor);
       this.survival.update(
         delta,
         this.orbital.getTemperature(),
@@ -275,7 +355,8 @@ export class Game {
       this.orbital.getTemperature().value,
     );
 
-    this.updateHud(nearbyLog, stableEra);
+    this.forecastStrip.render(this.orbital.getForecast());
+    this.updateHud(nearbyLog, stableEra, nearPit, nearWater);
 
     if (this.survival.status === 'dead') {
       this.handleDeath();
@@ -285,6 +366,11 @@ export class Game {
     this.renderer.render(this.scene, this.player.camera);
     this.animationId = requestAnimationFrame(this.animate);
   };
+
+  private setStatusOverride(message: string, seconds: number): void {
+    this.statusOverride = message;
+    this.statusOverrideTimer = seconds;
+  }
 
   private handleEraTransitions(): void {
     const transition = this.orbital.consumeTransition();
@@ -299,6 +385,7 @@ export class Game {
 
     if (transition.leftStable) {
       this.stableBanner.hide();
+      this.setStatusOverride('The golden sky darkens. Chaotic Eras return — find shelter.', 10);
     }
   }
 
@@ -309,12 +396,16 @@ export class Game {
     }
 
     if (!canReadLog(nearbyLog.log, this.orbital.getEraKind())) {
+      this.setStatusOverride('This tablet is dormant. Wait for a Stable Era.', 5);
       return;
     }
 
     const isNew = this.logDiscovery.discover(nearbyLog.log.id);
     if (isNew) {
       this.audio.playLogDiscover();
+      if (nearbyLog.log.id === 'final_log') {
+        this.pendingEpilogue = true;
+      }
     }
     this.logReader.open(nearbyLog.log);
     this.syncMovementState();
@@ -332,17 +423,21 @@ export class Game {
     this.audio.stop();
     this.player.unlock();
     this.overlays.deathMessage.textContent = this.survival.getDeathMessage();
+    const total = this.logDiscovery.getAllLogs().length;
+    const found = this.logDiscovery.getDiscoveredCount();
+    this.overlays.deathLogs.textContent = `Civilization memory preserved: ${found} / ${total} logs remain known to you across cycles.`;
     this.overlays.death.classList.remove('hidden');
   }
 
   private updateHud(
     nearbyLog: ReturnType<LogMarkers['update']>,
     stableEra: boolean,
+    nearPit: boolean,
+    nearWater: boolean,
   ): void {
     const temperature = this.orbital.getTemperature();
     const position = this.player.getPosition();
     const shelter = this.shelterZones.sample(position);
-    const nearPit = this.shelterZones.isNearDehydrationPit(position);
     const snapshot = this.survival.getSnapshot(temperature, shelter, nearPit);
 
     this.hud.era.textContent = this.orbital.getEraLabel();
@@ -353,28 +448,31 @@ export class Game {
     this.hud.position.textContent = this.player.getPositionText();
     this.hud.logs.textContent = `${this.logDiscovery.getDiscoveredCount()} / ${this.logDiscovery.getAllLogs().length}`;
 
+    const landmark = nearestLandmarkHint(position);
+    this.hud.landmark.textContent = landmark ?? 'Open wasteland';
+
     this.hud.health.textContent = `${Math.ceil(snapshot.health)}`;
     this.hud.healthBar.style.width = `${snapshot.health}%`;
     this.hud.hydration.textContent = `${Math.ceil(snapshot.hydration)}`;
     this.hud.hydrationBar.style.width = `${snapshot.hydration}%`;
 
     let statusMessage = snapshot.statusMessage;
-    if (stableEra) {
-      statusMessage = 'Stable Era — the grove lives. Hydration slowly returns.';
+    if (this.statusOverride) {
+      statusMessage = this.statusOverride;
+    } else if (stableEra && nearWater) {
+      statusMessage = 'Stable Era — press R at the grove pool to drink condensate.';
+    } else if (stableEra) {
+      statusMessage = 'Stable Era — the grove lives. Find the pool or the final tablets.';
     } else if (this.logReader.isOpen()) {
       statusMessage = 'Reading recovered text.';
+    } else if (nearbyLog && nearPit) {
+      statusMessage = `F — read ${nearbyLog.log.title.toLowerCase()}. E — dehydrate on the ring only (step away from the stone).`;
     } else if (nearbyLog) {
       statusMessage = nearbyLog.discovered
         ? `Press F to re-read ${nearbyLog.log.title.toLowerCase()}.`
         : `Press F to read ${nearbyLog.log.title.toLowerCase()}.`;
-    } else if (!stableEra) {
-      const stableLogsRemaining = this.logDiscovery.getAllLogs().filter((log) => log.requiresStableEra).length;
-      const foundStableLogs = this.logDiscovery.getAllLogs().filter(
-        (log) => log.requiresStableEra && this.logDiscovery.isDiscovered(log.id),
-      ).length;
-      if (foundStableLogs < stableLogsRemaining) {
-        statusMessage = `${statusMessage} Grove logs await a Stable Era.`;
-      }
+    } else if (!this.meta.hasSeenFinalLog(this.logDiscovery)) {
+      statusMessage = `${statusMessage} A Stable Era will come — the sky cannot rage forever.`;
     }
 
     this.hud.status.textContent = statusMessage;

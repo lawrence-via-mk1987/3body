@@ -153,6 +153,17 @@ export class SurvivalSystem {
     return this.dehydratedPrompt;
   }
 
+  refillHydration(amount: number): void {
+    if (this.status === 'dead' || this.status === 'dehydrated') {
+      return;
+    }
+    this.hydration = THREE.MathUtils.clamp(
+      this.hydration + amount,
+      0,
+      SURVIVAL_CONFIG.maxHydration,
+    );
+  }
+
   reset(): void {
     this.health = SURVIVAL_CONFIG.maxHealth;
     this.hydration = SURVIVAL_CONFIG.maxHydration;

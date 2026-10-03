@@ -87,6 +87,20 @@ h1 {
   filter: brightness(1.05);
 }
 
+.volume-label {
+  display: block;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #b79a7d;
+  margin-bottom: 0.35rem;
+}
+
+#master-volume {
+  width: 100%;
+  margin-bottom: 1.25rem;
+}
+
 .controls {
   margin-top: 1rem;
   font-size: 0.85rem;
@@ -121,8 +135,100 @@ h1 {
 .hud-hydration { top: 15rem; }
 .hud-forecast { top: 18.5rem; max-width: 220px; }
 .hud-logs { top: 22rem; }
-.hud-status { top: 25.5rem; max-width: 260px; }
-.hud-position { top: 30rem; }
+.hud-landmark { top: 25.5rem; max-width: 240px; }
+.hud-status { top: 29rem; max-width: 280px; }
+.hud-position { top: 33.5rem; }
+
+#hud-landmark {
+  font-size: 0.85rem;
+  color: #c9b59d;
+  line-height: 1.35;
+}
+
+.forecast-strip {
+  position: absolute;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.forecast-slot {
+  padding: 0.45rem 0.65rem;
+  background: rgba(10, 8, 6, 0.65);
+  border: 1px solid rgba(242, 230, 216, 0.14);
+  min-width: 72px;
+  text-align: center;
+}
+
+.forecast-slot .forecast-time {
+  display: block;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  color: #9f8d7b;
+}
+
+.forecast-slot .forecast-phase {
+  display: block;
+  font-size: 0.85rem;
+  margin: 0.15rem 0;
+}
+
+.forecast-slot .forecast-conf {
+  display: block;
+  font-size: 0.65rem;
+  color: #b79a7d;
+}
+
+.forecast-slot.danger-heat {
+  border-color: rgba(255, 90, 64, 0.45);
+}
+
+.forecast-slot.danger-heat .forecast-phase {
+  color: #ff9a7a;
+}
+
+.forecast-slot.danger-cold {
+  border-color: rgba(142, 200, 255, 0.4);
+}
+
+.forecast-slot.danger-cold .forecast-phase {
+  color: #a8d4ff;
+}
+
+#epilogue-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(12, 18, 10, 0.9);
+  z-index: 35;
+}
+
+#epilogue-overlay.hidden {
+  display: none;
+}
+
+.epilogue-panel h2 {
+  font-size: 2rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  color: #e8d8a0;
+}
+
+.epilogue-panel p {
+  line-height: 1.65;
+  color: #d8e8c8;
+  margin-bottom: 1.5rem;
+}
+
+.death-meta {
+  color: #c9b59d;
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
 
 #log-reader {
   position: fixed;

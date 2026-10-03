@@ -44,6 +44,11 @@ function pickWeighted(options: Array<{ phase: EraPhase; weight: number }>): EraP
   return options[options.length - 1].phase;
 }
 
+export interface StableEraRoll {
+  chance: number;
+  force: boolean;
+}
+
 export class EraStateMachine {
   era: EraKind = 'chaotic';
   phase: EraPhase = ORBITAL_CONFIG.startPhase;
@@ -51,7 +56,11 @@ export class EraStateMachine {
   phaseDuration = 45;
   private dangerousCooldown = 0;
 
-  constructor() {
+  constructor(
+    private readonly getStableRoll: () => StableEraRoll = () => ({ chance: ORBITAL_CONFIG.stableEraChance, force: false }),
+    private readonly onChaoticPhaseEnded?: () => void,
+    private readonly onStableEntered?: () => void,
+  ) {
     this.phaseDuration = this.rollDuration(ORBITAL_CONFIG.startPhase);
     this.elapsedInPhase = this.phaseDuration * ORBITAL_CONFIG.startPhaseProgress;
   }
@@ -80,8 +89,12 @@ export class EraStateMachine {
       return;
     }
 
-    if (Math.random() < ORBITAL_CONFIG.stableEraChance) {
+    this.onChaoticPhaseEnded?.();
+
+    const roll = this.getStableRoll();
+    if (roll.force || Math.random() < roll.chance) {
       this.enterStable();
+      this.onStableEntered?.();
       return;
     }
 
