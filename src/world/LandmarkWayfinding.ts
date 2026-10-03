@@ -126,12 +126,12 @@ export class LandmarkWayfinding {
       color: '#6a5040',
       roughness: 0.95,
       emissive: '#3a2010',
-      emissiveIntensity: 0.2,
+      emissiveIntensity: 0.42,
     });
-    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.45, 1.1, 4, 8), bodyMat);
-    body.position.y = 1.05;
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 8), bodyMat);
-    head.position.y = 1.85;
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.55, 1.35, 4, 8), bodyMat);
+    body.position.y = 1.25;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.38, 8, 8), bodyMat);
+    head.position.y = 2.15;
 
     const shawl = new THREE.Mesh(
       new THREE.CylinderGeometry(0.55, 0.7, 0.15, 8),
@@ -139,7 +139,20 @@ export class LandmarkWayfinding {
     );
     shawl.position.y = 1.45;
 
-    this.registrarGroup.add(body, head, shawl);
+    const footRing = new THREE.Mesh(
+      new THREE.RingGeometry(0.9, 1.2, 24),
+      new THREE.MeshBasicMaterial({
+        color: '#ffa060',
+        transparent: true,
+        opacity: 0.45,
+        side: THREE.DoubleSide,
+      }),
+    );
+    footRing.rotation.x = -Math.PI / 2;
+    footRing.position.y = 0.05;
+
+    this.registrarGroup.add(body, head, shawl, footRing);
+    this.registrarGroup.scale.setScalar(1.35);
     const regY = this.terrain.getHeightAt(PIT_REGISTRAR.x, PIT_REGISTRAR.z);
     this.registrarGroup.position.set(PIT_REGISTRAR.x, regY, PIT_REGISTRAR.z);
     this.registrarGroup.rotation.y = Math.atan2(

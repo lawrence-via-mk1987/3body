@@ -36,6 +36,10 @@ import { StoryDirector } from '../narrative/StoryDirector';
 import type { StoryBeatId } from '../narrative/storyContent';
 import { StoryOverlay } from '../ui/StoryOverlay';
 import { CivilizationCounter } from '../narrative/CivilizationCounter';
+import { CivilizationLegacy } from '../narrative/CivilizationLegacy';
+import { getStageCopy } from '../narrative/civilizationStages';
+import { CivilizationProps } from '../world/CivilizationProps';
+import { NpcPresence } from '../world/NpcPresence';
 import { CounselChoices } from '../narrative/CounselChoices';
 import { buildEpilogueBody } from '../narrative/epilogueContent';
 import {
@@ -133,6 +137,9 @@ export class Game {
   private readonly groveKeeperState = new GroveKeeperState();
   private readonly counselChoices = new CounselChoices();
   private readonly civilizationCounter = new CivilizationCounter();
+  private readonly civilizationLegacy = new CivilizationLegacy();
+  private civilizationProps: CivilizationProps;
+  private readonly npcPresence: NpcPresence;
   private civilizationCycle = 187;
   private omenTimer = 0;
   private lethalWarnedPhase: EraPhase | null = null;
@@ -348,6 +355,8 @@ export class Game {
     this.waterSource = new WaterSource(this.terrain);
     this.wayfinding = new LandmarkWayfinding(this.terrain);
     this.settlementNpcs = new SettlementNpcs(this.terrain);
+    this.civilizationProps = new CivilizationProps(this.terrain, this.civilizationLegacy.getStage());
+    this.npcPresence = new NpcPresence(this.terrain);
 
     this.scene.add(this.sky.mesh);
     this.scene.add(this.terrain.mesh);
@@ -357,6 +366,8 @@ export class Game {
     this.scene.add(this.waterSource.mesh);
     this.scene.add(this.wayfinding.group);
     this.scene.add(this.settlementNpcs.group);
+    this.scene.add(this.civilizationProps.group);
+    this.scene.add(this.npcPresence.group);
     this.addLandmarks();
     this.scene.add(new CaveShelter(this.terrain, this.shelterZones).group);
 
@@ -662,6 +673,12 @@ export class Game {
     this.runJournal.clear();
     this.runJournal.recordCycleStart(fromCheckpoint);
     this.runJournal.recordCounsel(this.civilizationCounter.formatLabel(this.getLocale()));
+    const stageCopy = getStageCopy(this.getLocale(), this.civilizationLegacy.getStage());
+    this.runJournal.recordCounsel(
+      this.getLocale() === 'zh'
+        ? `世界时代：${stageCopy.name} — ${stageCopy.worldNote}`
+        : `World age: ${stageCopy.name} — ${stageCopy.worldNote}`,
+    );
     this.storyDirector.resetRun();
     this.storyDirector.setPredictorCalibrated(this.forecastMeta.isCalibrated());
     this.storyDirector.syncFromDiscovery(this.logDiscovery);
@@ -866,6 +883,16 @@ export class Game {
     this.runJournal.recordCounsel(
       `${this.civilizationCounter.formatLabel(this.getLocale())} begins.`,
     );
+    const stageCopy = getStageCopy(this.getLocale(), this.civilizationLegacy.getStage());
+    this.runJournal.recordCounsel(
+      this.getLocale() === 'zh'
+        ? `世界时代：${stageCopy.name} — ${stageCopy.worldNote}`
+        : `World age: ${stageCopy.name} — ${stageCopy.worldNote}`,
+    );
+    this.scene.remove(this.civilizationProps.group);
+    this.civilizationProps.dispose();
+    this.civilizationProps = new CivilizationProps(this.terrain, this.civilizationLegacy.getStage());
+    this.scene.add(this.civilizationProps.group);
     this.survival.reset();
     this.meta.resetRun();
     this.orbital.reset();
@@ -893,11 +920,16 @@ export class Game {
     this.running = false;
     this.audio.stop();
     this.player.unlock();
+    const worldStage = this.civilizationLegacy.getStage();
+    this.civilizationLegacy.recordCycleCleared();
+    const stageAfterClear = this.civilizationLegacy.getStage();
     this.epilogue.show(
       buildEpilogueBody(
         this.getLocale(),
         this.counselChoices.getSnapshot(),
         this.civilizationCycle,
+        worldStage,
+        stageAfterClear,
       ),
     );
   }
@@ -972,6 +1004,7 @@ export class Game {
         this.forecastMeta.isCalibrated(),
       );
       this.settlementNpcs.update(this.orbital.getEraKind(), this.anchor, this.npcPulseTime);
+      this.npcPresence.update(delta, this.orbital.getEraKind(), this.anchor.x, this.anchor.z);
       this.renderer.render(this.scene, this.player.camera);
       this.animationId = requestAnimationFrame(this.animate);
       return;
@@ -1081,6 +1114,7 @@ export class Game {
       this.forecastMeta.isCalibrated(),
     );
     this.settlementNpcs.update(this.orbital.getEraKind(), this.anchor, this.npcPulseTime);
+    this.npcPresence.update(delta, this.orbital.getEraKind(), this.anchor.x, this.anchor.z);
     this.updateHud(nearbyLog, stableEra, nearPit, nearWater);
 
     if (this.survival.status === 'dead') {
@@ -1573,6 +1607,8 @@ export class Game {
     this.sky.dispose();
     this.wayfinding.dispose();
     this.settlementNpcs.dispose();
+    this.civilizationProps.dispose();
+    this.npcPresence.dispose();
     this.renderer.dispose();
   }
 }

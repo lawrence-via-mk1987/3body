@@ -19,9 +19,9 @@ export class SettlementNpcs {
       color: '#4a5868',
       roughness: 0.85,
       emissive: '#1a2838',
-      emissiveIntensity: 0.35,
+      emissiveIntensity: 0.55,
     });
-    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.42, 1, 4, 8), mat);
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.52, 1.25, 4, 8), mat);
     body.position.y = 1;
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), mat);
     head.position.y = 1.75;
@@ -38,7 +38,20 @@ export class SettlementNpcs {
     dial.rotation.x = Math.PI / 2;
     dial.position.set(0.55, 1.35, 0.35);
 
-    this.predictorGroup.add(body, head, dial);
+    const footRing = new THREE.Mesh(
+      new THREE.RingGeometry(0.85, 1.15, 24),
+      new THREE.MeshBasicMaterial({
+        color: '#8ec8ff',
+        transparent: true,
+        opacity: 0.45,
+        side: THREE.DoubleSide,
+      }),
+    );
+    footRing.rotation.x = -Math.PI / 2;
+    footRing.position.y = 0.05;
+
+    this.predictorGroup.add(body, head, dial, footRing);
+    this.predictorGroup.scale.setScalar(1.45);
     const y = terrain.getHeightAt(LAST_PREDICTOR.x, LAST_PREDICTOR.z);
     this.predictorGroup.position.set(LAST_PREDICTOR.x, y, LAST_PREDICTOR.z);
     this.predictorGroup.rotation.y = -0.6;
@@ -68,7 +81,20 @@ export class SettlementNpcs {
     vine.rotation.x = Math.PI / 2.4;
     vine.position.y = 1.35;
 
-    this.groveKeeperGroup.add(body, head, vine);
+    const footRing = new THREE.Mesh(
+      new THREE.RingGeometry(0.8, 1.1, 24),
+      new THREE.MeshBasicMaterial({
+        color: '#8ab86a',
+        transparent: true,
+        opacity: 0.4,
+        side: THREE.DoubleSide,
+      }),
+    );
+    footRing.rotation.x = -Math.PI / 2;
+    footRing.position.y = 0.05;
+
+    this.groveKeeperGroup.add(body, head, vine, footRing);
+    this.groveKeeperGroup.scale.setScalar(1.45);
     const y = terrain.getHeightAt(GROVE_KEEPER.x, GROVE_KEEPER.z);
     this.groveKeeperGroup.position.set(GROVE_KEEPER.x, y, GROVE_KEEPER.z);
     this.groveKeeperGroup.rotation.y = 2.2;
