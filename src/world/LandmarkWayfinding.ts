@@ -8,6 +8,7 @@ import {
   PIT_REGISTRAR,
   SPAWN_HINT,
 } from './landmarks';
+import { applyNpcGlow, buildHumanoidNpc, REGISTRAR_STYLE } from './HumanoidNpc';
 
 export class LandmarkWayfinding {
   readonly group = new THREE.Group();
@@ -122,36 +123,19 @@ export class LandmarkWayfinding {
   }
 
   private buildRegistrar(): void {
-    const bodyMat = new THREE.MeshStandardMaterial({
-      color: '#6a5040',
-      roughness: 0.95,
-      emissive: '#3a2010',
-      emissiveIntensity: 0.42,
+    const figure = buildHumanoidNpc(REGISTRAR_STYLE, (root) => {
+      const scrollMat = new THREE.MeshStandardMaterial({
+        color: REGISTRAR_STYLE.accent,
+        emissive: REGISTRAR_STYLE.accentEmissive,
+        emissiveIntensity: 0.35,
+        roughness: 0.85,
+      });
+      const scroll = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.38, 0.06), scrollMat);
+      scroll.position.set(-0.42, 1.12, 0.2);
+      scroll.rotation.y = 0.35;
+      root.add(scroll);
     });
-    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.55, 1.35, 4, 8), bodyMat);
-    body.position.y = 1.25;
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.38, 8, 8), bodyMat);
-    head.position.y = 2.15;
-
-    const shawl = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.55, 0.7, 0.15, 8),
-      new THREE.MeshStandardMaterial({ color: '#8f6a4a', roughness: 1 }),
-    );
-    shawl.position.y = 1.45;
-
-    const footRing = new THREE.Mesh(
-      new THREE.RingGeometry(0.9, 1.2, 24),
-      new THREE.MeshBasicMaterial({
-        color: '#ffa060',
-        transparent: true,
-        opacity: 0.45,
-        side: THREE.DoubleSide,
-      }),
-    );
-    footRing.rotation.x = -Math.PI / 2;
-    footRing.position.y = 0.05;
-
-    this.registrarGroup.add(body, head, shawl, footRing);
+    this.registrarGroup.add(figure);
     this.registrarGroup.scale.setScalar(1.35);
     const regY = this.terrain.getHeightAt(PIT_REGISTRAR.x, PIT_REGISTRAR.z);
     this.registrarGroup.position.set(PIT_REGISTRAR.x, regY, PIT_REGISTRAR.z);
@@ -208,12 +192,10 @@ export class LandmarkWayfinding {
       playerPosition.x - PIT_REGISTRAR.x,
       playerPosition.z - PIT_REGISTRAR.z,
     ) < PIT_REGISTRAR.talkRadius + 4;
-    for (const part of this.registrarGroup.children) {
-      const mat = (part as THREE.Mesh).material as THREE.MeshStandardMaterial;
-      if (mat.emissiveIntensity !== undefined) {
-        mat.emissiveIntensity = nearRegistrar ? 0.45 : 0.2;
-      }
-    }
+    applyNpcGlow(
+      this.registrarGroup,
+      nearRegistrar ? 0.48 : 0.24,
+    );
   }
 
   isNearRegistrar(position: THREE.Vector3): boolean {

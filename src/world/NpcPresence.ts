@@ -51,7 +51,7 @@ export class NpcPresence {
       const y = terrain.getHeightAt(site.x, site.z);
 
       const pole = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.12, 0.18, 10, 8),
+        new THREE.CylinderGeometry(0.08, 0.12, 5.5, 8),
         new THREE.MeshStandardMaterial({
           color: site.color,
           emissive: site.emissive,
@@ -61,7 +61,7 @@ export class NpcPresence {
           roughness: 0.8,
         }),
       );
-      pole.position.y = 5;
+      pole.position.y = 2.75;
 
       const halo = new THREE.Mesh(
         new THREE.TorusGeometry(1.2, 0.08, 8, 32),
@@ -74,7 +74,7 @@ export class NpcPresence {
         }),
       );
       halo.rotation.x = Math.PI / 2;
-      halo.position.y = 9.5;
+      halo.position.y = 5.2;
 
       const ring = new THREE.Mesh(
         new THREE.RingGeometry(2.5, 3.2, 32),
@@ -89,7 +89,7 @@ export class NpcPresence {
       ring.position.y = 0.08;
 
       const label = makeLabelSprite(site.label);
-      label.position.y = 11.5;
+      label.position.y = 6.2;
 
       root.add(pole, halo, ring, label);
       root.position.set(site.x, y, site.z);
