@@ -1172,6 +1172,19 @@ export class Game {
       if (omen) {
         this.showSkyOmen(omen, 9);
       }
+      if (phase === 'tri_solar') {
+        this.gameToast.show(
+          this.getLocale() === 'zh'
+            ? '三体时刻：三颗太阳同时在天空 — 极热，快找掩体。'
+            : 'Tri-Solar: all three suns share the sky — brutal heat; find shelter.',
+        );
+      } else if (phase === 'flying_star') {
+        this.gameToast.show(
+          this.getLocale() === 'zh'
+            ? '飞星：一颗太阳贴地掠过 — 像 drama 里的灾厄前兆。'
+            : 'Flying Star: a sun skims the horizon — the drama’s omen made visible.',
+        );
+      }
       this.lethalWarnedPhase = null;
     }
 
