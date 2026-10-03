@@ -201,6 +201,17 @@ export class OrbitalDirector {
     this.refreshForecast();
   }
 
+  getEraSnapshot() {
+    return this.eraState.getSnapshot();
+  }
+
+  restoreEraSnapshot(snapshot: ReturnType<EraStateMachine['getSnapshot']>): void {
+    this.eraState.applySnapshot(snapshot);
+    this.forecastTimer = 0;
+    this.pendingTransition = null;
+    this.refreshForecast();
+  }
+
   private refreshForecast(): void {
     this.forecast = buildForecast(
       this.eraState.phase,

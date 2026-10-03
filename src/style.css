@@ -72,7 +72,8 @@ h1 {
   margin-bottom: 1.5rem;
 }
 
-#start-btn {
+#start-btn,
+#continue-btn {
   width: 100%;
   border: 0;
   padding: 0.95rem 1rem;
@@ -81,6 +82,24 @@ h1 {
   color: #1a120d;
   background: linear-gradient(180deg, #e2b07f, #c07a45);
   cursor: pointer;
+}
+
+#continue-btn {
+  margin-bottom: 0.65rem;
+}
+
+#continue-btn.hidden,
+.checkpoint-info.hidden {
+  display: none;
+}
+
+.checkpoint-info {
+  font-size: 0.88rem;
+  color: #c9b59d;
+  line-height: 1.45;
+  margin-bottom: 0.85rem;
+  border-left: 2px solid rgba(194, 138, 90, 0.5);
+  padding-left: 0.75rem;
 }
 
 #start-btn:hover {

@@ -24,6 +24,18 @@ export class MetaProgress {
     this.enteredStableThisRun = false;
   }
 
+  exportRunState(): { chaoticTransitionsThisRun: number; enteredStableThisRun: boolean } {
+    return {
+      chaoticTransitionsThisRun: this.chaoticTransitionsThisRun,
+      enteredStableThisRun: this.enteredStableThisRun,
+    };
+  }
+
+  importRunState(state: { chaoticTransitionsThisRun: number; enteredStableThisRun: boolean }): void {
+    this.chaoticTransitionsThisRun = state.chaoticTransitionsThisRun;
+    this.enteredStableThisRun = state.enteredStableThisRun;
+  }
+
   getStableEraEnterChance(hasFinalLog: boolean): number {
     if (hasFinalLog) {
       return 0.08;

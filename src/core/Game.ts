@@ -4,6 +4,7 @@ import { canReadLog } from '../narrative/logs';
 import { LogDiscovery } from '../narrative/LogDiscovery';
 import { LogMarkers } from '../narrative/LogMarkers';
 import { MetaProgress } from '../narrative/MetaProgress';
+import { CheckpointSave } from '../save/CheckpointSave';
 import { OrbitalDirector } from '../orbital/OrbitalDirector';
 import { FirstPersonController } from '../player/FirstPersonController';
 import { ShelterZones } from '../survival/ShelterZones';
@@ -251,14 +252,67 @@ export class Game {
     this.scene.add(pitMarker);
   }
 
-  async start(): Promise<void> {
+  async startNewGame(): Promise<void> {
     if (this.running) {
+      this.stop();
+    }
+    CheckpointSave.clear();
+    this.survival.reset();
+    this.meta.resetRun();
+    this.orbital.reset();
+    this.player.resetToSpawn();
+    await this.beginSession();
+  }
+
+  async continueFromCheckpoint(): Promise<boolean> {
+    const checkpoint = CheckpointSave.load();
+    if (!checkpoint) {
+      return false;
+    }
+    if (this.running) {
+      this.stop();
+    }
+    this.applyCheckpoint(checkpoint);
+    await this.beginSession();
+    return true;
+  }
+
+  saveCheckpoint(label: string): void {
+    if (!this.running || this.survival.status === 'dead' || this.paused) {
       return;
     }
 
+    const position = this.player.getPosition();
+    CheckpointSave.save({
+      version: 1,
+      savedAt: Date.now(),
+      label,
+      player: { x: position.x, y: position.y, z: position.z },
+      survival: this.survival.exportState(),
+      orbital: this.orbital.getEraSnapshot(),
+      meta: this.meta.exportRunState(),
+    });
+    this.setStatusOverride(`Checkpoint saved — ${label}`, 4);
+  }
+
+  private applyCheckpoint(checkpoint: NonNullable<ReturnType<typeof CheckpointSave.load>>): void {
+    this.player.setPosition(
+      checkpoint.player.x,
+      checkpoint.player.y,
+      checkpoint.player.z,
+    );
+    this.survival.importState(checkpoint.survival);
+    this.orbital.restoreEraSnapshot(checkpoint.orbital);
+    this.meta.importRunState(checkpoint.meta);
+    this.statusOverride = null;
+    this.statusOverrideTimer = 0;
+  }
+
+  private async beginSession(): Promise<void> {
     const volume = MetaProgress.loadMasterVolume();
     await this.audio.start(volume);
     this.audio.setMasterVolume(volume);
+    this.audio.resume();
     this.running = true;
     this.paused = false;
     this.pauseMenu.hide();
@@ -472,6 +526,7 @@ export class Game {
     if (transition.enteredStable) {
       this.stableBanner.show();
       this.audio.playStableEraChime();
+      this.saveCheckpoint('Stable Era (auto)');
     }
 
     if (transition.leftStable) {
@@ -511,6 +566,7 @@ export class Game {
 
   private handleDeath(): void {
     this.running = false;
+    CheckpointSave.clear();
     this.audio.stop();
     this.player.unlock();
     this.overlays.deathMessage.textContent = this.survival.getDeathMessage();

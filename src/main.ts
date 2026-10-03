@@ -4,6 +4,7 @@ import { ForecastStrip } from './ui/ForecastStrip';
 import { LogReader } from './ui/LogReader';
 import { PauseMenu } from './ui/PauseMenu';
 import { StableEraBanner } from './ui/StableEraBanner';
+import { CheckpointSave } from './save/CheckpointSave';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
 const overlay = document.querySelector<HTMLDivElement>('#overlay');
@@ -16,9 +17,12 @@ const stableBannerSubtitle = document.querySelector<HTMLParagraphElement>('#stab
 const logReaderOverlay = document.querySelector<HTMLDivElement>('#log-reader');
 const forecastStripEl = document.querySelector<HTMLDivElement>('#forecast-strip');
 const startButton = document.querySelector<HTMLButtonElement>('#start-btn');
+const continueButton = document.querySelector<HTMLButtonElement>('#continue-btn');
+const checkpointInfo = document.querySelector<HTMLParagraphElement>('#checkpoint-info');
 const restartButton = document.querySelector<HTMLButtonElement>('#restart-btn');
 const epilogueRestartButton = document.querySelector<HTMLButtonElement>('#epilogue-restart');
 const pauseResumeButton = document.querySelector<HTMLButtonElement>('#pause-resume');
+const pauseSaveButton = document.querySelector<HTMLButtonElement>('#pause-save');
 const pauseQuitButton = document.querySelector<HTMLButtonElement>('#pause-quit');
 const logCloseButton = document.querySelector<HTMLButtonElement>('#log-close');
 const masterVolumeSlider = document.querySelector<HTMLInputElement>('#master-volume');
@@ -52,9 +56,12 @@ if (
   || !logReaderOverlay
   || !forecastStripEl
   || !startButton
+  || !continueButton
+  || !checkpointInfo
   || !restartButton
   || !epilogueRestartButton
   || !pauseResumeButton
+  || !pauseSaveButton
   || !pauseQuitButton
   || !logCloseButton
   || !masterVolumeSlider
@@ -79,6 +86,21 @@ if (
   throw new Error('Missing required DOM elements.');
 }
 
+function refreshCheckpointMenu(): void {
+  const checkpoint = CheckpointSave.load();
+  const continueBtn = continueButton!;
+  const info = checkpointInfo!;
+  if (!checkpoint) {
+    continueBtn.classList.add('hidden');
+    info.classList.add('hidden');
+    return;
+  }
+
+  continueBtn.classList.remove('hidden');
+  info.classList.remove('hidden');
+  info.textContent = `Checkpoint: ${checkpoint.label} — saved ${CheckpointSave.formatSavedAt(checkpoint.savedAt)}`;
+}
+
 const logReader = new LogReader(logReaderOverlay, logTitle, logBody, logCloseButton);
 const stableEraBanner = new StableEraBanner(stableBanner, stableBannerSubtitle);
 const forecastStrip = new ForecastStrip(forecastStripEl);
@@ -88,6 +110,7 @@ let game: Game;
 const showMainMenu = (): void => {
   overlay.classList.remove('hidden');
   hud.classList.add('hidden');
+  refreshCheckpointMenu();
 };
 
 const epilogue = new EpilogueOverlay(epilogueOverlay, epilogueRestartButton, () => {
@@ -97,8 +120,13 @@ const epilogue = new EpilogueOverlay(epilogueOverlay, epilogueRestartButton, () 
 const pauseMenu = new PauseMenu(
   pauseOverlay,
   pauseResumeButton,
+  pauseSaveButton,
   pauseQuitButton,
   () => game.resume(),
+  () => {
+    game.saveCheckpoint('Manual save');
+    refreshCheckpointMenu();
+  },
   () => game.quitToMenu(),
 );
 
@@ -137,8 +165,16 @@ game = new Game(
 startButton.addEventListener('click', () => {
   overlay.classList.add('hidden');
   hud.classList.remove('hidden');
-  void game.start();
+  void game.startNewGame();
 });
+
+continueButton.addEventListener('click', () => {
+  overlay.classList.add('hidden');
+  hud.classList.remove('hidden');
+  void game.continueFromCheckpoint();
+});
+
+refreshCheckpointMenu();
 
 document.addEventListener('pointerlockchange', () => {
   if (document.pointerLockElement === canvas) {

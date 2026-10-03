@@ -91,7 +91,11 @@ export class FirstPersonController {
   }
 
   resetToSpawn(): void {
-    this.camera.position.set(0, 12, 24);
+    this.setPosition(0, 12, 24);
+  }
+
+  setPosition(x: number, y: number, z: number): void {
+    this.camera.position.set(x, y, z);
     this.velocity.set(0, 0, 0);
     this.movementEnabled = true;
   }

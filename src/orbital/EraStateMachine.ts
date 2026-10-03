@@ -148,4 +148,34 @@ export class EraStateMachine {
     this.elapsedInPhase = this.phaseDuration * ORBITAL_CONFIG.startPhaseProgress;
     this.dangerousCooldown = 0;
   }
+
+  getSnapshot(): {
+    era: EraKind;
+    phase: EraPhase;
+    elapsedInPhase: number;
+    phaseDuration: number;
+    dangerousCooldown: number;
+  } {
+    return {
+      era: this.era,
+      phase: this.phase,
+      elapsedInPhase: this.elapsedInPhase,
+      phaseDuration: this.phaseDuration,
+      dangerousCooldown: this.dangerousCooldown,
+    };
+  }
+
+  applySnapshot(snapshot: {
+    era: EraKind;
+    phase: EraPhase;
+    elapsedInPhase: number;
+    phaseDuration: number;
+    dangerousCooldown: number;
+  }): void {
+    this.era = snapshot.era;
+    this.phase = snapshot.phase;
+    this.elapsedInPhase = snapshot.elapsedInPhase;
+    this.phaseDuration = snapshot.phaseDuration;
+    this.dangerousCooldown = snapshot.dangerousCooldown;
+  }
 }

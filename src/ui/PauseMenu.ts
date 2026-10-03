@@ -4,12 +4,17 @@ export class PauseMenu {
   constructor(
     private readonly overlay: HTMLElement,
     resumeButton: HTMLButtonElement,
+    saveButton: HTMLButtonElement,
     quitButton: HTMLButtonElement,
     private readonly onResume: () => void,
+    private readonly onSave: () => void,
     private readonly onQuit: () => void,
   ) {
     resumeButton.addEventListener('click', () => {
       this.onResume();
+    });
+    saveButton.addEventListener('click', () => {
+      this.onSave();
     });
     quitButton.addEventListener('click', () => {
       this.onQuit();

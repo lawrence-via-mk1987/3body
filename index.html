@@ -22,7 +22,9 @@
         </p>
         <label class="volume-label" for="master-volume">Master volume</label>
         <input id="master-volume" type="range" min="0" max="100" value="55" />
-        <button id="start-btn" type="button">Enter the wasteland</button>
+        <p id="checkpoint-info" class="checkpoint-info hidden"></p>
+        <button id="continue-btn" type="button" class="hidden">Continue from checkpoint</button>
+        <button id="start-btn" type="button">New cycle (fresh start)</button>
         <p class="controls">
           WASD · mouse look (click game) · F read · R drink · E dehydrate · P or Esc pause
         </p>
@@ -43,6 +45,7 @@
         <h2>Chaotic sky on hold</h2>
         <p class="pause-copy">Simulation frozen. Resume to keep enduring.</p>
         <button id="pause-resume" type="button">Resume</button>
+        <button id="pause-save" type="button" class="secondary-btn">Save checkpoint</button>
         <button id="pause-quit" type="button" class="secondary-btn">Quit to menu</button>
       </div>
     </div>
