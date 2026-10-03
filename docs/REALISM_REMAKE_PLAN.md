@@ -96,6 +96,14 @@ Each phase should be playable on the existing URL. Do not replace everything in 
 
 **Done when:** standing in the open wasteland already feels like a place, before any new building.
 
+**Status: shipped.** Procedural dust/clay textures with normal + roughness maps (planar, not
+triplanar yet — steep trench walls still stretch a little), vertex AO/ridge tints, scattering sky
+with haze and stars, limb-darkened suns with depth-tested halos, PMREM environment light,
+per-phase exposure/bloom, desktop-only bloom, and phone/tablet/desktop quality tiers
+(`src/platform/renderQuality.ts`). Collision now follows the rendered mesh, and the player spawns
+facing the open trench. Follow-ups for later phases: triplanar mapping on steep slopes, soft
+contact shadows under props.
+
 ### Phase 2 — Landmarks
 
 Replace code-built landmarks with authored meshes, same positions in `landmarks.ts`:
