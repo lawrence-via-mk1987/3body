@@ -227,16 +227,18 @@ export class Game {
       ? new MobileHudSheet(
         mobileHud.sheet,
         mobileHud.sheetBackdrop,
-        mobileHud.sheetClose,
-        mobileHud.skyButton,
+        [mobileHud.sheetClose, mobileHud.sheetCloseTop],
+        [
+          mobileHud.skyButton,
+          ...(mobileHud.statsButton ? [mobileHud.statsButton] : []),
+        ],
+        {
+          onOpen: () => this.mobileControls?.setSkySheetOpen(true),
+          onClose: () => this.mobileControls?.setSkySheetOpen(false),
+          getLocale: () => this.getLocale(),
+        },
       )
       : null;
-    if (mobileHud?.statsButton && this.mobileHudSheet) {
-      mobileHud.statsButton.addEventListener('click', (event) => {
-        event.stopPropagation();
-        this.mobileHudSheet?.toggle();
-      });
-    }
     this.storyDirector = new StoryDirector(
       this.storyBeatState,
       getLocale,
@@ -722,6 +724,7 @@ export class Game {
     this.audio.stop();
     this.mobileControls?.hide();
     this.mobileHudSheet?.close();
+    this.mobileControls?.setSkySheetOpen(false);
     this.soundBanner?.hide();
     this.player.unlock();
   }

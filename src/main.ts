@@ -120,6 +120,7 @@ const mobileHudHydration = document.querySelector<HTMLSpanElement>('#mobile-hud-
 const hudMobileBackdrop = document.querySelector<HTMLDivElement>('#hud-mobile-backdrop');
 const hudMobileSheet = document.querySelector<HTMLDivElement>('#hud-mobile-sheet');
 const hudMobileSheetClose = document.querySelector<HTMLButtonElement>('#hud-mobile-sheet-close');
+const hudMobileSheetCloseTop = document.querySelector<HTMLButtonElement>('#hud-mobile-sheet-close-top');
 const mobileHudSkyBtn = document.querySelector<HTMLButtonElement>('#mobile-hud-sky-btn');
 const sheetPhase = document.querySelector<HTMLSpanElement>('#sheet-phase');
 const sheetTemperature = document.querySelector<HTMLSpanElement>('#sheet-temperature');
@@ -401,6 +402,7 @@ const mobileHudBundle: MobileHudBundle | null = deviceProfile.prefersTouchContro
   && hudMobileBackdrop
   && hudMobileSheet
   && hudMobileSheetClose
+  && hudMobileSheetCloseTop
   && mobileHudSkyBtn
   && sheetPhase
   && sheetTemperature
@@ -420,6 +422,7 @@ const mobileHudBundle: MobileHudBundle | null = deviceProfile.prefersTouchContro
     sheet: hudMobileSheet,
     sheetBackdrop: hudMobileBackdrop,
     sheetClose: hudMobileSheetClose,
+    sheetCloseTop: hudMobileSheetCloseTop,
     sheetPhase,
     sheetTemperature,
     sheetForecast,

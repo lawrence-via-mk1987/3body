@@ -268,8 +268,11 @@
     </div>
 
     <div id="hud-mobile-backdrop" class="hud-mobile-backdrop hidden" aria-hidden="true"></div>
-    <div id="hud-mobile-sheet" class="hud-mobile-sheet panel hidden" role="dialog" aria-modal="true" aria-labelledby="mobile-hud-sheet-title">
-      <p id="mobile-hud-sheet-title" class="eyebrow">Sky &amp; status</p>
+    <div id="hud-mobile-sheet" class="hud-mobile-sheet hidden" role="dialog" aria-modal="true" aria-labelledby="mobile-hud-sheet-title">
+      <div class="mobile-hud-sheet-header">
+        <p id="mobile-hud-sheet-title" class="eyebrow">Sky &amp; status</p>
+        <button id="hud-mobile-sheet-close-top" type="button" class="mobile-hud-sheet-close-top" aria-label="Close Sky panel">×</button>
+      </div>
       <ul class="mobile-sheet-list">
         <li><span>Phase</span><span id="sheet-phase"></span></li>
         <li><span>Temperature</span><span id="sheet-temperature"></span></li>
@@ -279,7 +282,7 @@
         <li><span>Position</span><span id="sheet-position"></span></li>
       </ul>
       <p id="sheet-status" class="sheet-status"></p>
-      <button id="hud-mobile-sheet-close" type="button" class="mobile-hud-sheet-close mobile-btn mobile-btn-primary">Close</button>
+      <button id="hud-mobile-sheet-close" type="button" class="mobile-hud-sheet-close">Done</button>
     </div>
 
     <div id="mobile-controls" class="mobile-controls hidden" aria-hidden="true">

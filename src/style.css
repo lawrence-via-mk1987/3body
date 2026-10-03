@@ -1391,8 +1391,8 @@ body.touch-ui .menu-panel {
 .hud-mobile-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  z-index: 18;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 38;
   pointer-events: auto;
   touch-action: manipulation;
 }
@@ -1402,32 +1402,69 @@ body.touch-ui .menu-panel {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 19;
-  max-height: 55vh;
-  border-radius: 12px 12px 0 0;
+  z-index: 39;
+  width: 100%;
+  max-width: none;
+  max-height: min(42vh, 360px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 14px 14px 0 0;
   pointer-events: auto;
   touch-action: manipulation;
-  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  padding: 0.85rem 1rem max(1rem, env(safe-area-inset-bottom));
+  border: 1px solid rgba(242, 230, 216, 0.18);
+  border-bottom: none;
+  background: rgba(12, 10, 8, 0.96);
+  box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.55);
+}
+
+.mobile-hud-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.mobile-hud-sheet-header .eyebrow {
+  margin-bottom: 0;
+}
+
+.mobile-hud-sheet-close-top {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid rgba(242, 230, 216, 0.28);
+  background: rgba(242, 230, 216, 0.12);
+  color: #f2e6d8;
+  font-size: 1.65rem;
+  line-height: 1;
+  touch-action: manipulation;
 }
 
 .mobile-hud-sheet-close {
   width: 100%;
   min-height: 48px;
+  margin-top: 0.35rem;
+  font: inherit;
   font-size: 1rem;
+  font-weight: 600;
+  border-radius: 10px;
+  border: 1px solid rgba(242, 230, 216, 0.22);
+  background: rgba(242, 230, 216, 0.14);
+  color: #f2e6d8;
+  touch-action: manipulation;
 }
 
-body.mobile-hud-sheet-open .mobile-controls {
+.mobile-controls.mobile-controls-sky-sheet-open {
+  visibility: hidden;
   pointer-events: none;
 }
 
-body.mobile-hud-sheet-open .mobile-controls * {
+body.mobile-hud-sheet-open .forecast-strip {
+  opacity: 0.25;
   pointer-events: none;
-}
-
-body.mobile-hud-sheet-open .hud-mobile-backdrop,
-body.mobile-hud-sheet-open .hud-mobile-sheet,
-body.mobile-hud-sheet-open .hud-mobile-sheet * {
-  pointer-events: auto;
 }
 
 .mobile-sheet-list {

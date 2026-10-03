@@ -9,6 +9,7 @@ export interface MobileHudBundle {
   sheet: HTMLElement;
   sheetBackdrop: HTMLElement;
   sheetClose: HTMLButtonElement;
+  sheetCloseTop: HTMLButtonElement;
   sheetPhase: HTMLElement;
   sheetTemperature: HTMLElement;
   sheetForecast: HTMLElement;

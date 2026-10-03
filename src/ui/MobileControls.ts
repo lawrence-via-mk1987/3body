@@ -53,6 +53,11 @@ export class MobileControls {
     this.endSprint();
   }
 
+  /** Hide touch chrome while the Sky sheet is open so it cannot steal taps. */
+  setSkySheetOpen(open: boolean): void {
+    this.root.classList.toggle('mobile-controls-sky-sheet-open', open);
+  }
+
   update(delta: number): void {
     if (this.root.classList.contains('hidden')) {
       return;
