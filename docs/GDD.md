@@ -15,7 +15,8 @@ This project is an unofficial, non-commercial fan work. It is not affiliated wit
 **Platform:** Web demo (browser)  
 **Tech stack:** Three.js, Vite, TypeScript  
 **Tone:** Hope-in-cycles — bleak Chaotic Eras punctuated by precious, fragile Stable Eras where rebuilding feels meaningful  
-**Narrative:** Silent environmental storytelling + discoverable text logs (no voiced dialogue)
+**Narrative (shipped demo):** Environmental storytelling + text logs + journal  
+**Narrative (next):** Diegetic wayfinding, then a small cast of **original** NPCs with text dialogue tied to era-survival problems (fan work — not licensed characters from the novels or drama)
 
 ### Elevator pitch
 
@@ -26,7 +27,7 @@ You are a Trisolarian during a Chaotic Era. Three suns move in unstable orbits a
 1. **Orbital chaos is the antagonist** — survival against the sky, not combat
 2. **Hope-in-cycles** — suffering in Chaotic Eras makes Stable Eras feel earned and luminous
 3. **First-person immersion** — look up at the suns; feel scale and dread in your own eyes
-4. **Silent story** — ruins, dehydration pools, and text logs tell of civilizations that came before
+4. **Show, then tell** — ruins and logs first; NPCs and beacons clarify what the world expects you to do
 5. **Scientific inspiration, gameplay abstraction** — inspired by the three-body problem, not a physics simulator
 
 ---
@@ -63,8 +64,9 @@ You are a Trisolarian during a Chaotic Era. Three suns move in unstable orbits a
 |---|---|
 | **Environmental** | Ruined shelters, mass dehydration pits, collapsed observatories, dried riverbeds that fill in Stable Eras |
 | **Text logs** | Discoverable data pads / etched tablets — short entries from prior survivors, sages, and failed civilizations |
-| **No dialogue** | No NPC conversations; optional sage statues or murals that only show text when interacted with |
-| **Player journal** | Auto-records era transitions and discoveries; player can leave notes for meta-progression |
+| **Player journal** | Auto-records era transitions and discoveries (shipped) |
+| **Wayfinding beacons** | *(Planned)* World-anchored cues toward dehydration pit and Stable grove — see [Visual wayfinding](#visual-wayfinding) |
+| **NPC counsel** | *(Planned)* Short text conversations with original survivors/sages at key landmarks — see [NPC chapter](#npc-chapter-drama-inspired-problems) |
 
 ---
 
@@ -115,6 +117,79 @@ Single focused region (~1–2 km²) — enough for landmarks and exploration, sm
 
 ---
 
+## Visual wayfinding
+
+**Problem:** Players know landmarks exist from HUD text and logs, but the **world does not visually answer** “where is the pit?” or “where is the grove?”
+
+**Goal:** Make critical survival locations **readable at a glance** without replacing exploration — guidance ramps up when the player is lost or the era demands action.
+
+### Landmark targets (demo region)
+
+| Landmark | Position (approx.) | Player need |
+|---|---|---|
+| **Mass dehydration pit** | (−42, 18) | Survive flying star / tri-solar; voluntary stasis |
+| **Stable Era grove** | (28, −32) | Water (R), Final Log, hope beat |
+
+### Visual language (consistent icons)
+
+| Cue | Pit (Chaotic priority) | Grove (Stable priority) |
+|---|---|---|
+| **Horizon beacon** | Pale amber pillar / smoke column visible from far away | Green-gold pillar when `era === stable`; dim dormant mesh otherwise |
+| **Ground trail** | Cracked ochre path + desiccated ring markers leading inward | Moss/lichen trail + pooled water glint in Stable Era |
+| **Sky glance** | Subtle compass tick on HUD edge pointing to pit when hydration &lt; 40% or forecast shows lethal heat | Same tick toward grove when Stable Era active and player has not drunk / found Final Log |
+| **Proximity** | Ring torus pulses when player within ~25 m; stronger pulse on interaction ring | Pool shimmer + particle motes; banner already fires on Stable entry |
+| **Audio** | Low wind through hollow pit (spatialized) | Insect/hum + water drip in Stable Era |
+
+### UX rules
+
+- Beacons **respect era**: grove path fully lit only in Stable Era; pit beacon **stronger** in Chaotic / dangerous phases.
+- No quest arrow through walls — use **terrain-following** markers and horizon silhouettes.
+- **Accessibility:** cues work together (color + motion + HUD tick); not color-only.
+
+### Implementation sketch (Three.js)
+
+- `LandmarkBeacons.ts` — pillar meshes, shader pulse, distance-based opacity.
+- `TrailMarkers.ts` — instanced stones / rings along spline from spawn toward pit; grove branch gated by era.
+- `HudCompass.ts` — optional edge indicator toward active objective (pit vs grove from `Game` state).
+- Hook into existing `LandmarkHints`, `WaterSource`, `ShelterZones`.
+
+---
+
+## NPC chapter (drama-inspired problems)
+
+**Intent:** Evoke the **kinds of problems** Trisolarian civilizations face in the source material and adaptations — predicting chaos, choosing mass dehydration, clinging to hope in a Stable Era — without importing **named characters, likenesses, or plot scenes** from the novels or TV drama.
+
+All NPCs are **original fan-created** figures (e.g. “the pit registrar,” “the grove keeper,” “the broken predictor”). Dialogue is **text-only** (reuse log reader / dialogue panel), no voice acting in the web demo.
+
+### Design pillars for NPCs
+
+1. **Problems, not parody** — each NPC embodies one survival dilemma, not a cutscene recap.
+2. **Gameplay-linked** — conversation choices or tasks change forecast confidence, unlock a trail, or gate a ritual at the pit.
+3. **Era-aware** — some NPCs only “wake” in Stable Era (grove); others are desiccated silhouettes at the pit until Chaotic danger rises.
+4. **Small cast** — 3 NPCs max for the next milestone; expand only after wayfinding ships.
+
+### Cast (original characters)
+
+| NPC | Location | Problem (drama *theme*, not IP) | Gameplay hook |
+|---|---|---|---|
+| **Registrar of the Pit** | Dehydration pit ring | When does a civilization choose mass stasis vs. running? | Teaches pit ring vs. tablet; optional “fold with the row” tutorial dehydration |
+| **Last Predictor** | Ruined observatory | Can the sky be forecast when three suns lie? | Mini-game: align broken dials to **narrow forecast cone** (meta unlock persists) |
+| **Grove Keeper** | Stable grove | Is hope rational when Stable Eras always end? | Stable-only: trade condensate hint for finding Final Log; journal entry |
+
+### Conversation format
+
+- **Interact:** `T` talk when near NPC (keep `F` for tablets).
+- **UI:** Dialogue panel (speaker name + 2–4 lines + 2–3 choices); choices affect **run state** or **meta flags** in `localStorage`.
+- **Fail-forward:** Wrong predictor guess still teaches; NPCs never soft-lock the demo.
+
+### What we are not doing (legal / scope)
+
+- No Wang Miao, Ye Wenjie, Shi Qiang, or other licensed names or likenesses.
+- No recreated drama sets or verbatim dialogue.
+- No full RPG quest tree — **3 problem vignettes** tied to existing landmarks.
+
+---
+
 ## Celestial system (summary)
 
 See [ORBITAL_SIM.md](./ORBITAL_SIM.md) for technical detail.
@@ -160,7 +235,7 @@ Orbital behavior uses an **authored phase state machine** with bounded randomnes
 |---|---|
 | Rendering | Three.js (r160+) |
 | Build | Vite + TypeScript |
-| Physics | Rapier3D (player collision, shelter volumes) |
+| Physics | Custom terrain height + shelter volumes (no Rapier in current build) |
 | Input | Pointer Lock API (first-person mouse look) |
 | Audio | Web Audio API + howler.js (optional) |
 | Storage | localStorage for meta-progression and journal |
@@ -177,38 +252,47 @@ Orbital behavior uses an **authored phase state machine** with bounded randomnes
 
 ## Scope: web demo MVP
 
-### In scope
+### Shipped (M1–7 + flow polish)
 
-- [ ] First-person movement (WASD + pointer lock)
-- [ ] Procedural terrain chunk with underground area
-- [ ] Three suns with 4+ orbital phases
-- [ ] Temperature + hydration survival
-- [ ] Dehydration mechanic
-- [ ] One Stable Era cycle per session (scripted timing for demo)
-- [ ] 5–8 discoverable text logs in ruins
-- [ ] Minimal HUD + log reader UI
-- [ ] Main menu with disclaimer screen
-- [ ] localStorage meta: unlocked logs persist across runs
+- [x] First-person movement (WASD + pointer lock)
+- [x] Procedural terrain chunk with underground area
+- [x] Three suns with 4+ orbital phases
+- [x] Temperature + hydration survival
+- [x] Dehydration mechanic
+- [x] Stable Era cycle (boosted until Final Log)
+- [x] 8 discoverable text logs in ruins
+- [x] HUD, log reader, journal, pause, checkpoints
+- [x] Main menu + disclaimer
+- [x] localStorage: discovered logs + checkpoint
+- [x] GitHub Pages deploy — [play online](https://lawrence-via-mk1987.github.io/3body/)
 
-### Out of scope (post-demo)
+### Next (M8–9)
+
+- [ ] **M8 Visual wayfinding** — pit/grove beacons, trails, HUD compass tick, proximity pulse
+- [ ] **M9 NPC vignettes** — 3 original NPCs, `T` talk, drama-*themed* problems, forecast / pit / grove hooks
+
+### Out of scope (later)
 
 - Full crafting tree
 - Multiple regions / planet scale
 - Real N-body physics integration
 - Multiplayer
 - Mobile touch controls (desktop browser first)
+- Licensed character appearances or voiced drama adaptation content
 
 ---
 
 ## Milestone order
 
-1. **Scaffold** — Vite + Three.js + TS, pointer-lock FPS controller, basic terrain
-2. **Celestial** — `OrbitalDirector`, three sun meshes, dynamic sky, temperature field
-3. **Survival** — hydration, temperature, death states, dehydration
-4. **World** — landmarks, ruin props, era-dependent terrain shader
-5. **Narrative** — text log placements, journal UI, environmental storytelling pass
-6. **Stable Era** — era transition polish, green palette shift, Final Log discovery
-7. **Demo polish** — disclaimer screen, audio, deploy to static host
+1. **Scaffold** — Vite + Three.js + TS, pointer-lock FPS controller, basic terrain ✅
+2. **Celestial** — `OrbitalDirector`, three sun meshes, dynamic sky, temperature field ✅
+3. **Survival** — hydration, temperature, death states, dehydration ✅
+4. **World** — landmarks, ruin props, era-dependent terrain shader ✅
+5. **Narrative** — text log placements, journal UI, environmental storytelling pass ✅
+6. **Stable Era** — era transition polish, green palette shift, Final Log discovery ✅
+7. **Demo polish** — disclaimer screen, audio, deploy to static host ✅
+8. **Visual wayfinding** — pit & grove beacons, trails, compass HUD, spatial audio cues *(recommended next build)*
+9. **NPC chapter** — dialogue UI, 3 original NPCs, predictor / pit / grove problem vignettes
 
 ---
 
@@ -244,4 +328,6 @@ Orbital behavior uses an **authored phase state machine** with bounded randomnes
 | Web perf with 3 suns | Limit shadow casters; shader-based sun glow |
 | First-person disorientation | Subtle vignette, clear horizon reference, underground beacons |
 | Fan work legal sensitivity | Prominent disclaimer on menu and README; non-commercial demo |
-| Scope creep | Lock demo to one region, one Stable Era, 5–8 logs |
+| Scope creep | Lock demo to one region; M8 before M9; 3 NPCs max |
+| Players cannot find pit/grove | M8 wayfinding beacons + HUD tick |
+| NPCs dilute silent tone | Short vignettes at landmarks only; tablets remain primary lore |

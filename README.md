@@ -38,7 +38,8 @@ Pages uses **GitHub Actions** (`build_type: workflow`). Each push to `main` runs
 
 ## Status
 
-**Milestone 5 + flow polish** — audio, Stable Era presentation, GitHub Pages deploy, and demo-friendly onboarding.
+**Shipped:** Milestones 1–7 + flow polish (journal, checkpoints, [live demo](https://lawrence-via-mk1987.github.io/3body/)).  
+**Next:** [GDD Milestone 8](./docs/GDD.md#visual-wayfinding) visual wayfinding (pit & grove), then Milestone 9 NPC vignettes.
 
 | Milestone | Features |
 |---|---|
