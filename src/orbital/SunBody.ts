@@ -1,21 +1,35 @@
 import * as THREE from 'three';
 import { ORBITAL_CONFIG } from './config';
 import type { SunId, SunSnapshot } from './types';
+import { createSunGlowTexture } from '../world/proceduralTextures';
 
 const SUN_DEFS: Record<
   SunId,
-  { color: string; emissive: string; phaseOffset: number; eccentricity: number }
+  { color: string; emissive: string; limb: string; phaseOffset: number; eccentricity: number }
 > = {
-  sun_a: { color: '#ffb27a', emissive: '#ff8a3d', phaseOffset: 0.2, eccentricity: 0.35 },
-  sun_b: { color: '#fff2cc', emissive: '#ffe08a', phaseOffset: 1.8, eccentricity: 0.45 },
-  sun_c: { color: '#ff5a3a', emissive: '#d62818', phaseOffset: 3.4, eccentricity: 0.75 },
+  sun_a: { color: '#ffb27a', emissive: '#ff8a3d', limb: '#ff6a2a', phaseOffset: 0.2, eccentricity: 0.35 },
+  sun_b: { color: '#fff2cc', emissive: '#ffe08a', limb: '#ffb860', phaseOffset: 1.8, eccentricity: 0.45 },
+  sun_c: { color: '#ff5a3a', emissive: '#d62818', limb: '#8a1008', phaseOffset: 3.4, eccentricity: 0.75 },
 };
 
+export interface SunLightOptions {
+  castShadow: boolean;
+  /** Secondary suns light the scene in their own colour without a shadow map. */
+  emitLight: boolean;
+  shadowMapSize?: number;
+  shadowRadius?: number;
+}
+
+/**
+ * One sun: a limb-darkened disk, an additive halo, and (optionally) a directional light.
+ * The disk writes colours above 1.0 so bloom (desktop) picks it up without touching terrain.
+ */
 export class SunBody {
   readonly id: SunId;
   readonly mesh: THREE.Mesh;
   readonly glow: THREE.Sprite;
   readonly light: THREE.DirectionalLight | null;
+  readonly color: THREE.Color;
 
   readonly phaseOffset: number;
   readonly eccentricity: number;
@@ -26,44 +40,87 @@ export class SunBody {
   intensity = 0;
   active = false;
 
-  private readonly direction = new THREE.Vector3();
+  readonly direction = new THREE.Vector3(0, 1, 0);
+  private readonly diskMaterial: THREE.ShaderMaterial;
 
-  constructor(id: SunId, castShadow: boolean) {
+  constructor(id: SunId, options: SunLightOptions) {
     this.id = id;
     const def = SUN_DEFS[id];
     this.phaseOffset = def.phaseOffset;
     this.eccentricity = def.eccentricity;
+    this.color = new THREE.Color(def.color);
 
-    const geometry = new THREE.SphereGeometry(1, 24, 24);
-    const material = new THREE.MeshBasicMaterial({
-      color: def.color,
+    this.diskMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        uCore: { value: new THREE.Color(def.color).multiplyScalar(2.4) },
+        uLimb: { value: new THREE.Color(def.limb).multiplyScalar(1.3) },
+        uBoost: { value: 1 },
+      },
+      vertexShader: `
+        varying vec3 vNormalView;
+        varying vec3 vViewDir;
+        void main() {
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          vNormalView = normalize(normalMatrix * normal);
+          vViewDir = normalize(-mvPosition.xyz);
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uCore;
+        uniform vec3 uLimb;
+        uniform float uBoost;
+        varying vec3 vNormalView;
+        varying vec3 vViewDir;
+        void main() {
+          float mu = clamp(dot(normalize(vNormalView), normalize(vViewDir)), 0.0, 1.0);
+          // Eddington-style limb darkening.
+          float limb = 0.4 + 0.6 * mu;
+          vec3 color = mix(uLimb, uCore, pow(limb, 1.6)) * uBoost;
+          gl_FragColor = vec4(color, 1.0);
+        }
+      `,
       toneMapped: false,
+      depthWrite: false,
+      fog: false,
     });
-    this.mesh = new THREE.Mesh(geometry, material);
+    this.mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 32), this.diskMaterial);
+    this.mesh.renderOrder = 1;
+    this.mesh.frustumCulled = false;
 
-    const glowTexture = createGlowTexture(def.emissive);
     this.glow = new THREE.Sprite(
       new THREE.SpriteMaterial({
-        map: glowTexture,
+        map: createSunGlowTexture(def.emissive),
         color: def.emissive,
         transparent: true,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
+        // Depth-tested so a sun behind a ridge reads as a halo over the ridge, not a disc through it.
+        depthTest: true,
         toneMapped: false,
+        fog: false,
       }),
     );
+    this.glow.renderOrder = 2;
     this.glow.scale.setScalar(ORBITAL_CONFIG.sunBaseScale * 4);
 
-    if (castShadow) {
+    if (options.emitLight || options.castShadow) {
       this.light = new THREE.DirectionalLight(def.color, 0);
-      this.light.castShadow = true;
-      this.light.shadow.mapSize.set(2048, 2048);
-      this.light.shadow.camera.near = 1;
-      this.light.shadow.camera.far = 420;
-      this.light.shadow.camera.left = -120;
-      this.light.shadow.camera.right = 120;
-      this.light.shadow.camera.top = 120;
-      this.light.shadow.camera.bottom = -120;
+      if (options.castShadow) {
+        const radius = options.shadowRadius ?? 80;
+        const mapSize = options.shadowMapSize ?? 2048;
+        this.light.castShadow = true;
+        this.light.shadow.mapSize.set(mapSize, mapSize);
+        this.light.shadow.camera.near = 1;
+        this.light.shadow.camera.far = 520;
+        this.light.shadow.camera.left = -radius;
+        this.light.shadow.camera.right = radius;
+        this.light.shadow.camera.top = radius;
+        this.light.shadow.camera.bottom = -radius;
+        this.light.shadow.bias = -0.0006;
+        this.light.shadow.normalBias = 0.6;
+        this.light.shadow.radius = 2.5;
+      }
     } else {
       this.light = null;
     }
@@ -101,13 +158,22 @@ export class SunBody {
     this.mesh.position.copy(position);
     this.mesh.scale.setScalar(scale);
 
+    // Low suns look redder and dimmer through more atmosphere.
+    const horizonFactor = THREE.MathUtils.clamp(this.elevation / 0.35, 0, 1);
+    this.diskMaterial.uniforms.uBoost.value = 0.55 + horizonFactor * 0.45 + Math.min(this.intensity, 3) * 0.15;
+
     this.glow.visible = true;
     this.glow.position.copy(position);
-    this.glow.scale.setScalar(scale * 4.5);
+    const haloScale = scale * (3.6 + Math.min(this.intensity, 3) * 1.1) * (1.3 - horizonFactor * 0.3);
+    this.glow.scale.setScalar(haloScale);
+    (this.glow.material as THREE.SpriteMaterial).opacity = THREE.MathUtils.clamp(0.35 + this.intensity * 0.3, 0.3, 1);
 
     if (this.light) {
-      this.light.intensity = this.intensity * 1.15;
-      this.light.color.set(SUN_DEFS[this.id].color);
+      // Physical light units: ~π× intensity reads as sunlight on a Lambert surface.
+      // Soft knee keeps Tri-Solar / Flying Star bright without saturating the whole ground.
+      const knee = this.intensity / (1 + this.intensity * 0.4);
+      this.light.intensity = knee * (this.light.castShadow ? 3.4 : 1.5);
+      this.light.color.copy(this.color);
       this.light.position.copy(position);
       this.light.target.position.copy(anchor);
       this.light.target.updateMatrixWorld();
@@ -136,32 +202,9 @@ export class SunBody {
 
   dispose(): void {
     this.mesh.geometry.dispose();
-    (this.mesh.material as THREE.Material).dispose();
+    this.diskMaterial.dispose();
     const glowMaterial = this.glow.material as THREE.SpriteMaterial;
     glowMaterial.map?.dispose();
     glowMaterial.dispose();
   }
-}
-
-function createGlowTexture(color: string): THREE.CanvasTexture {
-  const size = 128;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const context = canvas.getContext('2d');
-
-  if (!context) {
-    return new THREE.CanvasTexture(canvas);
-  }
-
-  const gradient = context.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  gradient.addColorStop(0, color);
-  gradient.addColorStop(0.2, 'rgba(255, 180, 80, 0.45)');
-  gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, size, size);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.needsUpdate = true;
-  return texture;
 }

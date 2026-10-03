@@ -37,6 +37,8 @@ import type { StoryBeatId } from '../narrative/storyContent';
 import { StoryOverlay } from '../ui/StoryOverlay';
 import { CivilizationCounter } from '../narrative/CivilizationCounter';
 import { CivilizationLegacy } from '../narrative/CivilizationLegacy';
+import { resolveRenderQuality, type RenderQuality } from '../platform/renderQuality';
+import { RenderPipeline } from '../render/RenderPipeline';
 import { getStageCopy } from '../narrative/civilizationStages';
 import { CivilizationProps } from '../world/CivilizationProps';
 import { NpcPresence } from '../world/NpcPresence';
@@ -115,6 +117,8 @@ interface OverlayElements {
 
 export class Game {
   private readonly renderer: THREE.WebGLRenderer;
+  private readonly renderQuality: RenderQuality;
+  private readonly pipeline: RenderPipeline;
   private readonly scene = new THREE.Scene();
   private readonly clock = new THREE.Clock();
   private readonly terrain: Terrain;
@@ -277,7 +281,8 @@ export class Game {
       antialias: true,
       powerPreference: 'high-performance',
     });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderQuality = resolveRenderQuality(deviceProfile);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.renderQuality.pixelRatioCap));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -288,7 +293,14 @@ export class Game {
     this.fog = new THREE.FogExp2('#3a2818', 0.002);
     this.scene.fog = this.fog;
 
-    this.terrain = new Terrain();
+    this.terrain = new Terrain({
+      segments: this.renderQuality.terrainSegments,
+      textureSize: this.renderQuality.textureSize,
+      anisotropy: Math.min(
+        this.renderQuality.anisotropy,
+        this.renderer.capabilities.getMaxAnisotropy(),
+      ),
+    });
     this.sky = new Sky();
     this.shelterZones = new ShelterZones(this.terrain);
     this.player = new FirstPersonController(
@@ -350,6 +362,13 @@ export class Game {
       () => this.meta.onChaoticPhaseEnded(),
       () => this.meta.onStableEntered(),
       () => this.forecastMeta.getConfidenceBonus(),
+      { renderer: this.renderer, quality: this.renderQuality },
+    );
+    this.pipeline = new RenderPipeline(
+      this.renderer,
+      this.scene,
+      this.player.camera,
+      this.renderQuality,
     );
 
     this.logMarkers = new LogMarkers(this.terrain, this.logDiscovery);
@@ -491,6 +510,14 @@ export class Game {
     });
 
     window.addEventListener('resize', this.onResize);
+    if (new URLSearchParams(window.location.search).has('debug')) {
+      (window as unknown as { __3body?: unknown }).__3body = {
+        setPhase: (phase: EraPhase) => this.orbital.debugSetPhase(phase),
+        position: () => this.player.getPosition().toArray(),
+        groundHeight: () => this.terrain.getHeightAt(this.player.getPosition().x, this.player.getPosition().z),
+        quality: this.renderQuality,
+      };
+    }
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible' && this.running) {
         void this.audio.unlockFromGesture(MetaProgress.loadMasterVolume());
@@ -1011,7 +1038,7 @@ export class Game {
       );
       this.settlementNpcs.update(this.orbital.getEraKind(), this.anchor, this.npcPulseTime);
       this.npcPresence.update(delta, this.orbital.getEraKind(), this.anchor.x, this.anchor.z);
-      this.renderer.render(this.scene, this.player.camera);
+      this.pipeline.render(this.scene, this.player.camera);
       this.animationId = requestAnimationFrame(this.animate);
       return;
     }
@@ -1078,12 +1105,13 @@ export class Game {
       }
     }
 
-    this.exposureTarget = stableEra ? 1.28 : 1.12;
+    this.exposureTarget = this.orbital.getExposureTarget();
     this.renderer.toneMappingExposure = THREE.MathUtils.lerp(
       this.renderer.toneMappingExposure,
       this.exposureTarget,
-      Math.min(delta * 2, 1),
+      Math.min(delta * 1.2, 1),
     );
+    this.pipeline.setBloomStrength(this.orbital.getBloomTarget());
 
     if (this.survival.status !== 'dead' && !this.logReader.isOpen()) {
       const shelter = this.shelterZones.sample(this.anchor);
@@ -1132,7 +1160,7 @@ export class Game {
       this.tryPresentPendingStoryBeat();
     }
 
-    this.renderer.render(this.scene, this.player.camera);
+    this.pipeline.render(this.scene, this.player.camera);
     this.animationId = requestAnimationFrame(this.animate);
   };
 
@@ -1620,7 +1648,7 @@ export class Game {
   private onResize = (): void => {
     const width = window.innerWidth;
     const height = window.innerHeight;
-    this.renderer.setSize(width, height);
+    this.pipeline.setSize(width, height);
     this.player.resize(width / height);
   };
 
@@ -1636,6 +1664,7 @@ export class Game {
     this.settlementNpcs.dispose();
     this.civilizationProps.dispose();
     this.npcPresence.dispose();
+    this.pipeline.dispose();
     this.renderer.dispose();
   }
 }
