@@ -17,6 +17,7 @@ import { CheckpointSave } from './save/CheckpointSave';
 import { MetaProgress } from './narrative/MetaProgress';
 import { applyDeviceProfileToDocument, detectDeviceProfile } from './platform/deviceProfile';
 import type { MobileChromeElements } from './ui/mobileChrome';
+import type { MobileHudBundle } from './ui/mobileHudBundle';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
 const overlay = document.querySelector<HTMLDivElement>('#overlay');
@@ -59,10 +60,13 @@ const logNavRow = document.querySelector<HTMLDivElement>('#log-nav');
 const logPrevButton = document.querySelector<HTMLButtonElement>('#log-prev');
 const logNextButton = document.querySelector<HTMLButtonElement>('#log-next');
 const logNavIndicator = document.querySelector<HTMLSpanElement>('#log-nav-indicator');
+const logActionHint = document.querySelector<HTMLParagraphElement>('#log-action-hint');
 const journalEraList = document.querySelector<HTMLUListElement>('#journal-era-list');
 const journalLogList = document.querySelector<HTMLUListElement>('#journal-log-list');
 const journalLetterList = document.querySelector<HTMLUListElement>('#journal-letter-list');
 const journalLettersHeading = document.querySelector<HTMLHeadingElement>('#journal-letters-heading');
+const journalQuestList = document.querySelector<HTMLUListElement>('#journal-quest-list');
+const journalQuestHeading = document.querySelector<HTMLHeadingElement>('#journal-quest-heading');
 const journalLogCount = document.querySelector<HTMLSpanElement>('#journal-log-count');
 const journalCloseButton = document.querySelector<HTMLButtonElement>('#journal-close');
 const storyBeatOverlay = document.querySelector<HTMLDivElement>('#story-beat-overlay');
@@ -103,6 +107,27 @@ const mobileBtnUse = document.querySelector<HTMLButtonElement>('#mobile-btn-use'
 const mobileBtnInteract = document.querySelector<HTMLButtonElement>('#mobile-btn-interact');
 const mobileBtnJournal = document.querySelector<HTMLButtonElement>('#mobile-btn-journal');
 const mobileBtnPause = document.querySelector<HTMLButtonElement>('#mobile-btn-pause');
+const mobileBtnStats = document.querySelector<HTMLButtonElement>('#mobile-btn-stats');
+const soundUnlockBannerEl = document.querySelector<HTMLDivElement>('#sound-unlock-banner');
+const soundUnlockBtn = document.querySelector<HTMLButtonElement>('#sound-unlock-btn');
+const hudMobileStrip = document.querySelector<HTMLDivElement>('#hud-mobile-strip');
+const mobileHudLine1 = document.querySelector<HTMLSpanElement>('#mobile-hud-line1');
+const mobileHudObjective = document.querySelector<HTMLParagraphElement>('#mobile-hud-objective');
+const mobileHudHealthBar = document.querySelector<HTMLDivElement>('#mobile-hud-health-bar');
+const mobileHudHydrationBar = document.querySelector<HTMLDivElement>('#mobile-hud-hydration-bar');
+const mobileHudHealth = document.querySelector<HTMLSpanElement>('#mobile-hud-health');
+const mobileHudHydration = document.querySelector<HTMLSpanElement>('#mobile-hud-hydration');
+const hudMobileBackdrop = document.querySelector<HTMLDivElement>('#hud-mobile-backdrop');
+const hudMobileSheet = document.querySelector<HTMLDivElement>('#hud-mobile-sheet');
+const hudMobileSheetClose = document.querySelector<HTMLButtonElement>('#hud-mobile-sheet-close');
+const mobileHudSkyBtn = document.querySelector<HTMLButtonElement>('#mobile-hud-sky-btn');
+const sheetPhase = document.querySelector<HTMLSpanElement>('#sheet-phase');
+const sheetTemperature = document.querySelector<HTMLSpanElement>('#sheet-temperature');
+const sheetForecast = document.querySelector<HTMLSpanElement>('#sheet-forecast');
+const sheetLandmark = document.querySelector<HTMLSpanElement>('#sheet-landmark');
+const sheetLogs = document.querySelector<HTMLSpanElement>('#sheet-logs');
+const sheetPosition = document.querySelector<HTMLSpanElement>('#sheet-position');
+const sheetStatus = document.querySelector<HTMLParagraphElement>('#sheet-status');
 
 const deviceProfile = detectDeviceProfile();
 applyDeviceProfileToDocument(deviceProfile);
@@ -125,6 +150,23 @@ function applyMenuControlsHint(locale: 'en' | 'zh'): void {
     }
     if (mobileBtnPause) {
       mobileBtnPause.textContent = locale === 'zh' ? '暂停' : 'Pause';
+    }
+    if (mobileBtnStats) {
+      mobileBtnStats.textContent = locale === 'zh' ? '天空' : 'Sky';
+    }
+    if (mobileHudSkyBtn) {
+      mobileHudSkyBtn.textContent = locale === 'zh' ? '天空' : 'Sky';
+    }
+  }
+  if (menuControlsHint && !deviceProfile.prefersTouchControls) {
+    return;
+  }
+  if (menuControlsHint && deviceProfile.prefersTouchControls) {
+    const silentNote = locale === 'zh'
+      ? ' iPhone：请关闭静音开关以听到环境音。'
+      : ' On iPhone, turn off silent mode for ambience.';
+    if (!menuControlsHint.textContent?.includes('silent') && !menuControlsHint.textContent?.includes('静音')) {
+      menuControlsHint.textContent += silentNote;
     }
   }
 }
@@ -284,6 +326,7 @@ const logReader = new LogReader(
   logPrevButton,
   logNextButton,
   logNavIndicator,
+  logActionHint!,
 );
 const journal = new Journal(
   journalOverlay,
@@ -292,6 +335,8 @@ const journal = new Journal(
   journalLogCount,
   journalLetterList!,
   journalLettersHeading!,
+  journalQuestList!,
+  journalQuestHeading!,
   journalCloseButton,
 );
 const dialoguePanel = new DialoguePanel(
@@ -342,6 +387,48 @@ const mobileChrome: MobileChromeElements | null = deviceProfile.prefersTouchCont
     interactButton: mobileBtnInteract,
     journalButton: mobileBtnJournal,
     pauseButton: mobileBtnPause,
+  }
+  : null;
+
+const mobileHudBundle: MobileHudBundle | null = deviceProfile.prefersTouchControls
+  && hudMobileStrip
+  && mobileHudLine1
+  && mobileHudObjective
+  && mobileHudHealthBar
+  && mobileHudHydrationBar
+  && mobileHudHealth
+  && mobileHudHydration
+  && hudMobileBackdrop
+  && hudMobileSheet
+  && hudMobileSheetClose
+  && mobileHudSkyBtn
+  && sheetPhase
+  && sheetTemperature
+  && sheetForecast
+  && sheetLandmark
+  && sheetLogs
+  && sheetPosition
+  && sheetStatus
+  ? {
+    strip: hudMobileStrip,
+    line1: mobileHudLine1,
+    objective: mobileHudObjective,
+    healthBar: mobileHudHealthBar,
+    hydrationBar: mobileHudHydrationBar,
+    healthText: mobileHudHealth,
+    hydrationText: mobileHudHydration,
+    sheet: hudMobileSheet,
+    sheetBackdrop: hudMobileBackdrop,
+    sheetClose: hudMobileSheetClose,
+    sheetPhase,
+    sheetTemperature,
+    sheetForecast,
+    sheetLandmark,
+    sheetLogs,
+    sheetPosition,
+    sheetStatus,
+    skyButton: mobileHudSkyBtn,
+    statsButton: mobileBtnStats,
   }
   : null;
 
@@ -434,6 +521,9 @@ game = new Game(
   storyOverlay,
   deviceProfile,
   mobileChrome,
+  mobileHudBundle,
+  soundUnlockBannerEl,
+  soundUnlockBtn,
 );
 
 introCinematic = new IntroCinematic(
@@ -453,6 +543,9 @@ introCinematic = new IntroCinematic(
     game.setCinematicBed(active);
   },
 );
+introCinematic.setOnUserGesture(() => {
+  void game.unlockAudioFromGesture();
+});
 
 localeMenu = new LocaleMenu(
   worldIntroBody,
@@ -516,17 +609,22 @@ async function launchGame(
   await startSession();
 }
 
+const tapPlay = (mode: 'new' | 'continue'): void => {
+  void game.unlockAudioFromGesture();
+  void launchGame(mode);
+};
+
 startButton.addEventListener('click', () => {
   if (CheckpointSave.load()) {
     freshStartConfirm!.classList.remove('hidden');
     return;
   }
-  void launchGame('new');
+  tapPlay('new');
 });
 
 freshStartConfirmButton.addEventListener('click', () => {
   freshStartConfirm!.classList.add('hidden');
-  void launchGame('new');
+  tapPlay('new');
 });
 
 freshStartCancelButton.addEventListener('click', () => {
@@ -534,7 +632,7 @@ freshStartCancelButton.addEventListener('click', () => {
 });
 
 continueButton.addEventListener('click', () => {
-  void launchGame('continue');
+  tapPlay('continue');
 });
 
 refreshCheckpointMenu();

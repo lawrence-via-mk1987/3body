@@ -19,6 +19,10 @@ export class MetaProgress {
     this.enteredStableThisRun = true;
   }
 
+  hasEnteredStableThisRun(): boolean {
+    return this.enteredStableThisRun;
+  }
+
   resetRun(): void {
     this.chaoticTransitionsThisRun = 0;
     this.enteredStableThisRun = false;

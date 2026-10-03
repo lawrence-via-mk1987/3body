@@ -69,6 +69,14 @@ import { Sky } from '../world/Sky';
 import { StableEraParticles } from '../world/StableEraParticles';
 import { Terrain } from '../world/Terrain';
 import { WATER_REFILL_AMOUNT, WaterSource } from '../world/WaterSource';
+import {
+  getLogActionHint,
+  getQuestObjectiveLine,
+  type QuestProgressInput,
+} from '../narrative/questContent';
+import { MobileHudSheet } from '../ui/MobileHudSheet';
+import type { MobileHudBundle } from '../ui/mobileHudBundle';
+import { SoundUnlockBanner } from '../ui/SoundUnlockBanner';
 
 interface HudElements {
   root: HTMLElement;
@@ -162,6 +170,9 @@ export class Game {
   private lastSurvivalStatus: 'active' | 'dehydrated' | 'dead' = 'active';
   private readonly deviceProfile: DeviceProfile;
   private readonly mobileControls: MobileControls | null;
+  private readonly mobileHud: MobileHudBundle | null;
+  private readonly mobileHudSheet: MobileHudSheet | null;
+  private readonly soundBanner: SoundUnlockBanner | null;
   private mobileUi = {
     hasNearbyLog: false,
     nearPit: false,
@@ -193,9 +204,32 @@ export class Game {
     private readonly storyOverlay: StoryOverlay,
     deviceProfile: DeviceProfile,
     mobileChrome: MobileChromeElements | null,
+    mobileHud: MobileHudBundle | null,
+    soundBannerRoot: HTMLElement | null,
+    soundBannerButton: HTMLButtonElement | null,
   ) {
     this.deviceProfile = deviceProfile;
     this.mobileControls = null;
+    this.mobileHud = mobileHud;
+    this.soundBanner = soundBannerRoot && soundBannerButton
+      ? new SoundUnlockBanner(soundBannerRoot, soundBannerButton, () => {
+        void this.unlockAudioFromGesture();
+      })
+      : null;
+    this.mobileHudSheet = mobileHud
+      ? new MobileHudSheet(
+        mobileHud.sheet,
+        mobileHud.sheetBackdrop,
+        mobileHud.sheetClose,
+        mobileHud.skyButton,
+      )
+      : null;
+    if (mobileHud?.statsButton && this.mobileHudSheet) {
+      mobileHud.statsButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        this.mobileHudSheet?.toggle();
+      });
+    }
     this.storyDirector = new StoryDirector(
       this.storyBeatState,
       getLocale,
@@ -373,6 +407,7 @@ export class Game {
             this.logDiscovery,
             this.storyDirector.getUnlockedForJournal(),
             this.getLocale(),
+            this.buildQuestProgress(),
           );
         }
       });
@@ -442,6 +477,42 @@ export class Game {
     });
 
     window.addEventListener('resize', this.onResize);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && this.running) {
+        void this.audio.unlockFromGesture(MetaProgress.loadMasterVolume());
+        this.syncSoundBanner();
+      }
+    });
+  }
+
+  async unlockAudioFromGesture(): Promise<void> {
+    await this.audio.unlockFromGesture(MetaProgress.loadMasterVolume());
+    this.syncSoundBanner();
+  }
+
+  private syncSoundBanner(): void {
+    if (!this.soundBanner) {
+      return;
+    }
+    if (!this.running || this.paused) {
+      this.soundBanner.hide();
+      return;
+    }
+    if (this.audio.isContextRunning()) {
+      this.soundBanner.hide();
+    } else {
+      this.soundBanner.show(this.getLocale());
+    }
+  }
+
+  private buildQuestProgress(): QuestProgressInput {
+    return {
+      hasWaystone: this.logDiscovery.isDiscovered('waystone'),
+      predictorCalibrated: this.forecastMeta.isCalibrated(),
+      enteredStableThisRun: this.meta.hasEnteredStableThisRun(),
+      hasGroveHope: this.logDiscovery.isDiscovered('grove_hope'),
+      hasFinalLog: this.logDiscovery.isDiscovered('final_log'),
+    };
   }
 
   private addLandmarks(): void {
@@ -491,9 +562,7 @@ export class Game {
   }
 
   async ensureAudio(): Promise<void> {
-    const volume = MetaProgress.loadMasterVolume();
-    await this.audio.start(volume);
-    this.audio.setMasterVolume(volume);
+    await this.unlockAudioFromGesture();
   }
 
   setCinematicBed(active: boolean): void {
@@ -608,13 +677,16 @@ export class Game {
     if (this.deviceProfile.prefersTouchControls) {
       this.hudCompact = true;
       this.hud.root.classList.add('compact');
+      this.mobileHud?.strip.classList.remove('hidden');
       this.mobileControls?.show();
       this.player.enableTouchMode();
       this.player.lock();
     } else {
+      this.mobileHud?.strip.classList.add('hidden');
       this.mobileControls?.hide();
       this.player.lock();
     }
+    this.syncSoundBanner();
     this.clock.start();
     this.animate();
     window.setTimeout(() => {
@@ -632,6 +704,8 @@ export class Game {
     this.narration.cancel();
     this.audio.stop();
     this.mobileControls?.hide();
+    this.mobileHudSheet?.close();
+    this.soundBanner?.hide();
     this.player.unlock();
   }
 
@@ -734,6 +808,7 @@ export class Game {
       this.logDiscovery,
       this.storyDirector.getUnlockedForJournal(),
       this.getLocale(),
+      this.buildQuestProgress(),
     );
     this.syncMovementState();
   }
@@ -1238,14 +1313,20 @@ export class Game {
     }
 
     const isNew = this.logDiscovery.discover(nearbyLog.log.id);
+    const locale = this.getLocale();
+    const actionHint = getLogActionHint(locale, nearbyLog.log.id);
     if (isNew) {
       this.audio.playLogDiscover();
       if (nearbyLog.log.id === 'final_log') {
         this.pendingEpilogue = true;
       }
       this.storyDirector.syncFromDiscovery(this.logDiscovery);
+      if (actionHint) {
+        this.gameToast.show(actionHint);
+        this.runJournal.recordCounsel(actionHint);
+      }
     }
-    this.logReader.open(nearbyLog.log);
+    this.logReader.open(nearbyLog.log, actionHint);
     this.syncMovementState();
   }
 
@@ -1351,7 +1432,9 @@ export class Game {
     this.hud.forecast.textContent = this.orbital.getForecastSummary();
     this.hud.position.textContent = this.player.getPositionText();
     this.hud.logs.textContent = `${this.logDiscovery.getDiscoveredCount()} / ${this.logDiscovery.getAllLogs().length}`;
-    this.hud.chapter.textContent = this.storyDirector.getObjectiveText(this.logDiscovery);
+    const questProgress = this.buildQuestProgress();
+    const objectiveLine = getQuestObjectiveLine(this.getLocale(), questProgress);
+    this.hud.chapter.textContent = objectiveLine;
 
     const temperatureSample = this.orbital.getTemperature();
     const currentPhase = this.orbital.getPhase();
@@ -1406,6 +1489,25 @@ export class Game {
 
     this.hud.status.textContent = statusMessage;
 
+    if (this.mobileHud) {
+      this.mobileHud.line1.textContent =
+        `${this.orbital.getEraLabel()} · ${this.orbital.getPhaseLabel()} · ${temperature.label}`;
+      this.mobileHud.objective.textContent = objectiveLine.replace(/^Chapter: |^章节：/, '');
+      this.mobileHud.healthText.textContent = `${Math.ceil(snapshot.health)}`;
+      this.mobileHud.hydrationText.textContent = `${Math.ceil(snapshot.hydration)}`;
+      this.mobileHud.healthBar.style.width = `${snapshot.health}%`;
+      this.mobileHud.hydrationBar.style.width = `${snapshot.hydration}%`;
+      this.mobileHud.sheetPhase.textContent = this.orbital.getPhaseLabel();
+      this.mobileHud.sheetTemperature.textContent =
+        `${temperature.label} (${snapshot.effectiveTemperature.toFixed(1)})`;
+      this.mobileHud.sheetForecast.textContent = this.orbital.getForecastSummary();
+      this.mobileHud.sheetLandmark.textContent = landmark ?? 'Open wasteland';
+      this.mobileHud.sheetLogs.textContent =
+        `${this.logDiscovery.getDiscoveredCount()} / ${this.logDiscovery.getAllLogs().length}`;
+      this.mobileHud.sheetPosition.textContent = this.player.getPositionText();
+      this.mobileHud.sheetStatus.textContent = statusMessage;
+    }
+
     const interaction = resolveInteractionPrompt({
       stableEra,
       nearbyLog,
@@ -1426,6 +1528,8 @@ export class Game {
     } else {
       this.hud.interaction.classList.add('hidden');
     }
+
+    this.syncSoundBanner();
 
     this.hud.healthBar.parentElement?.classList.toggle('critical', snapshot.health < 30);
     this.hud.hydrationBar.parentElement?.classList.toggle('critical', snapshot.hydration < 25);

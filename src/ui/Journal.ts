@@ -3,6 +3,11 @@ import type { LogDiscovery } from '../narrative/LogDiscovery';
 import type { RunJournal } from '../narrative/RunJournal';
 import type { TextLog } from '../narrative/logs';
 import type { StoryBeatId } from '../narrative/storyContent';
+import {
+  getQuestSteps,
+  isQuestStepComplete,
+  type QuestProgressInput,
+} from '../narrative/questContent';
 import { getStoryBeat } from '../narrative/storyContent';
 
 export class Journal {
@@ -19,6 +24,8 @@ export class Journal {
     private readonly logCount: HTMLElement,
     private readonly letterList: HTMLUListElement,
     private readonly lettersHeading: HTMLElement,
+    private readonly questList: HTMLUListElement,
+    private readonly questHeading: HTMLElement,
     closeButton: HTMLButtonElement,
   ) {
     closeButton.addEventListener('click', (event) => {
@@ -69,12 +76,13 @@ export class Journal {
     discovery: LogDiscovery,
     letterIds: readonly StoryBeatId[],
     locale: Locale,
+    questProgress: QuestProgressInput,
   ): void {
     if (this.openState) {
       this.close();
       return;
     }
-    this.render(runJournal, discovery, letterIds, locale);
+    this.render(runJournal, discovery, letterIds, locale, questProgress);
     this.overlay.classList.remove('hidden');
     this.openState = true;
     this.onOpenCallback?.();
@@ -94,7 +102,24 @@ export class Journal {
     discovery: LogDiscovery,
     letterIds: readonly StoryBeatId[],
     locale: Locale,
+    questProgress: QuestProgressInput,
   ): void {
+    this.questHeading.textContent = locale === 'zh' ? '本循环目标' : 'This cycle';
+    this.questList.replaceChildren();
+    for (const step of getQuestSteps(locale)) {
+      const done = isQuestStepComplete(step.id, questProgress);
+      const item = document.createElement('li');
+      item.className = done ? 'journal-quest-done' : 'journal-quest-active';
+      const mark = document.createElement('span');
+      mark.className = 'journal-quest-mark';
+      mark.textContent = done ? '✓' : '○';
+      const text = document.createElement('span');
+      text.className = 'journal-quest-text';
+      text.textContent = `${step.title} — ${step.detail}`;
+      item.append(mark, text);
+      this.questList.append(item);
+    }
+
     this.lettersHeading.textContent = locale === 'zh'
       ? '上一循环智者的信'
       : 'Letters from the prior sage';

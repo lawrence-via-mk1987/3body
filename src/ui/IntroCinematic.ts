@@ -8,6 +8,7 @@ export class IntroCinematic {
   private index = 0;
   private locale: Locale = 'en';
   private onCompleteCallback: (() => void) | null = null;
+  private onUserGestureCallback: (() => void) | null = null;
   private narrationVolume = 0.55;
 
   constructor(
@@ -24,6 +25,7 @@ export class IntroCinematic {
     private readonly onCinematicBed: (active: boolean) => void,
   ) {
     skipButton.addEventListener('click', () => {
+      this.notifyUserGesture();
       this.finish(true);
     });
     nextButton.addEventListener('click', () => {
@@ -65,6 +67,14 @@ export class IntroCinematic {
 
   setNarrationVolume(volume: number): void {
     this.narrationVolume = volume;
+  }
+
+  setOnUserGesture(callback: () => void): void {
+    this.onUserGestureCallback = callback;
+  }
+
+  private notifyUserGesture(): void {
+    this.onUserGestureCallback?.();
   }
 
   isOpen(): boolean {
@@ -110,6 +120,7 @@ export class IntroCinematic {
   }
 
   private advance(): void {
+    this.notifyUserGesture();
     this.narration.cancel();
     if (this.index >= this.cards.length - 1) {
       this.finish(false);

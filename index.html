@@ -126,6 +126,10 @@
         <p class="eyebrow">Survivor journal</p>
         <h2>Cycle record</h2>
         <section class="journal-section">
+          <h3 id="journal-quest-heading">This cycle</h3>
+          <ul id="journal-quest-list" class="journal-list journal-quest-list"></ul>
+        </section>
+        <section class="journal-section">
           <h3 id="journal-letters-heading">Letters from the prior sage</h3>
           <ul id="journal-letter-list" class="journal-list journal-log-list"></ul>
         </section>
@@ -146,6 +150,7 @@
         <p class="eyebrow">Recovered text</p>
         <h2 id="log-title"></h2>
         <p id="log-body"></p>
+        <p id="log-action-hint" class="log-action-hint hidden"></p>
         <div id="log-nav" class="log-nav hidden">
           <button id="log-prev" type="button" class="secondary-btn log-nav-btn">Previous</button>
           <span id="log-nav-indicator" class="log-nav-indicator"></span>
@@ -176,7 +181,46 @@
       </div>
     </div>
 
+    <div id="sound-unlock-banner" class="sound-unlock-banner hidden" role="status">
+      <span class="sound-unlock-text"></span>
+      <button id="sound-unlock-btn" type="button" class="mobile-btn mobile-btn-primary">Enable sound</button>
+    </div>
+
     <div id="hud" class="hidden">
+      <div id="hud-mobile-strip" class="hud-mobile-strip hidden">
+        <div class="mobile-strip-row">
+          <span id="mobile-hud-line1" class="mobile-hud-line1"></span>
+          <button id="mobile-hud-sky-btn" type="button" class="mobile-hud-sky-btn">Sky</button>
+        </div>
+        <div class="mobile-strip-vitals">
+          <div class="mobile-vital">
+            <span class="mobile-vital-label">HP</span>
+            <div class="mobile-meter"><div id="mobile-hud-health-bar" class="mobile-meter-fill health"></div></div>
+            <span id="mobile-hud-health" class="mobile-vital-value">100</span>
+          </div>
+          <div class="mobile-vital">
+            <span class="mobile-vital-label">H₂O</span>
+            <div class="mobile-meter"><div id="mobile-hud-hydration-bar" class="mobile-meter-fill hydration"></div></div>
+            <span id="mobile-hud-hydration" class="mobile-vital-value">100</span>
+          </div>
+        </div>
+        <p id="mobile-hud-objective" class="mobile-hud-objective" aria-live="polite"></p>
+      </div>
+      <div id="hud-mobile-backdrop" class="hud-mobile-backdrop hidden"></div>
+      <div id="hud-mobile-sheet" class="hud-mobile-sheet panel hidden">
+        <p class="eyebrow">Sky &amp; status</p>
+        <ul class="mobile-sheet-list">
+          <li><span>Phase</span><span id="sheet-phase"></span></li>
+          <li><span>Temperature</span><span id="sheet-temperature"></span></li>
+          <li><span>Outlook</span><span id="sheet-forecast"></span></li>
+          <li><span>Landmark</span><span id="sheet-landmark"></span></li>
+          <li><span>Logs</span><span id="sheet-logs"></span></li>
+          <li><span>Position</span><span id="sheet-position"></span></li>
+        </ul>
+        <p id="sheet-status" class="sheet-status"></p>
+        <button id="hud-mobile-sheet-close" type="button">Close</button>
+      </div>
+
       <div class="hud-block hud-era">
         <span class="hud-label">Era</span>
         <span id="hud-era">Chaotic</span>
@@ -251,6 +295,7 @@
       <div class="mobile-action-bar mobile-action-bar-secondary">
         <button id="mobile-btn-journal" type="button" class="mobile-btn mobile-btn-small">Journal</button>
         <button id="mobile-btn-pause" type="button" class="mobile-btn mobile-btn-small">Pause</button>
+        <button id="mobile-btn-stats" type="button" class="mobile-btn mobile-btn-small">Sky</button>
       </div>
     </div>
 

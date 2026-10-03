@@ -16,6 +16,7 @@ export class LogReader {
     private readonly prevButton: HTMLButtonElement,
     private readonly nextButton: HTMLButtonElement,
     private readonly navIndicator: HTMLElement,
+    private readonly actionHint: HTMLElement,
   ) {
     closeButton.addEventListener('click', (event) => {
       event.stopPropagation();
@@ -62,10 +63,10 @@ export class LogReader {
     return this.openState;
   }
 
-  open(log: TextLog): void {
+  open(log: TextLog, actionHint: string | null = null): void {
     this.gallery = null;
     this.galleryIndex = 0;
-    this.showLog(log);
+    this.showLog(log, actionHint);
     this.updateNavigation();
     this.overlay.classList.remove('hidden');
     this.openState = true;
@@ -77,7 +78,7 @@ export class LogReader {
     const index = gallery.findIndex((entry) => entry.id === log.id);
     this.gallery = gallery.length > 1 ? gallery : null;
     this.galleryIndex = index >= 0 ? index : 0;
-    this.showLog(gallery[this.galleryIndex] ?? log);
+    this.showLog(gallery[this.galleryIndex] ?? log, null);
     this.updateNavigation();
     this.overlay.classList.remove('hidden');
     this.openState = true;
@@ -85,9 +86,16 @@ export class LogReader {
     this.closeButton.focus();
   }
 
-  private showLog(log: TextLog): void {
+  private showLog(log: TextLog, actionHint: string | null): void {
     this.title.textContent = log.title;
     this.body.textContent = log.body;
+    if (actionHint) {
+      this.actionHint.textContent = actionHint;
+      this.actionHint.classList.remove('hidden');
+    } else {
+      this.actionHint.textContent = '';
+      this.actionHint.classList.add('hidden');
+    }
   }
 
   private step(delta: number): void {
@@ -95,7 +103,7 @@ export class LogReader {
       return;
     }
     this.galleryIndex = (this.galleryIndex + delta + this.gallery.length) % this.gallery.length;
-    this.showLog(this.gallery[this.galleryIndex]!);
+    this.showLog(this.gallery[this.galleryIndex]!, null);
     this.updateNavigation();
   }
 

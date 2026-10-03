@@ -15,11 +15,11 @@ export class AudioDirector {
   private masterVolume = 0.55;
 
   async start(initialVolume = 0.55): Promise<void> {
-    if (this.started) {
+    this.masterVolume = initialVolume;
+    if (this.started && this.context) {
       return;
     }
 
-    this.masterVolume = initialVolume;
     this.context = new AudioContext();
     this.masterGain = this.context.createGain();
     this.masterGain.gain.value = initialVolume;
@@ -34,6 +34,23 @@ export class AudioDirector {
     }
 
     this.started = true;
+  }
+
+  /** Call synchronously from a click/touch handler; resumes Web Audio on iOS. */
+  async unlockFromGesture(initialVolume = 0.55): Promise<boolean> {
+    await this.start(initialVolume);
+    if (!this.context || !this.masterGain) {
+      return false;
+    }
+    if (this.context.state === 'suspended') {
+      await this.context.resume();
+    }
+    this.masterGain.gain.setTargetAtTime(this.masterVolume, this.context.currentTime, 0.05);
+    return this.context.state === 'running';
+  }
+
+  isContextRunning(): boolean {
+    return Boolean(this.started && this.context && this.context.state === 'running');
   }
 
   stop(): void {
