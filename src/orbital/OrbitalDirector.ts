@@ -106,6 +106,7 @@ export class OrbitalDirector {
     stableRoll: () => StableEraRoll = () => ({ chance: ORBITAL_CONFIG.stableEraChance, force: false }),
     onChaoticPhaseEnded?: () => void,
     onStableEntered?: () => void,
+    private readonly forecastConfidenceBonus: () => number = () => 0,
   ) {
     this.eraState = new EraStateMachine(stableRoll, onChaoticPhaseEnded, onStableEntered);
     for (const sun of this.suns) {
@@ -212,11 +213,16 @@ export class OrbitalDirector {
     this.refreshForecast();
   }
 
+  refreshForecastNow(): void {
+    this.refreshForecast();
+  }
+
   private refreshForecast(): void {
     this.forecast = buildForecast(
       this.eraState.phase,
       this.eraState.elapsedInPhase,
       this.eraState.phaseDuration,
+      this.forecastConfidenceBonus(),
     );
     this.forecastSummary = summarizeForecast(this.forecast);
   }

@@ -93,6 +93,9 @@ export class Journal {
       for (const entry of eraEntries) {
         const item = document.createElement('li');
         item.dataset.kind = entry.kind;
+        if (entry.kind === 'counsel') {
+          item.classList.add('journal-counsel');
+        }
         const time = document.createElement('span');
         time.className = 'journal-time';
         time.textContent = new Date(entry.at).toLocaleTimeString(undefined, {

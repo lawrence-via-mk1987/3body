@@ -1,18 +1,6 @@
-export interface DialogueChoice {
-  id: string;
-  label: string;
-  nextId: string;
-  sideEffect?: 'fold_lesson' | 'mark_spoke';
-}
+import type { DialogueTree } from './dialogueTypes';
 
-export interface DialogueNode {
-  id: string;
-  speaker: string;
-  body: string;
-  choices: DialogueChoice[];
-}
-
-export const PIT_REGISTRAR_DIALOGUE: Record<string, DialogueNode> = {
+export const PIT_REGISTRAR_DIALOGUE: DialogueTree = {
   greet: {
     id: 'greet',
     speaker: 'Registrar of the Pit',

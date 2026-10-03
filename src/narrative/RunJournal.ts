@@ -1,4 +1,4 @@
-export type RunJournalKind = 'cycle_start' | 'entered_stable' | 'left_stable' | 'checkpoint';
+export type RunJournalKind = 'cycle_start' | 'entered_stable' | 'left_stable' | 'checkpoint' | 'counsel';
 
 export interface RunJournalEntry {
   id: string;
@@ -60,6 +60,15 @@ export class RunJournal {
       at: Date.now(),
       kind: 'checkpoint',
       text: `Checkpoint saved — ${label}.`,
+    });
+  }
+
+  recordCounsel(text: string): void {
+    this.entries.push({
+      id: makeId(),
+      at: Date.now(),
+      kind: 'counsel',
+      text,
     });
   }
 }

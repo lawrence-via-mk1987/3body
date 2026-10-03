@@ -19,8 +19,18 @@ import { StableEraBanner } from '../ui/StableEraBanner';
 import { Toast } from '../ui/Toast';
 import { DialoguePanel } from '../ui/DialoguePanel';
 import { horizontalBearing, HudCompass } from '../ui/HudCompass';
+import type { DialogueChoice, DialogueNode, DialogueTree } from '../narrative/dialogueTypes';
+import { ForecastMeta } from '../narrative/ForecastMeta';
+import { GROVE_KEEPER_DIALOGUE } from '../narrative/groveKeeperDialogue';
+import { GroveKeeperState } from '../narrative/GroveKeeperState';
 import { PIT_REGISTRAR_DIALOGUE } from '../narrative/pitRegistrarDialogue';
+import {
+  buildPredictorCalibrationNode,
+  PREDICTOR_DIALOGUE,
+} from '../narrative/predictorDialogue';
 import { PitRegistrarState } from '../narrative/PitRegistrarState';
+import { SettlementNpcs } from '../world/SettlementNpcs';
+import { GROVE_KEEPER, LAST_PREDICTOR, PIT_REGISTRAR } from '../world/landmarks';
 import { CaveShelter } from '../world/CaveShelter';
 import { nearestLandmarkHint } from '../world/LandmarkHints';
 import { LandmarkWayfinding } from '../world/LandmarkWayfinding';
@@ -76,7 +86,12 @@ export class Game {
   private readonly stableParticles: StableEraParticles;
   private readonly waterSource: WaterSource;
   private readonly wayfinding: LandmarkWayfinding;
+  private readonly settlementNpcs: SettlementNpcs;
   private readonly pitRegistrarState = new PitRegistrarState();
+  private readonly forecastMeta = new ForecastMeta();
+  private readonly groveKeeperState = new GroveKeeperState();
+  private activeDialogue: DialogueTree = PIT_REGISTRAR_DIALOGUE;
+  private npcPulseTime = 0;
   private readonly dialoguePanel: DialoguePanel;
   private readonly hudCompass: HudCompass;
   private readonly audio = new AudioDirector();
@@ -177,6 +192,7 @@ export class Game {
       }),
       () => this.meta.onChaoticPhaseEnded(),
       () => this.meta.onStableEntered(),
+      () => this.forecastMeta.getConfidenceBonus(),
     );
 
     this.logMarkers = new LogMarkers(this.terrain, this.logDiscovery);
@@ -184,6 +200,7 @@ export class Game {
     this.stableParticles = new StableEraParticles(this.terrain);
     this.waterSource = new WaterSource(this.terrain);
     this.wayfinding = new LandmarkWayfinding(this.terrain);
+    this.settlementNpcs = new SettlementNpcs(this.terrain);
 
     this.scene.add(this.sky.mesh);
     this.scene.add(this.terrain.mesh);
@@ -192,6 +209,7 @@ export class Game {
     this.scene.add(this.stableParticles.points);
     this.scene.add(this.waterSource.mesh);
     this.scene.add(this.wayfinding.group);
+    this.scene.add(this.settlementNpcs.group);
     this.addLandmarks();
     this.scene.add(new CaveShelter(this.terrain, this.shelterZones).group);
 
@@ -240,16 +258,7 @@ export class Game {
     });
 
     this.dialoguePanel.onChoice((choice) => {
-      if (choice.sideEffect === 'fold_lesson') {
-        this.pitRegistrarState.markFoldLesson();
-      }
-      if (choice.sideEffect === 'mark_spoke') {
-        this.pitRegistrarState.markSpoke();
-      }
-      const next = PIT_REGISTRAR_DIALOGUE[choice.nextId];
-      if (next) {
-        this.dialoguePanel.open(next);
-      }
+      this.handleDialogueChoice(choice);
     });
 
     canvas.addEventListener('click', () => {
@@ -553,6 +562,7 @@ export class Game {
     }
 
     const delta = Math.min(this.clock.getDelta(), 0.05);
+    this.npcPulseTime += delta;
     const stableEra = this.orbital.getEraKind() === 'stable';
 
     this.hud.lookHint.classList.toggle(
@@ -596,13 +606,14 @@ export class Game {
         nearPit,
         this.waterSource.mesh.visible,
       );
+      this.settlementNpcs.update(this.orbital.getEraKind(), this.anchor, this.npcPulseTime);
       this.renderer.render(this.scene, this.player.camera);
       this.animationId = requestAnimationFrame(this.animate);
       return;
     }
 
     if (!this.logReader.isOpen() && this.player.consumePressedKey('KeyT')) {
-      this.tryTalkToRegistrar();
+      this.tryTalkToNearbyNpc();
     }
 
     if (!this.logReader.isOpen() && this.player.consumePressedKey('KeyE')) {
@@ -680,6 +691,7 @@ export class Game {
       nearPit,
       this.waterSource.mesh.visible,
     );
+    this.settlementNpcs.update(this.orbital.getEraKind(), this.anchor, this.npcPulseTime);
     this.updateHud(nearbyLog, stableEra, nearPit, nearWater);
 
     if (this.survival.status === 'dead') {
@@ -716,12 +728,90 @@ export class Game {
     }
   }
 
-  private tryTalkToRegistrar(): void {
-    if (!this.wayfinding.isNearRegistrar(this.anchor)) {
+  private tryTalkToNearbyNpc(): void {
+    const pos = this.anchor;
+    const stableEra = this.orbital.getEraKind() === 'stable';
+    const options: { distance: number; talk: () => void }[] = [];
+
+    if (this.wayfinding.isNearRegistrar(pos)) {
+      const distance = Math.hypot(pos.x - PIT_REGISTRAR.x, pos.z - PIT_REGISTRAR.z);
+      options.push({
+        distance,
+        talk: () => this.openDialogue(PIT_REGISTRAR_DIALOGUE, PIT_REGISTRAR_DIALOGUE.greet),
+      });
+    }
+
+    if (this.settlementNpcs.isNearPredictor(pos)) {
+      const distance = Math.hypot(pos.x - LAST_PREDICTOR.x, pos.z - LAST_PREDICTOR.z);
+      options.push({
+        distance,
+        talk: () => {
+          if (this.forecastMeta.isCalibrated()) {
+            this.openDialogue(PREDICTOR_DIALOGUE, PREDICTOR_DIALOGUE.already_calibrated);
+          } else {
+            this.openDialogue(PREDICTOR_DIALOGUE, PREDICTOR_DIALOGUE.greet);
+          }
+        },
+      });
+    }
+
+    if (stableEra && this.settlementNpcs.isNearGroveKeeper(pos)) {
+      const distance = Math.hypot(pos.x - GROVE_KEEPER.x, pos.z - GROVE_KEEPER.z);
+      options.push({
+        distance,
+        talk: () => this.openDialogue(GROVE_KEEPER_DIALOGUE, GROVE_KEEPER_DIALOGUE.greet),
+      });
+    }
+
+    if (options.length === 0) {
       return;
     }
-    this.dialoguePanel.open(PIT_REGISTRAR_DIALOGUE.greet);
+
+    options.sort((a, b) => a.distance - b.distance);
+    options[0]!.talk();
     this.syncMovementState();
+  }
+
+  private openDialogue(tree: DialogueTree, node: DialogueNode): void {
+    this.activeDialogue = tree;
+    this.dialoguePanel.open(node);
+  }
+
+  private handleDialogueChoice(choice: DialogueChoice): void {
+    if (choice.sideEffect === 'fold_lesson') {
+      this.pitRegistrarState.markFoldLesson();
+    }
+    if (choice.sideEffect === 'mark_spoke') {
+      this.pitRegistrarState.markSpoke();
+    }
+    if (choice.sideEffect === 'predictor_calibrated') {
+      this.forecastMeta.calibrate();
+      this.orbital.refreshForecastNow();
+      this.runJournal.recordCounsel('Last Predictor aligned the forecast — confidence improved.');
+      this.gameToast.show('Predictor calibrated — forecast confidence improved.');
+    }
+    if (choice.sideEffect === 'predictor_mark_spoke') {
+      // reserved for future meta flags
+    }
+    if (choice.sideEffect === 'grove_mark_spoke') {
+      this.groveKeeperState.markSpoke();
+    }
+    if (choice.sideEffect === 'grove_hint_logged') {
+      this.groveKeeperState.markHopeHint();
+      this.runJournal.recordCounsel('Grove Keeper shared counsel on water and the Final Log.');
+    }
+
+    if (choice.nextId === 'calibrate_dynamic') {
+      const node = buildPredictorCalibrationNode(this.orbital.getPhase());
+      this.activeDialogue = { ...PREDICTOR_DIALOGUE, calibrate: node };
+      this.dialoguePanel.open(node);
+      return;
+    }
+
+    const next = this.activeDialogue[choice.nextId];
+    if (next) {
+      this.dialoguePanel.open(next);
+    }
   }
 
   private tryReadNearbyLog(stableEra: boolean): void {
@@ -801,6 +891,12 @@ export class Game {
       statusMessage = 'Stable Era — press R at the grove pool to drink condensate.';
     } else if (stableEra) {
       statusMessage = 'Stable Era — the grove lives. Follow the green trail to the pool or final tablets.';
+    } else if (this.settlementNpcs.isNearGroveKeeper(position) && stableEra) {
+      statusMessage = 'Press T to speak with the Grove Keeper.';
+    } else if (this.settlementNpcs.isNearPredictor(position)) {
+      statusMessage = this.forecastMeta.isCalibrated()
+        ? 'Press T to speak with the Last Predictor.'
+        : 'Press T — the Last Predictor can calibrate your forecast.';
     } else if (this.wayfinding.isNearRegistrar(position)) {
       statusMessage = 'Press T to speak with the Registrar of the Pit.';
     } else if (this.journal.isOpen()) {
@@ -861,6 +957,7 @@ export class Game {
     this.terrain.dispose();
     this.sky.dispose();
     this.wayfinding.dispose();
+    this.settlementNpcs.dispose();
     this.renderer.dispose();
   }
 }

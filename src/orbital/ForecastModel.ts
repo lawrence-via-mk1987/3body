@@ -46,6 +46,7 @@ export function buildForecast(
   currentPhase: EraPhase,
   elapsedInPhase: number,
   phaseDuration: number,
+  confidenceBonus = 0,
 ): ForecastEntry[] {
   const neighbors = neighborPhases(currentPhase);
 
@@ -58,8 +59,8 @@ export function buildForecast(
     const timeRemaining = Math.max(phaseDuration - elapsedInPhase, 0);
     const phaseMayChange = offset > timeRemaining;
     const confidence = phaseMayChange
-      ? Math.max(0.25, ORBITAL_CONFIG.forecastBaseConfidence - offset * 0.008)
-      : Math.min(0.95, ORBITAL_CONFIG.forecastBaseConfidence + 0.2);
+      ? Math.max(0.25, ORBITAL_CONFIG.forecastBaseConfidence - offset * 0.008 + confidenceBonus)
+      : Math.min(0.97, ORBITAL_CONFIG.forecastBaseConfidence + 0.2 + confidenceBonus);
 
     return {
       timeOffset: offset,

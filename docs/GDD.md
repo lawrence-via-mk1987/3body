@@ -269,7 +269,7 @@ Orbital behavior uses an **authored phase state machine** with bounded randomnes
 ### Next (M8–9)
 
 - [x] **M8 Visual wayfinding** — pit/grove beacons, trails, HUD compass tick, proximity pulse *(shipped)*
-- [ ] **M9 NPC vignettes** — Registrar at pit *(shipped)*; Predictor + Grove Keeper remaining
+- [x] **M9 NPC vignettes** — Registrar, Last Predictor (forecast calibration), Grove Keeper *(shipped)*
 
 ### Out of scope (later)
 

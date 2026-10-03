@@ -1,4 +1,4 @@
-import type { DialogueChoice, DialogueNode } from '../narrative/pitRegistrarDialogue';
+import type { DialogueChoice, DialogueNode } from '../narrative/dialogueTypes';
 
 export class DialoguePanel {
   private openState = false;
