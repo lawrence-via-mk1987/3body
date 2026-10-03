@@ -11,6 +11,7 @@ import { SurvivalSystem } from '../survival/SurvivalSystem';
 import { EpilogueOverlay } from '../ui/EpilogueOverlay';
 import { ForecastStrip } from '../ui/ForecastStrip';
 import { LogReader } from '../ui/LogReader';
+import { PauseMenu } from '../ui/PauseMenu';
 import { StableEraBanner } from '../ui/StableEraBanner';
 import { CaveShelter } from '../world/CaveShelter';
 import { nearestLandmarkHint } from '../world/LandmarkHints';
@@ -33,6 +34,7 @@ interface HudElements {
   status: HTMLElement;
   logs: HTMLElement;
   landmark: HTMLElement;
+  lookHint: HTMLElement;
 }
 
 interface OverlayElements {
@@ -64,11 +66,14 @@ export class Game {
   private readonly logReader: LogReader;
   private readonly forecastStrip: ForecastStrip;
   private readonly epilogue: EpilogueOverlay;
+  private readonly pauseMenu: PauseMenu;
+  private readonly onQuitToMenu: () => void;
   private readonly hud: HudElements;
   private readonly overlays: OverlayElements;
   private readonly anchor = new THREE.Vector3();
   private animationId = 0;
   private running = false;
+  private paused = false;
   private exposureTarget = 1.12;
   private statusOverride: string | null = null;
   private statusOverrideTimer = 0;
@@ -82,6 +87,8 @@ export class Game {
     stableBanner: StableEraBanner,
     forecastStrip: ForecastStrip,
     epilogue: EpilogueOverlay,
+    pauseMenu: PauseMenu,
+    onQuitToMenu: () => void,
     masterVolumeSlider: HTMLInputElement,
   ) {
     this.hud = hud;
@@ -90,6 +97,8 @@ export class Game {
     this.stableBanner = stableBanner;
     this.forecastStrip = forecastStrip;
     this.epilogue = epilogue;
+    this.pauseMenu = pauseMenu;
+    this.onQuitToMenu = onQuitToMenu;
 
     const initialVolume = MetaProgress.loadMasterVolume();
     masterVolumeSlider.value = String(Math.round(initialVolume * 100));
@@ -147,11 +156,28 @@ export class Game {
     this.addLandmarks();
     this.scene.add(new CaveShelter(this.terrain, this.shelterZones).group);
 
+    this.logReader.onOpen(() => {
+      this.player.unlock();
+    });
+
     this.logReader.onClose(() => {
       this.syncMovementState();
       if (this.pendingEpilogue) {
         this.pendingEpilogue = false;
         this.showEpilogue();
+        return;
+      }
+      if (this.running && !this.paused) {
+        this.player.tryLock();
+      }
+    });
+
+    canvas.addEventListener('click', () => {
+      if (!this.running || this.paused || this.logReader.isOpen() || this.pauseMenu.isOpen()) {
+        return;
+      }
+      if (!this.player.isLocked()) {
+        this.player.tryLock();
       }
     });
 
@@ -234,6 +260,8 @@ export class Game {
     await this.audio.start(volume);
     this.audio.setMasterVolume(volume);
     this.running = true;
+    this.paused = false;
+    this.pauseMenu.hide();
     this.overlays.death.classList.add('hidden');
     this.epilogue.hide();
     this.player.lock();
@@ -243,9 +271,53 @@ export class Game {
 
   stop(): void {
     this.running = false;
+    this.paused = false;
+    this.pauseMenu.hide();
     cancelAnimationFrame(this.animationId);
     this.audio.stop();
     this.player.unlock();
+  }
+
+  isRunning(): boolean {
+    return this.running;
+  }
+
+  isPaused(): boolean {
+    return this.paused;
+  }
+
+  isLogOpen(): boolean {
+    return this.logReader.isOpen();
+  }
+
+  pause(): void {
+    if (!this.running || this.paused || this.logReader.isOpen()) {
+      return;
+    }
+    this.paused = true;
+    this.pauseMenu.show();
+    this.player.unlock();
+  }
+
+  resume(): void {
+    if (!this.running || !this.paused) {
+      return;
+    }
+    this.paused = false;
+    this.pauseMenu.hide();
+    this.player.tryLock();
+  }
+
+  quitToMenu(): void {
+    this.stop();
+    this.onQuitToMenu();
+  }
+
+  onPointerLockLost(): void {
+    if (!this.running || this.paused || this.logReader.isOpen() || this.pauseMenu.isOpen()) {
+      return;
+    }
+    this.pause();
   }
 
   private restart(): void {
@@ -254,6 +326,8 @@ export class Game {
     this.orbital.reset();
     this.player.resetToSpawn();
     this.logReader.close();
+    this.pauseMenu.hide();
+    this.paused = false;
     this.stableBanner.hide();
     this.epilogue.hide();
     this.overlays.death.classList.add('hidden');
@@ -285,10 +359,25 @@ export class Game {
     const delta = Math.min(this.clock.getDelta(), 0.05);
     const stableEra = this.orbital.getEraKind() === 'stable';
 
+    this.hud.lookHint.classList.toggle(
+      'hidden',
+      this.player.isLocked() || this.paused || this.logReader.isOpen(),
+    );
+
+    if (!this.logReader.isOpen() && !this.paused && this.player.consumePressedKey('KeyP')) {
+      this.pause();
+    }
+
     this.anchor.copy(this.player.getPosition());
     const nearbyLog = this.logMarkers.update(this.anchor, stableEra);
     const nearPit = this.shelterZones.isNearDehydrationPit(this.anchor);
     const nearWater = this.waterSource.isNear(this.anchor);
+
+    if (this.paused) {
+      this.renderer.render(this.scene, this.player.camera);
+      this.animationId = requestAnimationFrame(this.animate);
+      return;
+    }
 
     if (!this.logReader.isOpen() && this.player.consumePressedKey('KeyE')) {
       if (nearPit && !nearbyLog) {
@@ -297,7 +386,9 @@ export class Game {
     }
 
     if (!this.logReader.isOpen() && this.player.consumePressedKey('KeyF')) {
-      this.tryReadNearbyLog(stableEra);
+      if (nearbyLog) {
+        this.tryReadNearbyLog(stableEra);
+      }
     }
 
     if (!this.logReader.isOpen() && this.player.consumePressedKey('KeyR') && nearWater) {

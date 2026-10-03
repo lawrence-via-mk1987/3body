@@ -52,6 +52,13 @@ export class FirstPersonController {
     this.controls.lock();
   }
 
+  tryLock(): void {
+    if (this.controls.isLocked) {
+      return;
+    }
+    this.controls.lock();
+  }
+
   unlock(): void {
     this.controls.unlock();
   }

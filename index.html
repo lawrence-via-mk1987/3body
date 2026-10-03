@@ -24,7 +24,7 @@
         <input id="master-volume" type="range" min="0" max="100" value="55" />
         <button id="start-btn" type="button">Enter the wasteland</button>
         <p class="controls">
-          WASD · Shift sprint · F read · R drink (Stable grove) · E dehydrate at pit ring · Esc menu
+          WASD · mouse look (click game) · F read · R drink · E dehydrate · P or Esc pause
         </p>
       </div>
     </div>
@@ -37,12 +37,22 @@
       </div>
     </div>
 
+    <div id="pause-overlay" class="hidden">
+      <div class="panel pause-panel">
+        <p class="eyebrow">Paused</p>
+        <h2>Chaotic sky on hold</h2>
+        <p class="pause-copy">Simulation frozen. Resume to keep enduring.</p>
+        <button id="pause-resume" type="button">Resume</button>
+        <button id="pause-quit" type="button" class="secondary-btn">Quit to menu</button>
+      </div>
+    </div>
+
     <div id="log-reader" class="hidden">
       <div class="panel log-panel">
         <p class="eyebrow">Recovered text</p>
         <h2 id="log-title"></h2>
         <p id="log-body"></p>
-        <button id="log-close" type="button">Close</button>
+        <button id="log-close" type="button">Close (Enter / Esc)</button>
       </div>
     </div>
 
@@ -116,6 +126,7 @@
         <span id="hud-position">0, 0</span>
       </div>
       <div id="forecast-strip" class="forecast-strip" aria-label="Sky forecast"></div>
+      <div id="hud-look-hint" class="hud-look-hint hidden">Click the game view to look around</div>
       <div class="hud-crosshair" aria-hidden="true"></div>
     </div>
 
