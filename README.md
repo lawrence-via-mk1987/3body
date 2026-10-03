@@ -54,4 +54,4 @@ npm run preview      # preview production build
 ### Controls
 
 - **WASD** — move · **Shift** — sprint · **Space** — jump
-- **F** — read log · **R** — drink at grove (Stable Era) · **E** — dehydrate at pit ring · **Esc** — menu
+- **F** — read log · **J** — journal · **R** — drink at grove (Stable Era) · **E** — dehydrate at pit ring · **P / Esc** — pause (save & volume in pause menu)

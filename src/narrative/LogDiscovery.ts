@@ -21,6 +21,10 @@ export class LogDiscovery {
     return this.discovered.size;
   }
 
+  getDiscoveredLogsInOrder(): TextLog[] {
+    return TEXT_LOGS.filter((log) => this.discovered.has(log.id));
+  }
+
   discover(id: string): boolean {
     if (this.discovered.has(id)) {
       return false;

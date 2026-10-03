@@ -11,9 +11,12 @@ import { ShelterZones } from '../survival/ShelterZones';
 import { SurvivalSystem } from '../survival/SurvivalSystem';
 import { EpilogueOverlay } from '../ui/EpilogueOverlay';
 import { ForecastStrip } from '../ui/ForecastStrip';
+import { RunJournal } from '../narrative/RunJournal';
+import { Journal } from '../ui/Journal';
 import { LogReader } from '../ui/LogReader';
 import { PauseMenu } from '../ui/PauseMenu';
 import { StableEraBanner } from '../ui/StableEraBanner';
+import { Toast } from '../ui/Toast';
 import { CaveShelter } from '../world/CaveShelter';
 import { nearestLandmarkHint } from '../world/LandmarkHints';
 import { Ruins } from '../world/Ruins';
@@ -57,6 +60,7 @@ export class Game {
   private readonly shelterZones: ShelterZones;
   private readonly survival = new SurvivalSystem();
   private readonly logDiscovery = new LogDiscovery();
+  private readonly runJournal = new RunJournal();
   private readonly meta = new MetaProgress();
   private readonly logMarkers: LogMarkers;
   private readonly ruins: Ruins;
@@ -68,7 +72,12 @@ export class Game {
   private readonly forecastStrip: ForecastStrip;
   private readonly epilogue: EpilogueOverlay;
   private readonly pauseMenu: PauseMenu;
+  private readonly journal: Journal;
+  private readonly gameToast: Toast;
+  private readonly pauseToast: Toast;
   private readonly onQuitToMenu: () => void;
+  private readonly onCheckpointMenuChange: () => void;
+  private readonly syncMenuVolume: (volume: number) => void;
   private readonly hud: HudElements;
   private readonly overlays: OverlayElements;
   private readonly anchor = new THREE.Vector3();
@@ -89,7 +98,12 @@ export class Game {
     forecastStrip: ForecastStrip,
     epilogue: EpilogueOverlay,
     pauseMenu: PauseMenu,
+    journal: Journal,
+    gameToast: Toast,
+    pauseToast: Toast,
     onQuitToMenu: () => void,
+    onCheckpointMenuChange: () => void,
+    syncMenuVolume: (volume: number) => void,
     masterVolumeSlider: HTMLInputElement,
   ) {
     this.hud = hud;
@@ -99,7 +113,12 @@ export class Game {
     this.forecastStrip = forecastStrip;
     this.epilogue = epilogue;
     this.pauseMenu = pauseMenu;
+    this.journal = journal;
+    this.gameToast = gameToast;
+    this.pauseToast = pauseToast;
     this.onQuitToMenu = onQuitToMenu;
+    this.onCheckpointMenuChange = onCheckpointMenuChange;
+    this.syncMenuVolume = syncMenuVolume;
 
     const initialVolume = MetaProgress.loadMasterVolume();
     masterVolumeSlider.value = String(Math.round(initialVolume * 100));
@@ -168,13 +187,36 @@ export class Game {
         this.showEpilogue();
         return;
       }
-      if (this.running && !this.paused) {
+      if (this.running && !this.paused && !this.journal.isOpen()) {
         this.player.tryLock();
       }
     });
 
+    this.journal.onOpen(() => {
+      this.player.unlock();
+    });
+
+    this.journal.onClose(() => {
+      this.syncMovementState();
+      if (this.running && !this.paused && !this.logReader.isOpen()) {
+        this.player.tryLock();
+      }
+    });
+
+    this.journal.onReadLog((log, gallery) => {
+      this.journal.close();
+      this.logReader.openFromJournal(log, gallery);
+      this.syncMovementState();
+    });
+
     canvas.addEventListener('click', () => {
-      if (!this.running || this.paused || this.logReader.isOpen() || this.pauseMenu.isOpen()) {
+      if (
+        !this.running
+        || this.paused
+        || this.logReader.isOpen()
+        || this.journal.isOpen()
+        || this.pauseMenu.isOpen()
+      ) {
         return;
       }
       if (!this.player.isLocked()) {
@@ -186,6 +228,21 @@ export class Game {
       const volume = Number(masterVolumeSlider.value) / 100;
       MetaProgress.saveMasterVolume(volume);
       this.audio.setMasterVolume(volume);
+      this.syncMenuVolume(volume);
+    });
+
+    window.addEventListener('keydown', (event) => {
+      if (!this.running || this.logReader.isOpen() || this.journal.isOpen()) {
+        return;
+      }
+      if (event.code === 'Escape') {
+        event.preventDefault();
+        if (this.paused) {
+          this.resume();
+        } else {
+          this.pause();
+        }
+      }
     });
 
     this.overlays.restartButton.addEventListener('click', () => {
@@ -261,7 +318,7 @@ export class Game {
     this.meta.resetRun();
     this.orbital.reset();
     this.player.resetToSpawn();
-    await this.beginSession();
+    await this.beginSession(false);
   }
 
   async continueFromCheckpoint(): Promise<boolean> {
@@ -273,13 +330,13 @@ export class Game {
       this.stop();
     }
     this.applyCheckpoint(checkpoint);
-    await this.beginSession();
+    await this.beginSession(true);
     return true;
   }
 
-  saveCheckpoint(label: string): void {
-    if (!this.running || this.survival.status === 'dead' || this.paused) {
-      return;
+  saveCheckpoint(label: string): boolean {
+    if (!this.running || this.survival.status === 'dead') {
+      return false;
     }
 
     const position = this.player.getPosition();
@@ -292,7 +349,24 @@ export class Game {
       orbital: this.orbital.getEraSnapshot(),
       meta: this.meta.exportRunState(),
     });
+    this.runJournal.recordCheckpoint(label);
     this.setStatusOverride(`Checkpoint saved — ${label}`, 4);
+    const toastMessage = `Checkpoint saved — ${label}`;
+    if (this.paused) {
+      this.pauseToast.show(toastMessage);
+      this.pauseMenu.refreshCheckpointLine();
+    } else {
+      this.gameToast.show(toastMessage);
+    }
+    this.onCheckpointMenuChange();
+    return true;
+  }
+
+  deleteCheckpoint(): void {
+    CheckpointSave.clear();
+    this.pauseMenu.refreshCheckpointLine();
+    this.pauseToast.show('Checkpoint deleted.');
+    this.onCheckpointMenuChange();
   }
 
   private applyCheckpoint(checkpoint: NonNullable<ReturnType<typeof CheckpointSave.load>>): void {
@@ -308,14 +382,18 @@ export class Game {
     this.statusOverrideTimer = 0;
   }
 
-  private async beginSession(): Promise<void> {
+  private async beginSession(fromCheckpoint = false): Promise<void> {
     const volume = MetaProgress.loadMasterVolume();
     await this.audio.start(volume);
     this.audio.setMasterVolume(volume);
+    this.syncMenuVolume(volume);
     this.audio.resume();
+    this.runJournal.clear();
+    this.runJournal.recordCycleStart(fromCheckpoint);
     this.running = true;
     this.paused = false;
     this.pauseMenu.hide();
+    this.journal.close();
     this.overlays.death.classList.add('hidden');
     this.epilogue.hide();
     this.player.lock();
@@ -336,6 +414,10 @@ export class Game {
     return this.running;
   }
 
+  setMasterVolume(volume: number): void {
+    this.audio.setMasterVolume(volume);
+  }
+
   isPaused(): boolean {
     return this.paused;
   }
@@ -344,8 +426,20 @@ export class Game {
     return this.logReader.isOpen();
   }
 
-  pause(): void {
+  isJournalOpen(): boolean {
+    return this.journal.isOpen();
+  }
+
+  toggleJournal(): void {
     if (!this.running || this.paused || this.logReader.isOpen()) {
+      return;
+    }
+    this.journal.toggle(this.runJournal, this.logDiscovery);
+    this.syncMovementState();
+  }
+
+  pause(): void {
+    if (!this.running || this.paused || this.logReader.isOpen() || this.journal.isOpen()) {
       return;
     }
     this.paused = true;
@@ -368,7 +462,13 @@ export class Game {
   }
 
   onPointerLockLost(): void {
-    if (!this.running || this.paused || this.logReader.isOpen() || this.pauseMenu.isOpen()) {
+    if (
+      !this.running
+      || this.paused
+      || this.logReader.isOpen()
+      || this.journal.isOpen()
+      || this.pauseMenu.isOpen()
+    ) {
       return;
     }
     this.pause();
@@ -415,11 +515,24 @@ export class Game {
 
     this.hud.lookHint.classList.toggle(
       'hidden',
-      this.player.isLocked() || this.paused || this.logReader.isOpen(),
+      this.player.isLocked() || this.paused || this.logReader.isOpen() || this.journal.isOpen(),
     );
 
-    if (!this.logReader.isOpen() && !this.paused && this.player.consumePressedKey('KeyP')) {
+    if (
+      !this.logReader.isOpen()
+      && !this.journal.isOpen()
+      && !this.paused
+      && this.player.consumePressedKey('KeyP')
+    ) {
       this.pause();
+    }
+
+    if (
+      !this.logReader.isOpen()
+      && !this.paused
+      && this.player.consumePressedKey('KeyJ')
+    ) {
+      this.toggleJournal();
     }
 
     this.anchor.copy(this.player.getPosition());
@@ -427,7 +540,7 @@ export class Game {
     const nearPit = this.shelterZones.isNearDehydrationPit(this.anchor);
     const nearWater = this.waterSource.isNear(this.anchor);
 
-    if (this.paused) {
+    if (this.paused || this.journal.isOpen()) {
       this.renderer.render(this.scene, this.player.camera);
       this.animationId = requestAnimationFrame(this.animate);
       return;
@@ -524,12 +637,14 @@ export class Game {
     }
 
     if (transition.enteredStable) {
+      this.runJournal.recordEnteredStable();
       this.stableBanner.show();
       this.audio.playStableEraChime();
       this.saveCheckpoint('Stable Era (auto)');
     }
 
     if (transition.leftStable) {
+      this.runJournal.recordLeftStable();
       this.stableBanner.hide();
       this.setStatusOverride('The golden sky darkens. Chaotic Eras return — find shelter.', 10);
     }
@@ -559,6 +674,7 @@ export class Game {
 
   private syncMovementState(): void {
     const canMove = !this.logReader.isOpen()
+      && !this.journal.isOpen()
       && this.survival.status !== 'dehydrated'
       && this.survival.status !== 'dead';
     this.player.setMovementEnabled(canMove);
@@ -610,6 +726,8 @@ export class Game {
       statusMessage = 'Stable Era — press R at the grove pool to drink condensate.';
     } else if (stableEra) {
       statusMessage = 'Stable Era — the grove lives. Find the pool or the final tablets.';
+    } else if (this.journal.isOpen()) {
+      statusMessage = 'Reviewing your cycle journal.';
     } else if (this.logReader.isOpen()) {
       statusMessage = 'Reading recovered text.';
     } else if (nearbyLog && nearPit) {
@@ -620,6 +738,8 @@ export class Game {
         : `Press F to read ${nearbyLog.log.title.toLowerCase()}.`;
     } else if (!this.meta.hasSeenFinalLog(this.logDiscovery)) {
       statusMessage = `${statusMessage} A Stable Era will come — the sky cannot rage forever.`;
+    } else if (this.logDiscovery.getDiscoveredCount() > 0) {
+      statusMessage = `${statusMessage} Press J for your journal.`;
     }
 
     this.hud.status.textContent = statusMessage;
