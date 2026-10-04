@@ -13,6 +13,8 @@ interface DebrisSlot {
   lift: number;
   wobble: number;
   kind: 0 | 1;
+  /** Extra pull during Flying Star (horizon skim). */
+  flyingBias: number;
 }
 
 function buildDebris(count: number, terrain: Terrain): DebrisSlot[] {
@@ -37,14 +39,17 @@ function buildDebris(count: number, terrain: Terrain): DebrisSlot[] {
       lift: 6 + rnd() * 22,
       wobble: rnd() * Math.PI * 2,
       kind: rnd() > 0.72 ? 1 : 0,
+      flyingBias: rnd(),
     });
   }
   return slots;
 }
 
+type LevitationMode = 'off' | 'tri_solar' | 'flying_star';
+
 /**
- * During Tri-Solar, loose stones and hide scraps lift off the ground — the planet’s
- * grip loosens before heat takes over. Visual only; no gameplay collision change.
+ * During Tri-Solar and Flying Star, loose stones and hide scraps lift off the ground.
+ * Flying Star uses a stronger pull and higher ceiling. Visual only.
  */
 export class TriSolarLevitation {
   readonly group = new THREE.Group();
@@ -52,6 +57,7 @@ export class TriSolarLevitation {
   private readonly hides: THREE.InstancedMesh;
   private readonly slots: DebrisSlot[];
   private intensity = 0;
+  private targetMode: LevitationMode = 'off';
   private time = 0;
   private stoneIndices: number[] = [];
   private hideIndices: number[] = [];
@@ -67,7 +73,7 @@ export class TriSolarLevitation {
     }
 
     const stoneGeo = new THREE.DodecahedronGeometry(1, 0);
-    const stoneMat = new THREE.MeshStandardMaterial({ color: '#9a9088', roughness: 0.95, metalness: 0 });
+    const stoneMat = new THREE.MeshStandardMaterial({ color: '#9a9088', roughness: 0.95, metalness: 0, transparent: true });
     this.stones = new THREE.InstancedMesh(stoneGeo, stoneMat, Math.max(1, this.stoneIndices.length));
 
     const hideGeo = new THREE.PlaneGeometry(0.55, 0.35);
@@ -75,19 +81,26 @@ export class TriSolarLevitation {
       color: '#8a7358',
       roughness: 0.9,
       side: THREE.DoubleSide,
+      transparent: true,
     });
     this.hides = new THREE.InstancedMesh(hideGeo, hideMat, Math.max(1, this.hideIndices.length));
 
     this.group.add(this.stones, this.hides);
-    this.applyMatrices(0);
+    this.applyMatrices(0, 'off');
     this.group.visible = false;
   }
 
   update(delta: number, phase: EraPhase): void {
-    const target = phase === 'tri_solar' ? 1 : 0;
+    this.targetMode = phase === 'flying_star' ? 'flying_star' : phase === 'tri_solar' ? 'tri_solar' : 'off';
+    const targetIntensity = this.targetMode === 'off' ? 0 : 1;
     this.time += delta;
-    this.intensity = THREE.MathUtils.lerp(this.intensity, target, Math.min(delta * (target > this.intensity ? 1.4 : 2.8), 1));
-    this.applyMatrices(this.intensity);
+    this.intensity = THREE.MathUtils.lerp(
+      this.intensity,
+      targetIntensity,
+      Math.min(delta * (targetIntensity > this.intensity ? 1.4 : 2.8), 1),
+    );
+    const activeMode: LevitationMode = this.intensity > 0.02 ? this.targetMode : 'off';
+    this.applyMatrices(this.intensity, activeMode);
     this.group.visible = this.intensity > 0.02;
     const fade = this.intensity;
     for (const mesh of [this.stones, this.hides]) {
@@ -97,11 +110,11 @@ export class TriSolarLevitation {
     }
   }
 
-  private applyMatrices(intensity: number): void {
+  private applyMatrices(intensity: number, mode: LevitationMode): void {
     const dummy = new THREE.Object3D();
     let si = 0;
     for (const index of this.stoneIndices) {
-      this.writeMatrix(dummy, this.slots[index]!, intensity);
+      this.writeMatrix(dummy, this.slots[index]!, intensity, mode);
       this.stones.setMatrixAt(si, dummy.matrix);
       si += 1;
     }
@@ -112,7 +125,7 @@ export class TriSolarLevitation {
 
     let hi = 0;
     for (const index of this.hideIndices) {
-      this.writeMatrix(dummy, this.slots[index]!, intensity, true);
+      this.writeMatrix(dummy, this.slots[index]!, intensity, mode, true);
       this.hides.setMatrixAt(hi, dummy.matrix);
       hi += 1;
     }
@@ -122,16 +135,30 @@ export class TriSolarLevitation {
     }
   }
 
-  private writeMatrix(dummy: THREE.Object3D, slot: DebrisSlot, intensity: number, flat = false): void {
-    const rise = slot.lift * intensity;
-    const wobble = Math.sin(this.time * 1.6 + slot.wobble) * 0.35 * intensity;
-    dummy.position.set(slot.x + wobble, slot.baseY + rise, slot.z + wobble * 0.6);
-    dummy.rotation.set(
-      slot.spin * this.time * intensity,
-      slot.spin * 0.7 * this.time,
-      flat ? slot.spin * 0.4 : slot.spin * 0.3 * this.time,
+  private writeMatrix(
+    dummy: THREE.Object3D,
+    slot: DebrisSlot,
+    intensity: number,
+    mode: LevitationMode,
+    flat = false,
+  ): void {
+    const flying = mode === 'flying_star';
+    const liftMul = flying ? 2.35 + slot.flyingBias * 0.85 : 1;
+    const speedMul = flying ? 2.1 : 1;
+    const rise = slot.lift * intensity * liftMul;
+    const wobble = Math.sin(this.time * 1.6 * speedMul + slot.wobble) * (flying ? 0.65 : 0.35) * intensity;
+    const drift = flying ? Math.sin(this.time * 0.9 + slot.wobble) * 1.2 * intensity : 0;
+    dummy.position.set(
+      slot.x + wobble + drift,
+      slot.baseY + rise + (flying ? Math.sin(this.time * 1.1 + slot.flyingBias * 6) * 1.5 * intensity : 0),
+      slot.z + wobble * 0.6,
     );
-    const s = slot.size * (0.35 + intensity * 0.65);
+    dummy.rotation.set(
+      slot.spin * this.time * intensity * speedMul,
+      slot.spin * 0.7 * this.time * speedMul,
+      flat ? slot.spin * 0.4 * speedMul : slot.spin * 0.3 * this.time,
+    );
+    const s = slot.size * (0.35 + intensity * (flying ? 0.85 : 0.65));
     dummy.scale.set(s, s, s);
     dummy.updateMatrix();
   }

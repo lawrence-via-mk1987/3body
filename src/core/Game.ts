@@ -85,6 +85,7 @@ import { Sky } from '../world/Sky';
 import { StableEraParticles } from '../world/StableEraParticles';
 import { GroveGrass } from '../world/GroveGrass';
 import { StableScatterTrees } from '../world/StableScatterTrees';
+import { StablePitHerds } from '../world/StablePitHerds';
 import { StableWildlife } from '../world/StableWildlife';
 import { TriSolarLevitation } from '../world/TriSolarLevitation';
 import { ColdBreath } from '../world/ColdBreath';
@@ -159,6 +160,7 @@ export class Game {
   private readonly groveGrass: GroveGrass;
   private readonly stableScatterTrees: StableScatterTrees;
   private readonly stableWildlife: StableWildlife;
+  private readonly stablePitHerds: StablePitHerds;
   private readonly triSolarLevitation: TriSolarLevitation;
   private readonly coldBreath: ColdBreath | null;
   private readonly waterSource: WaterSource;
@@ -422,6 +424,11 @@ export class Game {
       this.renderQuality.wildlifeCritters,
       this.renderQuality.wildlifeBirds,
     );
+    this.stablePitHerds = new StablePitHerds(
+      this.terrain,
+      this.renderQuality.pitHerds,
+      this.renderQuality.pitHerdMembers,
+    );
     this.triSolarLevitation = new TriSolarLevitation(this.terrain, this.renderQuality.triSolarDebris);
     this.coldBreath = this.renderQuality.breath ? new ColdBreath() : null;
     this.waterSource = new WaterSource();
@@ -438,6 +445,7 @@ export class Game {
     this.scene.add(this.groveGrass.mesh);
     this.scene.add(this.stableScatterTrees.group);
     this.scene.add(this.stableWildlife.group);
+    this.scene.add(this.stablePitHerds.group);
     this.scene.add(this.triSolarLevitation.group);
     if (this.coldBreath) {
       this.scene.add(this.coldBreath.points);
@@ -1211,8 +1219,10 @@ export class Game {
     this.groveGrass.setStable(stableEra, delta);
     this.stableScatterTrees.setStable(stableEra, delta);
     this.stableWildlife.setStable(stableEra, delta, this.terrain);
+    this.stablePitHerds.setStable(stableEra, delta, this.terrain);
     const phaseNow = this.orbital.getPhase();
     this.triSolarLevitation.update(delta, phaseNow);
+    this.ruins.setTriSolarHideWind(phaseNow === 'tri_solar' ? 1 : 0, delta);
     const hotPhase = phaseNow === 'scorch' || phaseNow === 'tri_solar' || phaseNow === 'flying_star';
     const coldPhase = phaseNow === 'deep_cold' || phaseNow === 'eclipse_relief';
     this.pipeline.setHeat(hotPhase ? 1 : 0, delta);
@@ -1338,11 +1348,13 @@ export class Game {
         };
         this.gameToast.show(copy[locale] ?? copy.en);
       } else if (phase === 'flying_star') {
-        this.gameToast.show(
-          this.getLocale() === 'zh'
-            ? '飞星：一颗太阳贴地掠过 — 像 drama 里的灾厄前兆。'
-            : 'Flying Star: a sun skims the horizon — the drama’s omen made visible.',
-        );
+        const locale = this.getLocale();
+        const copy = {
+          en: 'Flying Star: a sun skims the horizon — debris tears upward in its wake.',
+          zh: '飞星：太阳贴地掠过 — 碎石与皮屑被猛地扯向天空。',
+          ja: '飛星：太陽が地平を掠める——瓦礫が引きずられて上がる。',
+        };
+        this.gameToast.show(copy[locale] ?? copy.en);
       }
       this.lethalWarnedPhase = null;
     }
@@ -1706,7 +1718,7 @@ export class Game {
     if (this.statusOverride) {
       statusMessage = this.statusOverride;
     } else if (stableEra && !nearWater && !interactionCtx.nearGroveKeeper && !nearbyLog) {
-      statusMessage = 'Stable Era — scrub trees, skitters, and birds return. Follow the green trail to the pool or final tablets.';
+      statusMessage = 'Stable Era — scrub trees, pit herds, skitters, and birds return. Follow the green trail to the pool or final tablets.';
     } else if (this.journal.isOpen()) {
       statusMessage = inputMode === 'touch'
         ? (this.getLocale() === 'zh' ? '正在查看循环日志。' : 'Reviewing your cycle journal.')
@@ -1806,6 +1818,7 @@ export class Game {
     this.groveGrass.dispose();
     this.stableScatterTrees.dispose();
     this.stableWildlife.dispose();
+    this.stablePitHerds.dispose();
     this.triSolarLevitation.dispose();
     this.coldBreath?.dispose();
     this.orbital.dispose();

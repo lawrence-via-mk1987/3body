@@ -28,6 +28,8 @@ export interface RenderQuality {
   wildlifeCritters: number;
   wildlifeBirds: number;
   triSolarDebris: number;
+  pitHerds: number;
+  pitHerdMembers: number;
 }
 
 export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
@@ -51,6 +53,8 @@ export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
       wildlifeCritters: 5,
       wildlifeBirds: 8,
       triSolarDebris: 28,
+      pitHerds: 1,
+      pitHerdMembers: 4,
     };
   }
   if (profile.kind === 'tablet') {
@@ -73,6 +77,8 @@ export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
       wildlifeCritters: 8,
       wildlifeBirds: 14,
       triSolarDebris: 44,
+      pitHerds: 2,
+      pitHerdMembers: 5,
     };
   }
   return {
@@ -94,5 +100,7 @@ export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
     wildlifeCritters: 12,
     wildlifeBirds: 22,
     triSolarDebris: 64,
+    pitHerds: 3,
+    pitHerdMembers: 6,
   };
 }

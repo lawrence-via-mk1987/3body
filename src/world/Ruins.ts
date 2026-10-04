@@ -3,6 +3,7 @@ import type { Terrain } from './Terrain';
 import { GROVE_SITE, OBSERVATORY_SITE, PIT_SITE } from './Terrain';
 import { GROVE_LANDMARK, LAST_PREDICTOR, OBSERVATORY_LANDMARK, PIT_LANDMARK, PIT_REGISTRAR, SPAWN_HINT } from './landmarks';
 import type { LandmarkMaterials } from './landmarkMaterials';
+import { createPitHideWindMaterial, type PitHideWindUniforms } from './pitHideWind';
 import {
   GeometryBatch,
   addCairn,
@@ -44,6 +45,8 @@ export class Ruins {
 
   private readonly bark: THREE.MeshStandardMaterial;
   private readonly canopy: THREE.MeshStandardMaterial;
+  private readonly pitHideMat: THREE.MeshStandardMaterial;
+  private readonly pitHideWind: PitHideWindUniforms;
 
   constructor(
     private readonly terrain: Terrain,
@@ -53,15 +56,30 @@ export class Ruins {
     this.bark.color.set('#3a2e24');
     this.canopy = new THREE.MeshStandardMaterial({ color: '#2a2820', roughness: 0.9, emissive: '#000000' });
 
+    const pitHideSetup = createPitHideWindMaterial(this.mats.hide);
+    this.pitHideMat = pitHideSetup.material;
+    this.pitHideWind = pitHideSetup.uniforms;
+
     const batch = new GeometryBatch();
+    const pitHideBatch = new GeometryBatch();
     this.buildObservatory(batch);
     this.buildCollapsedShelter(batch);
-    this.buildDehydrationPit(batch);
+    this.buildDehydrationPit(batch, pitHideBatch);
     this.buildWaystone(batch);
     batch.build(this.group);
+    pitHideBatch.build(this.group);
 
     this.buildGrove();
     this.group.add(this.groveGroup);
+  }
+
+  setTriSolarHideWind(strength: number, delta: number): void {
+    this.pitHideWind.uTime.value += delta;
+    this.pitHideWind.uWind.value = THREE.MathUtils.lerp(
+      this.pitHideWind.uWind.value,
+      strength,
+      Math.min(delta * (strength > this.pitHideWind.uWind.value ? 2.5 : 4), 1),
+    );
   }
 
   setStableEraActive(active: boolean): void {
@@ -226,11 +244,12 @@ export class Ruins {
 
   // ---------------------------------------------------------------- dehydration pit
 
-  private buildDehydrationPit(batch: GeometryBatch): void {
+  private buildDehydrationPit(batch: GeometryBatch, pitHideBatch: GeometryBatch): void {
     const { x, z } = PIT_LANDMARK;
     const floorY = PIT_SITE.floor;
     const rimY = PIT_SITE.rim;
-    const { stone, stoneDark, stonePale, hide, charcoal, wood } = this.mats;
+    const { stone, stoneDark, stonePale, charcoal, wood } = this.mats;
+    const pitHide = this.pitHideMat;
     const rnd = seededRandom(70);
 
     // Rim coping: a ring of worn blocks along the lip, leaving the eastern ramp open.
@@ -279,7 +298,7 @@ export class Ruins {
         const pz = z + rz * along + dirZ * across;
         seed += 1;
         batch.add(flagstoneGeometry(0.85, seed), stoneDark, { position: [px, floorY + 0.07, pz] });
-        batch.add(foldedFormGeometry(1.1 + rnd() * 0.3, seed), hide, {
+        pitHideBatch.add(foldedFormGeometry(1.1 + rnd() * 0.3, seed), pitHide, {
           position: [px, floorY + 0.14 + 0.13, pz],
           rotation: [0, rowYaw + (rnd() - 0.5) * 0.3, 0],
         });
@@ -304,7 +323,7 @@ export class Ruins {
       }
       batch.add(beamGeometry(3.6, 0.08), wood, { position: [px, floorY + rackH - 0.05, pz], rotation: [Math.PI / 2, rowYaw, 0] });
       for (const s of [-0.9, 0.4]) {
-        batch.add(clothPanelGeometry(1.0, 1.5, 0.18, 300 + k * 3 + s), hide, {
+        pitHideBatch.add(clothPanelGeometry(1.0, 1.5, 0.18, 300 + k * 3 + s), pitHide, {
           position: [px + rx * s, floorY + rackH - 0.1 - 0.75, pz + rz * s],
           rotation: [0, rowYaw + Math.PI / 2, 0],
         });
@@ -441,5 +460,6 @@ export class Ruins {
     });
     this.bark.dispose();
     this.canopy.dispose();
+    this.pitHideMat.dispose();
   }
 }
