@@ -246,6 +246,7 @@ export class Game {
     this.mobileHud = mobileHud;
     this.soundBanner = soundBannerRoot && soundBannerButton
       ? new SoundUnlockBanner(soundBannerRoot, soundBannerButton, () => {
+        this.narration.unlockFromUserGesture();
         void this.unlockAudioFromGesture();
       })
       : null;

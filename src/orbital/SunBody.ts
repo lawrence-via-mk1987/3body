@@ -28,6 +28,8 @@ export class SunBody {
   readonly id: SunId;
   readonly mesh: THREE.Mesh;
   readonly glow: THREE.Sprite;
+  readonly glowOuter: THREE.Sprite;
+  readonly glowCorona: THREE.Sprite;
   readonly light: THREE.DirectionalLight | null;
   readonly color: THREE.Color;
 
@@ -88,21 +90,29 @@ export class SunBody {
     this.mesh.renderOrder = 1;
     this.mesh.frustumCulled = false;
 
-    this.glow = new THREE.Sprite(
-      new THREE.SpriteMaterial({
-        map: createSunGlowTexture(def.emissive),
-        color: def.emissive,
-        transparent: true,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        // Depth-tested so a sun behind a ridge reads as a halo over the ridge, not a disc through it.
-        depthTest: true,
-        toneMapped: false,
-        fog: false,
-      }),
-    );
+    const glowMat = (color: string, opacity: number) => new THREE.SpriteMaterial({
+      map: createSunGlowTexture(color, 512),
+      color,
+      transparent: true,
+      opacity,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      depthTest: true,
+      toneMapped: false,
+      fog: false,
+    });
+
+    this.glow = new THREE.Sprite(glowMat(def.emissive, 0.9));
     this.glow.renderOrder = 2;
     this.glow.scale.setScalar(ORBITAL_CONFIG.sunBaseScale * 4);
+
+    this.glowOuter = new THREE.Sprite(glowMat(def.color, 0.45));
+    this.glowOuter.renderOrder = 2;
+    this.glowOuter.scale.setScalar(ORBITAL_CONFIG.sunBaseScale * 7.5);
+
+    this.glowCorona = new THREE.Sprite(glowMat(def.limb, 0.22));
+    this.glowCorona.renderOrder = 2;
+    this.glowCorona.scale.setScalar(ORBITAL_CONFIG.sunBaseScale * 11);
 
     if (options.emitLight || options.castShadow) {
       this.light = new THREE.DirectionalLight(def.color, 0);
@@ -138,6 +148,8 @@ export class SunBody {
     if (!this.active) {
       this.mesh.visible = false;
       this.glow.visible = false;
+      this.glowOuter.visible = false;
+      this.glowCorona.visible = false;
       if (this.light) {
         this.light.intensity = 0;
       }
@@ -163,10 +175,26 @@ export class SunBody {
     this.diskMaterial.uniforms.uBoost.value = 0.55 + horizonFactor * 0.45 + Math.min(this.intensity, 3) * 0.15;
 
     this.glow.visible = true;
+    this.glowOuter.visible = true;
+    this.glowCorona.visible = true;
     this.glow.position.copy(position);
+    this.glowOuter.position.copy(position);
+    this.glowCorona.position.copy(position);
     const haloScale = scale * (3.6 + Math.min(this.intensity, 3) * 1.1) * (1.3 - horizonFactor * 0.3);
     this.glow.scale.setScalar(haloScale);
+    this.glowOuter.scale.setScalar(haloScale * 1.85);
+    this.glowCorona.scale.setScalar(haloScale * 2.75);
     (this.glow.material as THREE.SpriteMaterial).opacity = THREE.MathUtils.clamp(0.35 + this.intensity * 0.3, 0.3, 1);
+    (this.glowOuter.material as THREE.SpriteMaterial).opacity = THREE.MathUtils.clamp(
+      0.18 + this.intensity * 0.22,
+      0.15,
+      0.65,
+    );
+    (this.glowCorona.material as THREE.SpriteMaterial).opacity = THREE.MathUtils.clamp(
+      0.08 + this.intensity * 0.14,
+      0.06,
+      0.38,
+    );
 
     if (this.light) {
       // Physical light units: ~π× intensity reads as sunlight on a Lambert surface.
@@ -194,6 +222,8 @@ export class SunBody {
   addToScene(scene: THREE.Scene): void {
     scene.add(this.mesh);
     scene.add(this.glow);
+    scene.add(this.glowOuter);
+    scene.add(this.glowCorona);
     if (this.light) {
       scene.add(this.light);
       scene.add(this.light.target);
@@ -203,8 +233,10 @@ export class SunBody {
   dispose(): void {
     this.mesh.geometry.dispose();
     this.diskMaterial.dispose();
-    const glowMaterial = this.glow.material as THREE.SpriteMaterial;
-    glowMaterial.map?.dispose();
-    glowMaterial.dispose();
+    for (const sprite of [this.glow, this.glowOuter, this.glowCorona]) {
+      const glowMaterial = sprite.material as THREE.SpriteMaterial;
+      glowMaterial.map?.dispose();
+      glowMaterial.dispose();
+    }
   }
 }

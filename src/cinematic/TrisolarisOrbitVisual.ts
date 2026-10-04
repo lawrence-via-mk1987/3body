@@ -1,10 +1,21 @@
 import * as THREE from 'three';
+import {
+  buildCelestialSunVisual,
+  updateCelestialSunVisual,
+  type CelestialSunPalette,
+} from '../world/CelestialSunVisual';
+
+const SUN_PALETTES: CelestialSunPalette[] = [
+  { core: '#ffb27a', limb: '#ff6a2a', emissive: '#ff8a3d' },
+  { core: '#fff2cc', limb: '#ffb860', emissive: '#ffe08a' },
+  { core: '#ff5a3a', limb: '#8a1008', emissive: '#d62818' },
+];
 
 /** Stylized three-body diagram: planet + three suns on independent orbits. */
 export class TrisolarisOrbitVisual {
   readonly group = new THREE.Group();
   private readonly planet: THREE.Mesh;
-  private readonly suns: THREE.Mesh[] = [];
+  private readonly sunGroups: THREE.Group[] = [];
   private readonly orbitRadii = [2.2, 3.1, 4.0];
   private readonly orbitSpeed = [0.85, -1.1, 0.65];
   private time = 0;
@@ -22,41 +33,27 @@ export class TrisolarisOrbitVisual {
       roughness: 0.85,
       metalness: 0.05,
     });
-    this.planet = new THREE.Mesh(new THREE.SphereGeometry(0.95, 24, 18), planetMat);
+    this.planet = new THREE.Mesh(new THREE.SphereGeometry(0.95, 32, 24), planetMat);
     this.planet.castShadow = true;
     this.group.add(this.planet);
 
-    const sunColors = ['#ffd4a8', '#ffb080', '#ffe8c8'];
     for (let i = 0; i < 3; i += 1) {
-      const sun = new THREE.Mesh(
-        new THREE.SphereGeometry(0.38 + i * 0.04, 16, 12),
-        new THREE.MeshStandardMaterial({
-          color: sunColors[i],
-          emissive: sunColors[i],
-          emissiveIntensity: 1.4,
-          roughness: 0.35,
-        }),
-      );
-      sun.userData.orbitIndex = i;
-      this.suns.push(sun);
-      this.group.add(sun);
+      const sunGroup = buildCelestialSunVisual(SUN_PALETTES[i]!, 0.42 + i * 0.05);
+      this.sunGroups.push(sunGroup);
+      this.group.add(sunGroup);
 
       const ring = new THREE.Mesh(
-        new THREE.RingGeometry(this.orbitRadii[i]! - 0.03, this.orbitRadii[i]! + 0.03, 64),
+        new THREE.RingGeometry(this.orbitRadii[i]! - 0.02, this.orbitRadii[i]! + 0.02, 72),
         new THREE.MeshBasicMaterial({
-          color: '#8a7060',
+          color: '#6a5a50',
           transparent: true,
-          opacity: 0.22,
+          opacity: 0.18,
           side: THREE.DoubleSide,
         }),
       );
       ring.rotation.x = -Math.PI / 2;
       this.group.add(ring);
     }
-
-    const halo = new THREE.PointLight('#ffcc88', 0.6, 18, 2);
-    halo.position.set(0, 0.5, 0);
-    this.group.add(halo);
   }
 
   setMode(mode: 'chaos' | 'stable' | 'blend', stableBlend = 0): void {
@@ -72,8 +69,8 @@ export class TrisolarisOrbitVisual {
     this.planet.rotation.y += delta * (0.15 + chaos * 0.25);
     this.group.rotation.y = Math.sin(this.time * 0.12) * 0.08 * chaos;
 
-    for (let i = 0; i < this.suns.length; i += 1) {
-      const sun = this.suns[i]!;
+    for (let i = 0; i < this.sunGroups.length; i += 1) {
+      const sunGroup = this.sunGroups[i]!;
       const r = this.orbitRadii[i]!;
       const wobble = chaos * Math.sin(this.time * (1.8 + i * 0.4) + i) * 0.35;
       const speed = this.orbitSpeed[i]! * (1 + chaos * 1.6);
@@ -81,9 +78,10 @@ export class TrisolarisOrbitVisual {
       const stableAngle = -0.6 + i * 0.22;
       const a = THREE.MathUtils.lerp(angle, stableAngle, stable);
       const radius = THREE.MathUtils.lerp(r, r * 0.72, stable * 0.5);
-      sun.position.set(Math.cos(a) * radius, Math.sin(a * 0.7) * 0.35 * chaos, Math.sin(a) * radius);
-      const mat = sun.material as THREE.MeshStandardMaterial;
-      mat.emissiveIntensity = THREE.MathUtils.lerp(1.5 + chaos * 0.8, 0.75, stable);
+      const yLift = Math.sin(a * 0.7) * 0.35 * chaos;
+      sunGroup.position.set(Math.cos(a) * radius, yLift, Math.sin(a) * radius);
+      const intensity = THREE.MathUtils.lerp(1.2 + chaos * 0.9, 0.55, stable);
+      updateCelestialSunVisual(sunGroup, intensity, this.time + i);
     }
   }
 
@@ -97,6 +95,11 @@ export class TrisolarisOrbitVisual {
         } else {
           m.dispose();
         }
+      }
+      if (obj instanceof THREE.Sprite) {
+        const mat = obj.material as THREE.SpriteMaterial;
+        mat.map?.dispose();
+        mat.dispose();
       }
     });
   }

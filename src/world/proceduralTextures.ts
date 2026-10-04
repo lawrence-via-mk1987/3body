@@ -270,10 +270,12 @@ export function createSunGlowTexture(color: string, size = 256): THREE.CanvasTex
   const c = new THREE.Color(color);
   const rgb = `${Math.round(c.r * 255)}, ${Math.round(c.g * 255)}, ${Math.round(c.b * 255)}`;
   const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  gradient.addColorStop(0, `rgba(255, 255, 255, 1)`);
-  gradient.addColorStop(0.08, `rgba(${rgb}, 0.9)`);
-  gradient.addColorStop(0.22, `rgba(${rgb}, 0.38)`);
-  gradient.addColorStop(0.5, `rgba(${rgb}, 0.1)`);
+  gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+  gradient.addColorStop(0.04, `rgba(255, 248, 230, 0.98)`);
+  gradient.addColorStop(0.1, `rgba(${rgb}, 0.92)`);
+  gradient.addColorStop(0.2, `rgba(${rgb}, 0.55)`);
+  gradient.addColorStop(0.38, `rgba(${rgb}, 0.22)`);
+  gradient.addColorStop(0.62, `rgba(${rgb}, 0.08)`);
   gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, size, size);

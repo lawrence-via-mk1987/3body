@@ -568,8 +568,14 @@ introCinematic = new IntroCinematic(
   },
 );
 introCinematic.setOnUserGesture(() => {
+  narration.unlockFromUserGesture();
   void game.unlockAudioFromGesture();
 });
+
+function unlockSpeechAndAudioFromGesture(): void {
+  narration.unlockFromUserGesture();
+  void game.unlockAudioFromGesture();
+}
 
 localeMenu = new LocaleMenu(
   worldIntroBody,
@@ -590,12 +596,12 @@ localeMenu = new LocaleMenu(
     applyMenuControlsHint(locale);
   },
   () => {
-    void game.ensureAudio().then(() => {
-      overlay.classList.add('hidden');
-      hud.classList.add('hidden');
-      game.playOpeningCutscene(() => {
-        showMainMenu();
-      });
+    unlockSpeechAndAudioFromGesture();
+    void game.ensureAudio();
+    overlay.classList.add('hidden');
+    hud.classList.add('hidden');
+    game.playOpeningCutscene(() => {
+      showMainMenu();
     });
   },
   (enabled) => {
@@ -629,10 +635,10 @@ async function launchGame(
   };
 
   const showCinematic = mode === 'new' && (options?.forceCinematic || !cinematicSeen());
-  await game.ensureAudio();
   introCinematic.setNarrationVolume(MetaProgress.loadMasterVolume());
 
   if (showCinematic) {
+    void game.ensureAudio();
     beginGame();
     hud?.classList.add('hidden');
     game.playOpeningCutscene(() => {
@@ -642,11 +648,12 @@ async function launchGame(
     return;
   }
 
+  await game.ensureAudio();
   await startSession();
 }
 
 const tapPlay = (mode: 'new' | 'continue'): void => {
-  void game.unlockAudioFromGesture();
+  unlockSpeechAndAudioFromGesture();
   void launchGame(mode);
 };
 

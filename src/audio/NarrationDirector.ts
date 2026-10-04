@@ -13,6 +13,7 @@ export class NarrationDirector {
   private gapTimer = 0;
   private utteranceDoneCallback: (() => void) | null = null;
   private voicesWaitTimer = 0;
+  private speechPrimed = false;
 
   constructor() {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -79,6 +80,26 @@ export class NarrationDirector {
   /** Warm up voice list (Chrome loads voices asynchronously). */
   warmUp(): void {
     this.refreshVoices();
+  }
+
+  /**
+   * Must run synchronously inside a user gesture (tap/click).
+   * iOS Safari drops speechSynthesis if speak() runs after an await.
+   */
+  unlockFromUserGesture(): void {
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      return;
+    }
+    const synth = window.speechSynthesis;
+    synth.resume?.();
+    this.refreshVoices();
+    if (!this.speechPrimed) {
+      const prime = new SpeechSynthesisUtterance('\u200b');
+      prime.volume = 0.01;
+      prime.rate = 1;
+      synth.speak(prime);
+      this.speechPrimed = true;
+    }
   }
 
   private refreshVoices(): void {
@@ -157,6 +178,32 @@ export class NarrationDirector {
       }
     };
 
+    let speechStarted = false;
+    utterance.onstart = () => {
+      speechStarted = true;
+    };
+
+    synth.resume?.();
     synth.speak(utterance);
+
+    window.setTimeout(() => {
+      if (speechStarted || synth.speaking || synth.pending) {
+        return;
+      }
+      this.refreshVoices();
+      const retry = new SpeechSynthesisUtterance(text);
+      retry.lang = utterance.lang;
+      retry.rate = utterance.rate;
+      retry.pitch = utterance.pitch;
+      retry.volume = utterance.volume;
+      const voice = this.resolveVoice(this.queueLocale);
+      if (voice) {
+        retry.voice = voice;
+      }
+      retry.onend = utterance.onend;
+      retry.onerror = utterance.onerror;
+      synth.resume?.();
+      synth.speak(retry);
+    }, 320);
   }
 }

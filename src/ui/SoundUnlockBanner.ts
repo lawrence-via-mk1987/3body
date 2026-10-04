@@ -20,7 +20,7 @@ export class SoundUnlockBanner {
           ? '轻触以启用环境音（请关闭静音模式）'
           : locale === 'ja'
             ? 'タップして環境音を有効に（iPhone は消音を解除）'
-            : 'Tap to enable ambience (turn off silent mode on iPhone)';
+            : 'Tap to enable ambience and voice (turn off silent mode on iPhone)';
     }
     this.banner.classList.remove('hidden');
   }
