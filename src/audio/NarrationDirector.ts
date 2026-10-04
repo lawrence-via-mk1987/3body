@@ -11,6 +11,8 @@ export class NarrationDirector {
   private queueVolume = 0.55;
   private queueRole: VoiceRole = 'narrator';
   private gapTimer = 0;
+  private utteranceDoneCallback: (() => void) | null = null;
+  private voicesWaitTimer = 0;
 
   constructor() {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -36,11 +38,19 @@ export class NarrationDirector {
       window.speechSynthesis.cancel();
     }
     window.clearTimeout(this.gapTimer);
+    window.clearTimeout(this.voicesWaitTimer);
     this.queue = [];
+    this.utteranceDoneCallback = null;
   }
 
-  speak(text: string, locale: Locale, volume = 0.55, role: VoiceRole = 'narrator'): void {
-    this.speakParts([text], locale, volume, role);
+  speak(
+    text: string,
+    locale: Locale,
+    volume = 0.55,
+    role: VoiceRole = 'narrator',
+    onComplete?: () => void,
+  ): void {
+    this.speakParts([text], locale, volume, role, onComplete);
   }
 
   /** Speaks each part in order with a short pause (e.g. title, then body). */
@@ -49,12 +59,15 @@ export class NarrationDirector {
     locale: Locale,
     volume = 0.55,
     role: VoiceRole = 'narrator',
+    onComplete?: () => void,
   ): void {
     if (!this.enabled || typeof window === 'undefined' || !window.speechSynthesis) {
+      onComplete?.();
       return;
     }
 
     this.cancel();
+    this.utteranceDoneCallback = onComplete ?? null;
     this.queue = parts.map((part) => part.trim()).filter(Boolean);
     this.queueLocale = locale;
     this.queueVolume = volume;
@@ -86,13 +99,34 @@ export class NarrationDirector {
     return this.voiceByLocale.get(locale) ?? null;
   }
 
+  private finishUtteranceQueue(): void {
+    if (this.queue.length === 0 && this.utteranceDoneCallback) {
+      const done = this.utteranceDoneCallback;
+      this.utteranceDoneCallback = null;
+      done();
+    }
+  }
+
   private speakNextQueued(): void {
     if (!this.enabled || this.queue.length === 0) {
+      this.finishUtteranceQueue();
       return;
     }
 
     const text = this.queue.shift()!;
     const synth = window.speechSynthesis;
+    if (this.cachedVoices.length === 0) {
+      this.refreshVoices();
+      if (this.cachedVoices.length === 0) {
+        window.clearTimeout(this.voicesWaitTimer);
+        this.voicesWaitTimer = window.setTimeout(() => {
+          this.refreshVoices();
+          this.queue.unshift(text);
+          this.speakNextQueued();
+        }, 120);
+        return;
+      }
+    }
     const prosody = prosodyForRole(this.queueLocale, this.queueRole);
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = prosody.lang;
@@ -110,12 +144,16 @@ export class NarrationDirector {
         this.gapTimer = window.setTimeout(() => {
           this.speakNextQueued();
         }, this.queueLocale === 'zh' ? 520 : 450);
+      } else {
+        this.finishUtteranceQueue();
       }
     };
 
     utterance.onerror = () => {
       if (this.queue.length > 0) {
         this.speakNextQueued();
+      } else {
+        this.finishUtteranceQueue();
       }
     };
 

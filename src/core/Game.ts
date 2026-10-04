@@ -427,9 +427,10 @@ export class Game {
     this.scene.add(new CaveShelter(this.terrain, this.shelterZones, this.landmarkMats).group);
 
     const cutsceneOverlay = document.querySelector<HTMLElement>('#cutscene-overlay');
+    const cutsceneSpeaker = document.querySelector<HTMLElement>('#cutscene-speaker');
     const cutsceneSubtitle = document.querySelector<HTMLElement>('#cutscene-subtitle');
     const cutsceneSkip = document.querySelector<HTMLButtonElement>('#cutscene-skip');
-    if (!cutsceneOverlay || !cutsceneSubtitle || !cutsceneSkip) {
+    if (!cutsceneOverlay || !cutsceneSpeaker || !cutsceneSubtitle || !cutsceneSkip) {
       throw new Error('Missing cutscene overlay elements.');
     }
     this.cutscene = new CutsceneController(
@@ -441,6 +442,7 @@ export class Game {
       this.player.camera,
       this.narration,
       cutsceneOverlay,
+      cutsceneSpeaker,
       cutsceneSubtitle,
       cutsceneSkip,
       () => MetaProgress.loadMasterVolume(),
@@ -686,6 +688,7 @@ export class Game {
   playOpeningCutscene(onComplete: () => void): void {
     this.player.unlock();
     this.setCinematicBed(true);
+    this.narration.warmUp();
     const locale = this.getLocale();
     this.cutscene.play(openingCutsceneBeats(locale), locale, () => {
       this.setCinematicBed(false);

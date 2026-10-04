@@ -224,6 +224,41 @@ function makeArm(
   return arm;
 }
 
+/** Re-pose an existing figure without rebuilding geometry. */
+export function applyHumanoidPosture(root: THREE.Object3D, posture: NpcPosture): void {
+  const body = root.getObjectByName('body');
+  if (body) {
+    body.userData.baseX = posture === 'tending' ? 0.28 : 0;
+    body.rotation.x = body.userData.baseX as number;
+  }
+  const head = root.getObjectByName('head');
+  if (head) {
+    head.userData.baseX = posture === 'skyward' ? -0.2 : posture === 'tending' ? 0.35 : 0;
+    head.rotation.x = head.userData.baseX as number;
+  }
+  for (const side of [-1, 1] as const) {
+    const arm = root.getObjectByName(side < 0 ? 'armL' : 'armR');
+    if (!arm) {
+      continue;
+    }
+    let pitch = -0.15;
+    let inward = side * -0.12;
+    if (posture === 'upright') {
+      pitch = side > 0 ? -1.05 : -0.6;
+      inward = side > 0 ? -0.5 : 0.4;
+    } else if (posture === 'skyward') {
+      pitch = side > 0 ? -0.4 : -0.15;
+      inward = side > 0 ? -0.18 : 0.1;
+    } else {
+      pitch = -0.6;
+      inward = side * -0.35;
+    }
+    arm.userData.baseX = pitch;
+    arm.rotation.x = pitch;
+    arm.rotation.z = inward;
+  }
+}
+
 /** Slow breathing, a sway, and a small turn of the hood. Safe to call every frame. */
 export function stepHumanoidIdle(root: THREE.Object3D, time: number): void {
   let seed = root.userData.idleSeed as number | undefined;

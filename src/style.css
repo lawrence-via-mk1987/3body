@@ -274,6 +274,17 @@ h1 {
   display: none;
 }
 
+.cutscene-speaker {
+  max-width: 42rem;
+  margin: 0 auto 0.35rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #c8b8a0;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+}
+
 .cutscene-subtitle {
   max-width: 42rem;
   margin: 0 auto 1rem;

@@ -92,7 +92,7 @@ Chinese lines are written with the English, not left for the browser to translat
 
 **Done when:** a new game and “Replay opening intro” both play this scene with voice and moving suns; Skip still reaches the wasteland; the figure reads as a person, not a card.
 
-**Status: shipped.** The three-card overlay is replaced by `CutsceneController` plus the ash-robed Witness (`buildHumanoidNpc`). New runs and **Replay opening intro** use the same four-beat scene with live sun phases and browser voice. Esc / Skip ends it.
+**Status: shipped (enhanced).** `CutsceneController` plus the ash-robed Witness; **The Witness / 见证者 / 見証者** speaks each beat with subtitles. Opening adds a **three-sun orbit diagram**, camera moves (orbit / sky / close-up), and **phase keyframes** that cycle Chaotic → Stable skies. Beats wait for narration (with timer fallback). Esc / Skip ends it.
 
 ## Phase 3 — When a civilization ends
 

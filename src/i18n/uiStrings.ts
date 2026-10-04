@@ -104,3 +104,7 @@ export function journalEmptyLogs(locale: Locale): string {
 export function mobileSheetCloseLabel(locale: Locale): string {
   return pickLocale(locale, { en: 'Close', zh: '关闭', ja: '閉じる' }, 'Close');
 }
+
+export function witnessSpeakerLabel(locale: Locale): string {
+  return pickLocale(locale, { en: 'The Witness', zh: '见证者', ja: '見証者' }, 'The Witness');
+}

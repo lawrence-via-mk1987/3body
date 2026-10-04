@@ -1,16 +1,23 @@
 import * as THREE from 'three';
 import type { NarrationDirector } from '../audio/NarrationDirector';
 import type { Locale } from '../i18n/locale';
+import { witnessSpeakerLabel } from '../i18n/uiStrings';
 import type { OrbitalDirector } from '../orbital/OrbitalDirector';
 import type { RenderPipeline } from '../render/RenderPipeline';
 import type { Sky } from '../world/Sky';
 import type { Terrain } from '../world/Terrain';
 import {
+  applyHumanoidPosture,
   buildHumanoidNpc,
   stepHumanoidIdle,
   type HumanoidNpcStyle,
 } from '../world/HumanoidNpc';
-import type { CutsceneBeat } from './sceneContent';
+import {
+  phaseForBeatProgress,
+  type CutsceneBeat,
+  type CutsceneCameraMode,
+} from './sceneContent';
+import { TrisolarisOrbitVisual } from './TrisolarisOrbitVisual';
 
 const WITNESS_STYLE: HumanoidNpcStyle = {
   skin: '#1c1410',
@@ -27,15 +34,34 @@ interface ActiveCutscene {
   onComplete: () => void;
   locale: Locale;
   pulse: number;
+  speechDone: boolean;
+  speechFallbackTimer: number;
 }
 
 export class CutsceneController {
   private session: ActiveCutscene | null = null;
   private witness: THREE.Group | null = null;
+  private orbitVisual: TrisolarisOrbitVisual | null = null;
   private animationId = 0;
   private readonly stage = new THREE.Vector3(0, 0, 14);
-  private readonly cinematicPos = new THREE.Vector3(0, 11.5, 22);
-  private readonly lookAt = new THREE.Vector3(0, 10.5, 14);
+  private readonly cameraWitness = {
+    position: new THREE.Vector3(0, 11.8, 20),
+    lookAt: new THREE.Vector3(0, 10.8, 14),
+  };
+  private readonly cameraSky = {
+    position: new THREE.Vector3(-4, 13.5, 17),
+    lookAt: new THREE.Vector3(0, 28, 22),
+  };
+  private readonly cameraOrbit = {
+    position: new THREE.Vector3(0, 17, 10),
+    lookAt: new THREE.Vector3(0, 24, 14),
+  };
+  private readonly cameraPos = new THREE.Vector3();
+  private readonly cameraTarget = new THREE.Vector3();
+  private readonly cameraGoal = {
+    position: new THREE.Vector3(),
+    lookAt: new THREE.Vector3(),
+  };
 
   constructor(
     private readonly scene: THREE.Scene,
@@ -46,6 +72,7 @@ export class CutsceneController {
     private readonly camera: THREE.PerspectiveCamera,
     private readonly narration: NarrationDirector,
     private readonly overlay: HTMLElement,
+    private readonly speakerEl: HTMLElement,
     private readonly subtitleEl: HTMLElement,
     skipButton: HTMLButtonElement,
     private readonly getVolume: () => number,
@@ -74,6 +101,7 @@ export class CutsceneController {
       return;
     }
     this.stopSession(false);
+    this.narration.warmUp();
     this.session = {
       beats,
       index: 0,
@@ -81,12 +109,17 @@ export class CutsceneController {
       onComplete,
       locale,
       pulse: 0,
+      speechDone: false,
     };
     this.ensureWitness();
+    this.ensureOrbitVisual();
+    this.setCameraGoal(beats[0]?.camera ?? 'witness', true);
+    this.cameraPos.copy(this.cameraGoal.position);
+    this.cameraTarget.copy(this.cameraGoal.lookAt);
+    this.camera.position.copy(this.cameraPos);
+    this.camera.lookAt(this.cameraTarget);
     this.applyBeat(0, locale);
     this.overlay.classList.remove('hidden');
-    this.camera.position.copy(this.cinematicPos);
-    this.camera.lookAt(this.lookAt);
     this.animationId = requestAnimationFrame(this.tick);
   }
 
@@ -99,6 +132,14 @@ export class CutsceneController {
     this.placeWitness();
   }
 
+  private ensureOrbitVisual(): void {
+    if (this.orbitVisual) {
+      return;
+    }
+    this.orbitVisual = new TrisolarisOrbitVisual();
+    this.scene.add(this.orbitVisual.group);
+  }
+
   private placeWitness(): void {
     if (!this.witness) {
       return;
@@ -108,15 +149,58 @@ export class CutsceneController {
     this.witness.rotation.y = Math.PI;
   }
 
+  private setCameraGoal(mode: CutsceneCameraMode, instant = false): void {
+    const preset = mode === 'orbit'
+      ? this.cameraOrbit
+      : mode === 'sky'
+        ? this.cameraSky
+        : this.cameraWitness;
+    this.cameraGoal.position.copy(preset.position);
+    this.cameraGoal.lookAt.copy(preset.lookAt);
+    if (instant) {
+      this.cameraPos.copy(this.cameraGoal.position);
+      this.cameraTarget.copy(this.cameraGoal.lookAt);
+    }
+  }
+
   private applyBeat(index: number, locale: Locale): void {
     const beat = this.session?.beats[index];
     if (!beat || !this.witness) {
       return;
     }
-    this.orbital.debugSetPhase(beat.phase);
-    this.terrain.setEraVisuals(this.orbital.getEraKind(), beat.phase);
+    applyHumanoidPosture(this.witness, beat.posture);
+    if (beat.camera) {
+      this.setCameraGoal(beat.camera);
+    }
+    this.speakerEl.textContent = witnessSpeakerLabel(locale);
     this.subtitleEl.textContent = beat.subtitle;
-    this.narration.speak(beat.subtitle, locale, this.getVolume(), 'witness');
+    this.session!.speechDone = !this.narration.isEnabled();
+    const phase = phaseForBeatProgress(beat, 0);
+    this.orbital.debugSetPhase(phase);
+    this.terrain.setEraVisuals(this.orbital.getEraKind(), phase);
+
+    if (this.orbitVisual) {
+      const mode = beat.orbitMode ?? 'chaos';
+      if (mode === 'blend') {
+        this.orbitVisual.setMode('blend', 0);
+      } else {
+        this.orbitVisual.setMode(mode);
+      }
+    }
+
+    if (this.narration.isEnabled()) {
+      this.narration.speak(
+        beat.subtitle,
+        locale,
+        this.getVolume(),
+        'witness',
+        () => {
+          if (this.session) {
+            this.session.speechDone = true;
+          }
+        },
+      );
+    }
   }
 
   private tick = (): void => {
@@ -129,15 +213,42 @@ export class CutsceneController {
     this.session.elapsed += delta;
 
     const beat = this.session.beats[this.session.index]!;
+    const phase = phaseForBeatProgress(beat, this.session.elapsed);
+    this.orbital.debugSetPhase(phase);
+    this.terrain.setEraVisuals(this.orbital.getEraKind(), phase);
+
+    if (this.orbitVisual) {
+      const mode = beat.orbitMode ?? 'chaos';
+      if (mode === 'blend') {
+        const t = Math.min(1, this.session.elapsed / beat.duration);
+        this.orbitVisual.setMode('blend', t);
+      } else {
+        this.orbitVisual.setMode(mode);
+      }
+      this.orbitVisual.update(delta);
+    }
+
+    const camLerp = 1 - Math.exp(-delta * 2.2);
+    this.cameraPos.lerp(this.cameraGoal.position, camLerp);
+    this.cameraTarget.lerp(this.cameraGoal.lookAt, camLerp);
+    this.camera.position.copy(this.cameraPos);
+    this.camera.lookAt(this.cameraTarget);
+
     this.orbital.update(delta, this.stage);
     this.sky.update();
     this.terrain.updateVisuals(delta);
     if (this.witness) {
       stepHumanoidIdle(this.witness, this.session.pulse);
+      if (beat.camera === 'witness') {
+        this.witness.rotation.y = THREE.MathUtils.lerp(this.witness.rotation.y, 0, camLerp);
+      } else {
+        this.witness.rotation.y = THREE.MathUtils.lerp(this.witness.rotation.y, Math.PI, camLerp);
+      }
     }
     this.pipeline.render(this.scene, this.camera);
 
-    if (this.session.elapsed >= beat.duration) {
+    const beatReady = this.session.elapsed >= beat.duration && this.session.speechDone;
+    if (beatReady) {
       this.session.index += 1;
       this.session.elapsed = 0;
       if (this.session.index >= this.session.beats.length) {
@@ -169,10 +280,16 @@ export class CutsceneController {
     cancelAnimationFrame(this.animationId);
     this.session = null;
     this.overlay.classList.add('hidden');
+    this.speakerEl.textContent = '';
     this.subtitleEl.textContent = '';
     if (this.witness) {
       this.scene.remove(this.witness);
       this.witness = null;
+    }
+    if (this.orbitVisual) {
+      this.scene.remove(this.orbitVisual.group);
+      this.orbitVisual.dispose();
+      this.orbitVisual = null;
     }
   }
 }
