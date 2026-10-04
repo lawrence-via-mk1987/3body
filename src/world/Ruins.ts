@@ -220,14 +220,18 @@ export class Ruins {
 
   // ---------------------------------------------------------------- dehydration pit
 
-  private buildDehydrationPit(batch: GeometryBatch): void {
-    const { x, z } = PIT_LANDMARK;
-    const floorY = PIT_SITE.floor;
-    const rimY = PIT_SITE.rim;
-    const { stone, stoneDark, stonePale, hide, charcoal, wood } = this.mats;
-    const rnd = seededRandom(70);
+  /** Legacy block rim when the baked glTF rim fails to load. */
+  addProceduralPitRim(): void {
+    const batch = new GeometryBatch();
+    this.addProceduralPitRimBlocks(batch);
+    batch.build(this.group);
+  }
 
-    // Rim coping: a ring of worn blocks along the lip, leaving the eastern ramp open.
+  private addProceduralPitRimBlocks(batch: GeometryBatch): void {
+    const { x, z } = PIT_LANDMARK;
+    const rimY = PIT_SITE.rim;
+    const { stone } = this.mats;
+    const rnd = seededRandom(70);
     const rimR = 10.3;
     const rampYaw = Math.atan2(SPAWN_HINT.x - x, SPAWN_HINT.z - z);
     const count = 44;
@@ -246,6 +250,16 @@ export class Ruins {
         rotation: [0, -blockYaw + Math.PI / 2, 0],
       });
     }
+  }
+
+  private buildDehydrationPit(batch: GeometryBatch): void {
+    const { x, z } = PIT_LANDMARK;
+    const floorY = PIT_SITE.floor;
+    const { stoneDark, stonePale, hide, charcoal, wood } = this.mats;
+    const rnd = seededRandom(70);
+    const rimR = 10.3;
+
+    const rampYaw = Math.atan2(SPAWN_HINT.x - x, SPAWN_HINT.z - z);
 
     // Ramp of flag steps down toward the floor, following the bowl slope.
     const dirX = Math.sin(rampYaw);

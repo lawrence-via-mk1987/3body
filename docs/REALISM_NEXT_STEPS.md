@@ -2,13 +2,15 @@
 
 Phases **1–4** of `REALISM_REMAKE_PLAN.md` are shipped in code (procedural landmarks, humanoids, era dressing, desktop SSAO, clouds, collision). This doc is the **recommended order** for the next visual wins without changing gameplay rules.
 
-## Shipped (5a / 5b partial)
+## Shipped (5a / 5b / 5c / 5d partial)
 
 - **Triplanar** dust/clay on **steep** trench walls (terrain shader blends planar ↔ triplanar by slope).
 - **Tri-solar** patchy warm ground tint (`uTriSolarBlend`); flying star uses a lighter mix.
 - **Flying star** sun disk scale increased (dominant red sun reads enormous at the horizon).
 - **Contact shadows** under predictor and grove keeper (`contactShadow.ts`).
 - **Stable grove pool** glossier (lower roughness, stronger env reflection).
+- **5c — Pit rim glTF** (`public/models/dehydration_pit_rim.gltf`, loader `PitGltfRim.ts`); procedural block rim remains as fallback.
+- **5d — Phone perf** tier tweaks + slower PMREM rebakes; see `docs/PERF.md`.
 
 ## Principles
 
@@ -59,4 +61,4 @@ Phases **1–4** of `REALISM_REMAKE_PLAN.md` are shipped in code (procedural lan
 3. **5c one glTF pit** if you commission or build art  
 4. **5d perf pass** and README  
 
-Music (procedural) is tracked in `docs/JAPANESE_AND_MUSIC_PLAN.md` Part B; **M1.5** (phase tone + stings) ships in code alongside this doc.
+Music (procedural) is tracked in `docs/JAPANESE_AND_MUSIC_PLAN.md` Part B; **M1.5** (phase tone + stings) and **M2 polish** (menu three-sun harmonics, death cutscene low bed + deep duck) ship in `AudioDirector`.

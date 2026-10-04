@@ -24,25 +24,28 @@ export interface RenderQuality {
   breath: boolean;
   /** Slow chaos arpeggio in procedural music beds; off on phones. */
   musicArpeggio: boolean;
+  /** Minimum seconds between sky PMREM rebakes (lower = prettier metals, higher = smoother on phone). */
+  pmremRebakeMinSec: number;
 }
 
 export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
   if (profile.kind === 'mobile') {
     return {
       tier: 'phone',
-      pixelRatioCap: 1.5,
+      pixelRatioCap: 1.35,
       shadowMapSize: 1024,
-      shadowRadius: 60,
-      terrainSegments: 160,
+      shadowRadius: 58,
+      terrainSegments: 144,
       textureSize: 512,
       anisotropy: 4,
       bloom: false,
       secondarySunLights: true,
-      grassBlades: 180,
+      grassBlades: 140,
       heatHaze: false,
       ssao: false,
       breath: false,
       musicArpeggio: false,
+      pmremRebakeMinSec: 3.5,
     };
   }
   if (profile.kind === 'tablet') {
@@ -61,6 +64,7 @@ export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
       ssao: false,
       breath: true,
       musicArpeggio: true,
+      pmremRebakeMinSec: 2,
     };
   }
   return {
@@ -78,5 +82,6 @@ export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
     ssao: true,
     breath: true,
     musicArpeggio: true,
+    pmremRebakeMinSec: 1.5,
   };
 }

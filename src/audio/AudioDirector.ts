@@ -31,6 +31,8 @@ export class AudioDirector {
   private musicEnabled = true;
   private menuActive = false;
   private duckMultiplier = 1;
+  private deathBedOsc: OscillatorNode | null = null;
+  private deathBedGain: GainNode | null = null;
   private musicArpeggio = true;
   private lastEra: EraKind = 'chaotic';
   private chaosMusicNodes: ChaosMusicNodes | null = null;
@@ -50,13 +52,13 @@ export class AudioDirector {
   }
 
   /** Lower music under voice-over and cutscenes. */
-  setMusicDuck(duck: boolean): void {
-    this.duckMultiplier = duck ? 0.22 : 1;
+  setMusicDuck(duck: boolean, depth: 'normal' | 'deep' = 'normal'): void {
+    this.duckMultiplier = duck ? (depth === 'deep' ? 0.06 : 0.22) : 1;
     if (!this.musicBus || !this.context) {
       return;
     }
     const target = this.musicEnabled ? this.duckMultiplier : 0;
-    this.musicBus.gain.setTargetAtTime(target, this.context.currentTime, 0.35);
+    this.musicBus.gain.setTargetAtTime(target, this.context.currentTime, depth === 'deep' ? 0.55 : 0.35);
   }
 
   async start(initialVolume = 0.78): Promise<void> {
@@ -250,16 +252,54 @@ export class AudioDirector {
     });
   }
 
-  setCinematicBed(active: boolean): void {
-    if (!this.context || !this.stableLayer || !this.windLayer) {
+  setCinematicBed(active: boolean, kind: 'default' | 'death' = 'default'): void {
+    if (!this.context || !this.stableLayer || !this.windLayer || !this.masterGain) {
       return;
     }
     const now = this.context.currentTime;
-    const stableTarget = active ? 0.2 : 0;
-    const windTarget = active ? 0.08 : 0.14;
-    this.stableLayer.gain.gain.setTargetAtTime(stableTarget, now, 0.5);
-    this.windLayer.gain.gain.setTargetAtTime(windTarget, now, 0.5);
-    this.setMusicDuck(active);
+    const isDeath = active && kind === 'death';
+    const stableTarget = isDeath ? 0.06 : active ? 0.2 : 0;
+    const windTarget = isDeath ? 0.03 : active ? 0.08 : 0.14;
+    this.stableLayer.gain.gain.setTargetAtTime(stableTarget, now, isDeath ? 0.8 : 0.5);
+    this.windLayer.gain.gain.setTargetAtTime(windTarget, now, isDeath ? 0.8 : 0.5);
+    if (isDeath) {
+      this.startDeathBedNote(now);
+    } else {
+      this.stopDeathBedNote(now);
+    }
+  }
+
+  private startDeathBedNote(now: number): void {
+    if (!this.context || !this.masterGain || this.deathBedOsc) {
+      return;
+    }
+    const gain = this.context.createGain();
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.14, now + 1.2);
+    gain.connect(this.masterGain);
+    const osc = this.context.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(55, now);
+    osc.frequency.exponentialRampToValueAtTime(49, now + 6);
+    osc.connect(gain);
+    osc.start(now);
+    this.deathBedOsc = osc;
+    this.deathBedGain = gain;
+  }
+
+  private stopDeathBedNote(now: number): void {
+    if (!this.context || !this.deathBedOsc || !this.deathBedGain) {
+      return;
+    }
+    this.deathBedGain.gain.setTargetAtTime(0.0001, now, 0.45);
+    const osc = this.deathBedOsc;
+    const gain = this.deathBedGain;
+    this.deathBedOsc = null;
+    this.deathBedGain = null;
+    osc.stop(now + 1.2);
+    window.setTimeout(() => {
+      gain.disconnect();
+    }, 1400);
   }
 
   playLogDiscover(): void {
@@ -284,6 +324,9 @@ export class AudioDirector {
   }
 
   dispose(): void {
+    if (this.context && this.deathBedOsc) {
+      this.stopDeathBedNote(this.context.currentTime);
+    }
     this.windLayer?.cleanup?.();
     this.solarLayer?.cleanup?.();
     this.stableLayer?.cleanup?.();
@@ -480,6 +523,29 @@ export class AudioDirector {
       partial.connect(gain);
       oscillator.start();
       oscillators.push(oscillator);
+    });
+
+    // Three “suns” — detuned harmonics with slow independent drift.
+    const sunHz = [98, 98 * 1.0042, 98 * 0.9961];
+    sunHz.forEach((frequency, index) => {
+      const oscillator = context.createOscillator();
+      oscillator.type = 'sine';
+      oscillator.frequency.value = frequency;
+      const partial = context.createGain();
+      partial.gain.value = 0.008 + index * 0.002;
+      oscillator.connect(partial);
+      partial.connect(gain);
+      oscillator.start();
+      oscillators.push(oscillator);
+
+      const lfo = context.createOscillator();
+      lfo.frequency.value = 0.03 + index * 0.011;
+      const lfoGain = context.createGain();
+      lfoGain.gain.value = 0.004 + index * 0.0015;
+      lfo.connect(lfoGain);
+      lfoGain.connect(partial.gain);
+      lfo.start();
+      oscillators.push(lfo);
     });
 
     const lfo = context.createOscillator();

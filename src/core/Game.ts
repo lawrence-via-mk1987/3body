@@ -78,6 +78,7 @@ import {
   resolveWayfindingTarget,
   wayfindingCoords,
 } from '../world/WayfindingObjective';
+import { attachDehydrationPitRim } from '../world/PitGltfRim';
 import { Ruins } from '../world/Ruins';
 import { getLandmarkMaterials, type LandmarkMaterials } from '../world/landmarkMaterials';
 import { GeometryBatch, boulderGeometry, seededRandom } from '../world/meshKit';
@@ -175,6 +176,7 @@ export class Game {
   private hudCompact = false;
   private stableNarrationPlayed = false;
   private cinematicBedActive = false;
+  private cinematicBedKind: 'default' | 'death' = 'default';
   private readonly dialoguePanel: DialoguePanel;
   private readonly hudCompass: HudCompass;
   private readonly audio = new AudioDirector();
@@ -408,6 +410,9 @@ export class Game {
       Math.min(this.renderQuality.anisotropy, this.renderer.capabilities.getMaxAnisotropy()),
     );
     this.ruins = new Ruins(this.terrain, this.landmarkMats);
+    void attachDehydrationPitRim(this.ruins.group, this.landmarkMats.stone, () => {
+      this.ruins.addProceduralPitRim();
+    });
     this.stableParticles = new StableEraParticles(this.terrain);
     this.groveGrass = new GroveGrass(this.terrain, this.renderQuality.grassBlades);
     this.coldBreath = this.renderQuality.breath ? new ColdBreath() : null;
@@ -667,9 +672,10 @@ export class Game {
     await this.unlockAudioFromGesture();
   }
 
-  setCinematicBed(active: boolean): void {
+  setCinematicBed(active: boolean, kind: 'default' | 'death' = 'default'): void {
     this.cinematicBedActive = active;
-    this.audio.setCinematicBed(active);
+    this.cinematicBedKind = active ? kind : 'default';
+    this.audio.setCinematicBed(active, kind);
     this.syncMusicDuck();
   }
 
@@ -692,7 +698,8 @@ export class Game {
       || this.journal.isOpen()
       || this.dialoguePanel.isOpen()
       || this.storyOverlay.isOpen();
-    this.audio.setMusicDuck(duck);
+    const depth = this.cinematicBedActive && this.cinematicBedKind === 'death' ? 'deep' : 'normal';
+    this.audio.setMusicDuck(duck, depth);
   }
 
   playOpeningCutscene(onComplete: () => void): void {
@@ -1600,7 +1607,7 @@ export class Game {
       logsFound: found,
       logsTotal: total,
     });
-    this.setCinematicBed(true);
+    this.setCinematicBed(true, 'death');
     this.cutscene.play(
       deathCutsceneBeats(locale, this.survival.deathReason),
       locale,

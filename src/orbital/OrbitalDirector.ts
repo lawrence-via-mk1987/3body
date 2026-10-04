@@ -180,6 +180,7 @@ export class OrbitalDirector {
   private envTimer = 99;
   private readonly envBakedPalette = { top: new THREE.Color(), horizon: new THREE.Color() };
   private envBakedSunEnergy = -1;
+  private pmremRebakeMinSec = 1.5;
   private readonly skySunInputs: SkySunInput[];
   private forecast: ForecastEntry[] = [];
   private forecastSummary = 'Conditions uncertain';
@@ -205,6 +206,7 @@ export class OrbitalDirector {
     this.eraState = new EraStateMachine(stableRoll, onChaoticPhaseEnded, onStableEntered);
 
     const quality = renderOptions?.quality;
+    this.pmremRebakeMinSec = quality?.pmremRebakeMinSec ?? 1.5;
     this.sunA = new SunBody('sun_a', {
       castShadow: true,
       emitLight: true,
@@ -355,7 +357,7 @@ export class OrbitalDirector {
       return;
     }
     this.envTimer += delta;
-    if (this.envTimer < 1.5) {
+    if (this.envTimer < this.pmremRebakeMinSec) {
       return;
     }
     const palette = this.sky.getCurrentPalette();

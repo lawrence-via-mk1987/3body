@@ -17,6 +17,8 @@ This project is an unofficial, non-commercial fan work. It is not affiliated wit
 - [Game Design Document](./docs/GDD.md)
 - [World intro (Three Body Problem context)](./docs/WORLD_INTRO.md)
 - [Orbital System Specification](./docs/ORBITAL_SIM.md)
+- [Realism roadmap (Phases 5a–5d)](./docs/REALISM_NEXT_STEPS.md)
+- [Performance tiers (iPhone-first)](./docs/PERF.md)
 
 ## Development
 
@@ -39,8 +41,13 @@ Pages uses **GitHub Actions** (`build_type: workflow`). Each push to `main` runs
 
 ## Status
 
-**Shipped:** Milestones 1–7 + flow polish (journal, checkpoints, [live demo](https://lawrence-via-mk1987.github.io/3body/)).  
-**Next:** [GDD Milestone 8](./docs/GDD.md#visual-wayfinding) visual wayfinding (pit & grove), then Milestone 9 NPC vignettes.
+**Shipped:** Milestones 1–7, voice/cutscene phases, Japanese locale, procedural music beds (menu / chaos / stable), realism phases **5a–5d** (triplanar terrain, pit glTF rim, mobile perf pass). [Live demo](https://lawrence-via-mk1987.github.io/3body/).
+
+**Locales:** English · 简体中文 · 日本語 (menu + HUD + logs/NPCs where translated).
+
+**Audio:** Master volume slider (boosted for small speakers) · **Music** toggle (persisted) · wind/solar layers · death cutscene ducks to a low bed.
+
+**Next:** Optional humanoid glTF (5c follow-up), asset music loops (M3), [GDD Milestone 8](./docs/GDD.md#visual-wayfinding) wayfinding polish.
 
 | Milestone | Features |
 |---|---|
@@ -57,4 +64,4 @@ Pages uses **GitHub Actions** (`build_type: workflow`). Each push to `main` runs
 - **F** — read log · **T** — talk (Registrar / Last Predictor / Grove Keeper in Stable Era) · **J** — journal · **Tab** — compact HUD · **R** — drink at grove (Stable Era) · **E** — dehydrate at pit ring · **P / Esc** — pause
 - **Beacons & HUD arrow:** amber → pit, cyan → observatory (until forecast calibrated), green → grove in Stable Era
 - **Interaction chip** appears center-bottom when you can talk, read, drink, or dehydrate
-- **Menu:** English / 简体中文 world intro · optional **browser narration** · skippable **3-card opening cinematic** on first new cycle (replay from menu)
+- **Menu:** locale picker (en / zh / ja) · world intro · **Music** + **Spoken narration** toggles · skippable Witness opening (replay from menu)
