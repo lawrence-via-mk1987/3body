@@ -2,6 +2,7 @@
 
 **Status:** **in progress** (Oct 2026).  
 **Shipped on branch `cursor/japanese-procedural-music-3d2d`:** locale `ja`, menu **日本語**, TTS scoring, full `ja` narrative tables (logs, NPCs, cutscenes), procedural **menu / chaos / stable** music beds + menu toggle (`3body_music_enabled`), duck under voice UI.  
+**M1.5 (procedural polish):** phase-aware chaos filter (heat vs cold), richer menu/stable harmonics, `playPhaseEnterSting` on sky phase change.  
 **Still optional later:** sampled OGG loops (M3), README locale line, grep CI for stray ternaries.  
 **Related:** `docs/MUSIC_AND_VOICE_SOURCING.md` (fan demo licensing and sourcing).  
 **Goal:** add **日本語** as a third language alongside English and 简体中文, and add **music** that makes Chaotic Eras, Stable Eras, and key story moments feel different — without breaking GitHub Pages, mobile Safari, or the fan-work disclaimer.

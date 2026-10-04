@@ -6,6 +6,11 @@ type AudioLayer = {
   cleanup?: () => void;
 };
 
+interface ChaosMusicNodes {
+  filter: BiquadFilterNode;
+  highpass: BiquadFilterNode;
+}
+
 export interface AudioDirectorOptions {
   /** Slow chaos arpeggio on desktop; phones keep pads only. */
   musicArpeggio: boolean;
@@ -28,6 +33,7 @@ export class AudioDirector {
   private duckMultiplier = 1;
   private musicArpeggio = true;
   private lastEra: EraKind = 'chaotic';
+  private chaosMusicNodes: ChaosMusicNodes | null = null;
 
   configure(options: AudioDirectorOptions): void {
     this.musicArpeggio = options.musicArpeggio;
@@ -160,6 +166,66 @@ export class AudioDirector {
 
     this.lastEra = era;
     this.applyMusicLevels(era, phase, temperature);
+    this.updateChaosMusicTone(phase, temperature);
+  }
+
+  /** Short synth accent when the sky phase changes (procedural, no samples). */
+  playPhaseEnterSting(phase: EraPhase): void {
+    if (!this.context || !this.masterGain || !this.musicEnabled) {
+      return;
+    }
+    const now = this.context.currentTime;
+    const bus = this.context.createGain();
+    bus.connect(this.masterGain);
+    bus.gain.setValueAtTime(0.0001, now);
+    bus.gain.exponentialRampToValueAtTime(0.22, now + 0.06);
+    bus.gain.exponentialRampToValueAtTime(0.0001, now + (phase === 'flying_star' ? 2.4 : 1.6));
+
+    const playTone = (freq: number, type: OscillatorType, peak: number, dur: number, delay = 0) => {
+      const g = this.context!.createGain();
+      g.connect(bus);
+      g.gain.setValueAtTime(0.0001, now + delay);
+      g.gain.exponentialRampToValueAtTime(peak, now + delay + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + delay + dur);
+      const osc = this.context!.createOscillator();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, now + delay);
+      if (phase === 'flying_star' && delay === 0) {
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.55, now + delay + dur);
+      }
+      osc.connect(g);
+      osc.start(now + delay);
+      osc.stop(now + delay + dur + 0.05);
+    };
+
+    switch (phase) {
+      case 'tri_solar':
+        playTone(73.42, 'sawtooth', 0.12, 0.9);
+        playTone(110, 'triangle', 0.08, 0.7, 0.08);
+        playTone(164.81, 'sine', 0.06, 0.5, 0.14);
+        break;
+      case 'flying_star':
+        playTone(55, 'sawtooth', 0.14, 1.8);
+        playTone(880, 'sine', 0.04, 0.35, 0.12);
+        break;
+      case 'deep_cold':
+      case 'eclipse_relief':
+        playTone(523.25, 'sine', 0.07, 0.55);
+        playTone(392, 'triangle', 0.04, 0.45, 0.06);
+        break;
+      case 'scorch':
+        playTone(98, 'triangle', 0.1, 0.75);
+        playTone(123.47, 'sine', 0.06, 0.6, 0.05);
+        break;
+      case 'stable_golden':
+        playTone(261.63, 'sine', 0.09, 0.85);
+        playTone(329.63, 'sine', 0.07, 0.75, 0.07);
+        playTone(392, 'sine', 0.05, 0.65, 0.14);
+        break;
+      default:
+        playTone(82.41, 'triangle', 0.06, 0.5);
+        break;
+    }
   }
 
   playStableEraChime(): void {
@@ -227,6 +293,44 @@ export class AudioDirector {
     void this.context?.close();
     this.context = null;
     this.started = false;
+  }
+
+  private updateChaosMusicTone(phase: EraPhase, temperature: number): void {
+    if (!this.context || !this.chaosMusicNodes) {
+      return;
+    }
+    const now = this.context.currentTime;
+    const { filter, highpass } = this.chaosMusicNodes;
+    let cutoff = 310;
+    let hp = 38;
+    switch (phase) {
+      case 'deep_cold':
+      case 'eclipse_relief':
+        cutoff = 220;
+        hp = 120;
+        break;
+      case 'flying_star':
+        cutoff = 720;
+        hp = 28;
+        break;
+      case 'tri_solar':
+        cutoff = 580;
+        hp = 32;
+        break;
+      case 'scorch':
+        cutoff = 460;
+        hp = 45;
+        break;
+      case 'stable_golden':
+        cutoff = 260;
+        hp = 80;
+        break;
+      default:
+        cutoff = 320 + Math.min(Math.max(temperature, 0), 2) * 25;
+        break;
+    }
+    filter.frequency.setTargetAtTime(cutoff, now, 2.8);
+    highpass.frequency.setTargetAtTime(hp, now, 2.8);
   }
 
   private applyMusicLevels(era: EraKind, phase: EraPhase, temperature: number): void {
@@ -365,12 +469,13 @@ export class AudioDirector {
     gain.connect(this.musicBus!);
 
     const oscillators: OscillatorNode[] = [];
-    [130.81, 164.81, 196.0].forEach((frequency) => {
+    const menuPartial = [65.41, 98, 130.81, 164.81, 196.0];
+    menuPartial.forEach((frequency, index) => {
       const oscillator = context.createOscillator();
-      oscillator.type = 'sine';
-      oscillator.frequency.value = frequency;
+      oscillator.type = index < 2 ? 'triangle' : 'sine';
+      oscillator.frequency.value = frequency * (index === 1 ? 1.002 : 1);
       const partial = context.createGain();
-      partial.gain.value = 0.018;
+      partial.gain.value = index === 0 ? 0.022 : index === 1 ? 0.014 : 0.018;
       oscillator.connect(partial);
       partial.connect(gain);
       oscillator.start();
@@ -400,20 +505,29 @@ export class AudioDirector {
     gain.gain.value = 0;
     gain.connect(this.musicBus!);
 
+    const highpass = context.createBiquadFilter();
+    highpass.type = 'highpass';
+    highpass.frequency.value = 38;
+    highpass.Q.value = 0.6;
+
     const filter = context.createBiquadFilter();
     filter.type = 'lowpass';
     filter.frequency.value = 280;
+    filter.Q.value = 0.9;
+
+    highpass.connect(filter);
     filter.connect(gain);
+    this.chaosMusicNodes = { filter, highpass };
 
     const oscillators: OscillatorNode[] = [];
-    [48, 50.8, 72].forEach((frequency, index) => {
+    [48, 50.8, 54.5, 72].forEach((frequency, index) => {
       const oscillator = context.createOscillator();
-      oscillator.type = index === 2 && this.musicArpeggio ? 'triangle' : 'sawtooth';
+      oscillator.type = index >= 2 && this.musicArpeggio ? 'triangle' : 'sawtooth';
       oscillator.frequency.value = frequency;
       const partial = context.createGain();
-      partial.gain.value = index === 2 ? 0.025 : 0.035;
+      partial.gain.value = index === 3 ? 0.028 : index >= 2 ? 0.03 : 0.038;
       oscillator.connect(partial);
-      partial.connect(filter);
+      partial.connect(highpass);
       oscillator.start();
       oscillators.push(oscillator);
     });
@@ -424,7 +538,7 @@ export class AudioDirector {
       const lfoGain = context.createGain();
       lfoGain.gain.value = 8;
       lfo.connect(lfoGain);
-      lfoGain.connect(oscillators[2]!.frequency);
+      lfoGain.connect(oscillators[3]!.frequency);
       lfo.start();
       oscillators.push(lfo);
     }
@@ -442,12 +556,12 @@ export class AudioDirector {
     gain.connect(this.musicBus!);
 
     const oscillators: OscillatorNode[] = [];
-    [174.61, 220, 261.63].forEach((frequency) => {
+    [174.61, 220, 261.63, 329.63].forEach((frequency, index) => {
       const oscillator = context.createOscillator();
       oscillator.type = 'sine';
       oscillator.frequency.value = frequency;
       const partial = context.createGain();
-      partial.gain.value = 0.022;
+      partial.gain.value = index === 3 ? 0.016 : 0.022;
       oscillator.connect(partial);
       partial.connect(gain);
       oscillator.start();

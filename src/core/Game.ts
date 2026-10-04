@@ -1305,6 +1305,7 @@ export class Game {
 
     if (transition.phaseChanged) {
       const phase = this.orbital.getPhase();
+      this.audio.playPhaseEnterSting(phase);
       const omen = omenForPhaseEnter(phase, this.getLocale());
       if (omen) {
         this.showSkyOmen(omen, 9);
