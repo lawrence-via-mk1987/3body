@@ -114,6 +114,7 @@ export class CutsceneController {
       speechDone: false,
       speechFallbackTimer: 0,
     };
+    this.orbital.setPresentation('cutscene');
     this.ensureWitness();
     this.ensureOrbitVisual();
     this.setCameraGoal(beats[0]?.camera ?? 'witness', true);
@@ -150,6 +151,23 @@ export class CutsceneController {
     const y = this.terrain.getHeightAt(this.stage.x, this.stage.z);
     this.witness.position.set(this.stage.x, y, this.stage.z);
     this.witness.rotation.y = Math.PI;
+  }
+
+  /** Deep space for orbit/sky shots; only the diagram shows three suns. */
+  private syncCutsceneSky(beat: CutsceneBeat): void {
+    if (beat.camera === 'orbit' || beat.camera === 'sky') {
+      this.sky.setPalette('#020208', '#080a14', '#101820');
+      this.sky.setGalaxyStrength(0.94);
+      this.sky.setClouds({ cover: 0, brightness: 1, color: '#ffffff' });
+      this.sky.setDarkness(0.92);
+      this.sky.setSunScatterScale(0);
+      return;
+    }
+    this.sky.setGalaxyStrength(0.18);
+    this.sky.setSunScatterScale(0);
+    this.sky.setClouds({ cover: 0.14, brightness: 0.82, color: '#a8b0c0' });
+    this.sky.setDarkness(0.55);
+    this.sky.setPalette('#1a1824', '#4a4048', '#2a2420');
   }
 
   private syncOrbitCaption(beat: CutsceneBeat, locale: Locale): void {
@@ -202,6 +220,7 @@ export class CutsceneController {
         this.orbitVisual.setMode(mode);
       }
     }
+    this.syncCutsceneSky(beat);
 
     window.clearTimeout(this.session!.speechFallbackTimer);
     this.session!.speechFallbackTimer = window.setTimeout(() => {
@@ -264,7 +283,8 @@ export class CutsceneController {
     this.camera.lookAt(this.cameraTarget);
 
     this.orbital.update(delta, this.stage);
-    this.sky.update();
+    this.syncCutsceneSky(beat);
+    this.sky.update(delta);
     this.terrain.updateVisuals(delta);
     if (this.witness) {
       stepHumanoidIdle(this.witness, this.session.pulse);
@@ -325,5 +345,6 @@ export class CutsceneController {
       this.orbitVisual.dispose();
       this.orbitVisual = null;
     }
+    this.orbital.setPresentation('world');
   }
 }

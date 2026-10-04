@@ -10,9 +10,17 @@ export interface SkySunInput {
   apparentScale: number;
 }
 
+export interface SkyCloudSettings {
+  /** 0–1 amount of cloud cover in the upper sky. */
+  cover: number;
+  /** Multiplier on cloud brightness vs sky. */
+  brightness: number;
+  color: string;
+}
+
 /**
- * Gradient dome with per-sun forward scattering, a horizon haze band and a faint
- * star field that shows through when the sky is dark.
+ * Gradient dome with per-sun forward scattering, era clouds, a Milky-Way band,
+ * and a star field that shows through when the sky is dark.
  */
 export class Sky {
   readonly mesh: THREE.Mesh;
@@ -28,6 +36,13 @@ export class Sky {
   private readonly sunIntensities = new Float32Array(MAX_SUNS);
   private readonly sunScales = new Float32Array(MAX_SUNS).fill(1);
   private darkness = 0;
+  private targetGalaxy = 0;
+  private targetCloudCover = 0;
+  private targetCloudBright = 1;
+  private readonly targetCloudColor = new THREE.Color('#eef2f8');
+  private readonly currentCloudColor = new THREE.Color('#eef2f8');
+  private sunScatterScale = 1;
+  private time = 0;
 
   constructor() {
     const geometry = new THREE.SphereGeometry(480, 48, 24);
@@ -42,7 +57,13 @@ export class Sky {
         uSunColors: { value: this.sunColors },
         uSunIntensities: { value: this.sunIntensities },
         uSunScales: { value: this.sunScales },
+        uSunScatterScale: { value: 1 },
         uDarkness: { value: 0 },
+        uGalaxy: { value: 0 },
+        uCloudCover: { value: 0 },
+        uCloudBright: { value: 1 },
+        uCloudColor: { value: this.currentCloudColor.clone() },
+        uTime: { value: 0 },
       },
       vertexShader: `
         varying vec3 vWorldPosition;
@@ -61,13 +82,45 @@ export class Sky {
         uniform vec3 uSunColors[MAX_SUNS];
         uniform float uSunIntensities[MAX_SUNS];
         uniform float uSunScales[MAX_SUNS];
+        uniform float uSunScatterScale;
         uniform float uDarkness;
+        uniform float uGalaxy;
+        uniform float uCloudCover;
+        uniform float uCloudBright;
+        uniform vec3 uCloudColor;
+        uniform float uTime;
         varying vec3 vWorldPosition;
 
         float hash13(vec3 p) {
           p = fract(p * 0.1031);
           p += dot(p, p.zyx + 31.32);
           return fract((p.x + p.y) * p.z);
+        }
+
+        float hash21(vec2 p) {
+          return hash13(vec3(p.x, p.y, 0.17));
+        }
+
+        float noise2(vec2 p) {
+          vec2 i = floor(p);
+          vec2 f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          float a = hash21(i);
+          float b = hash21(i + vec2(1.0, 0.0));
+          float c = hash21(i + vec2(0.0, 1.0));
+          float d = hash21(i + vec2(1.0, 1.0));
+          return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+        }
+
+        float fbm2(vec2 p) {
+          float v = 0.0;
+          float a = 0.55;
+          for (int i = 0; i < 4; i++) {
+            v += noise2(p) * a;
+            p *= 2.05;
+            a *= 0.5;
+          }
+          return v;
         }
 
         void main() {
@@ -77,13 +130,12 @@ export class Sky {
           vec3 color = mix(uBottomColor, uHorizonColor, smoothstep(0.0, 0.42, h));
           color = mix(color, uTopColor, smoothstep(0.38, 1.0, h));
 
-          // Dust haze sits on the horizon and lifts the band slightly.
           float haze = exp(-abs(dir.y) * 9.0);
           color += uHorizonColor * haze * 0.35;
 
-          // Forward scattering around each active sun: tight hot core + wide warm wash.
+          float scatter = uSunScatterScale;
           for (int i = 0; i < MAX_SUNS; i++) {
-            float inten = uSunIntensities[i];
+            float inten = uSunIntensities[i] * scatter;
             if (inten <= 0.001) continue;
             float cosA = max(dot(dir, uSunDirections[i]), 0.0);
             float wide = pow(cosA, 6.0) * 0.22 * inten;
@@ -92,7 +144,31 @@ export class Sky {
             color += uSunColors[i] * (wide + tight) * horizonBoost;
           }
 
-          // Stars fade in with darkness; hidden below the horizon haze.
+          if (uGalaxy > 0.01 && dir.y > -0.05) {
+            vec3 gal = normalize(vec3(dir.x * 0.55 + 0.08, dir.y * 0.85 + 0.12, dir.z * 0.5));
+            float band = exp(-pow(gal.y * 2.8, 2.0));
+            vec2 uv = vec2(atan(gal.z, gal.x) * 0.32, gal.y * 3.5 + 1.2);
+            float dust = fbm2(uv * 3.2);
+            float core = fbm2(uv * 8.0 + vec2(0.4, 1.1));
+            vec3 galCol = mix(vec3(0.08, 0.1, 0.16), vec3(0.35, 0.38, 0.48), dust);
+            galCol += vec3(0.45, 0.42, 0.55) * core * 0.35;
+            float vis = band * (0.35 + dust * 0.65) * uGalaxy;
+            vis *= smoothstep(-0.08, 0.15, dir.y);
+            color += galCol * vis;
+          }
+
+          if (uCloudCover > 0.02 && dir.y > 0.04) {
+            float u = atan(dir.z, dir.x) * 1.35;
+            float v = dir.y * 2.8;
+            vec2 wind = vec2(uTime * 0.018, uTime * 0.011);
+            float c1 = fbm2(vec2(u * 2.1 + wind.x, v * 3.4 + wind.y));
+            float c2 = fbm2(vec2(u * 4.6 - wind.x * 0.7, v * 5.2 + 2.4));
+            float cloud = smoothstep(0.52 - uCloudCover * 0.38, 0.78, c1 * 0.55 + c2 * 0.45);
+            cloud *= uCloudCover * smoothstep(0.04, 0.45, dir.y);
+            vec3 lit = mix(uCloudColor * 0.55, uCloudColor * uCloudBright, c2);
+            color = mix(color, lit, cloud * 0.92);
+          }
+
           if (uDarkness > 0.01 && dir.y > 0.02) {
             vec3 cell = floor(dir * 320.0);
             float star = hash13(cell);
@@ -114,6 +190,22 @@ export class Sky {
     this.targetTop.set(top);
     this.targetHorizon.set(horizon);
     this.targetBottom.set(bottom);
+  }
+
+  setClouds(settings: SkyCloudSettings): void {
+    this.targetCloudCover = THREE.MathUtils.clamp(settings.cover, 0, 1);
+    this.targetCloudBright = Math.max(settings.brightness, 0.2);
+    this.targetCloudColor.set(settings.color);
+  }
+
+  /** 0 = no band, 1 = deep-space Milky Way behind the diagram. */
+  setGalaxyStrength(value: number): void {
+    this.targetGalaxy = THREE.MathUtils.clamp(value, 0, 1);
+  }
+
+  /** Scales sky-dome sun glare only (gameplay sun meshes are separate). */
+  setSunScatterScale(value: number): void {
+    this.sunScatterScale = THREE.MathUtils.clamp(value, 0, 1);
   }
 
   /** Feed the current suns every frame; inactive suns should pass intensity 0. */
@@ -141,19 +233,24 @@ export class Sky {
     return { top: this.currentTop, horizon: this.currentHorizon, bottom: this.currentBottom };
   }
 
-  update(): void {
+  update(delta = 1 / 60): void {
+    this.time += delta;
     this.currentTop.lerp(this.targetTop, 0.05);
     this.currentHorizon.lerp(this.targetHorizon, 0.05);
     this.currentBottom.lerp(this.targetBottom, 0.05);
+    this.currentCloudColor.lerp(this.targetCloudColor, 0.05);
 
-    this.material.uniforms.uTopColor.value.copy(this.currentTop);
-    this.material.uniforms.uHorizonColor.value.copy(this.currentHorizon);
-    this.material.uniforms.uBottomColor.value.copy(this.currentBottom);
-    this.material.uniforms.uDarkness.value = THREE.MathUtils.lerp(
-      this.material.uniforms.uDarkness.value as number,
-      this.darkness,
-      0.04,
-    );
+    const u = this.material.uniforms;
+    u.uTopColor.value.copy(this.currentTop);
+    u.uHorizonColor.value.copy(this.currentHorizon);
+    u.uBottomColor.value.copy(this.currentBottom);
+    u.uCloudColor.value.copy(this.currentCloudColor);
+    u.uDarkness.value = THREE.MathUtils.lerp(u.uDarkness.value as number, this.darkness, 0.04);
+    u.uGalaxy.value = THREE.MathUtils.lerp(u.uGalaxy.value as number, this.targetGalaxy, 0.05);
+    u.uCloudCover.value = THREE.MathUtils.lerp(u.uCloudCover.value as number, this.targetCloudCover, 0.04);
+    u.uCloudBright.value = THREE.MathUtils.lerp(u.uCloudBright.value as number, this.targetCloudBright, 0.04);
+    u.uSunScatterScale.value = this.sunScatterScale;
+    u.uTime.value = this.time;
   }
 
   dispose(): void {

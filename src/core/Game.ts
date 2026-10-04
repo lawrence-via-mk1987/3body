@@ -1183,7 +1183,7 @@ export class Game {
 
     this.sky.mesh.position.copy(this.anchor);
     this.orbital.update(delta, this.anchor);
-    this.sky.update();
+    this.sky.update(delta);
     this.handleEraTransitions();
 
     this.terrain.setEraVisuals(this.orbital.getEraKind(), this.orbital.getPhase());

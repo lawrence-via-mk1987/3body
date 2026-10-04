@@ -108,7 +108,7 @@ export class TrisolarisOrbitVisual {
     this.barycenter.add(this.planet);
 
     for (let i = 0; i < 3; i += 1) {
-      const sunGroup = buildCelestialSunVisual(SUN_PALETTES[i]!, 0.5 + i * 0.04);
+      const sunGroup = buildCelestialSunVisual(SUN_PALETTES[i]!, 0.5 + i * 0.04, { diagram: true });
       this.sunGroups.push(sunGroup);
       this.barycenter.add(sunGroup);
     }

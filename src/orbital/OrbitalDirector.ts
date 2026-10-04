@@ -26,6 +26,10 @@ interface SkyPalette {
   bloom: number;
   /** 0 = day, 1 = stars fully visible. */
   darkness: number;
+  cloudCover: number;
+  cloudBright: number;
+  cloudColor: string;
+  galaxy: number;
 }
 
 const SKY_PALETTES: Record<EraPhase, SkyPalette> = {
@@ -39,6 +43,10 @@ const SKY_PALETTES: Record<EraPhase, SkyPalette> = {
     exposure: 0.95,
     bloom: 0.25,
     darkness: 0.85,
+    cloudCover: 0.22,
+    cloudBright: 0.75,
+    cloudColor: '#9aa8bc',
+    galaxy: 0.55,
   },
   thaw: {
     top: '#182036',
@@ -50,6 +58,10 @@ const SKY_PALETTES: Record<EraPhase, SkyPalette> = {
     exposure: 1.1,
     bloom: 0.45,
     darkness: 0.25,
+    cloudCover: 0.28,
+    cloudBright: 0.9,
+    cloudColor: '#dce4ef',
+    galaxy: 0.12,
   },
   scorch: {
     top: '#3a1e14',
@@ -61,6 +73,10 @@ const SKY_PALETTES: Record<EraPhase, SkyPalette> = {
     exposure: 1.12,
     bloom: 0.6,
     darkness: 0,
+    cloudCover: 0.08,
+    cloudBright: 0.85,
+    cloudColor: '#ffd8b0',
+    galaxy: 0,
   },
   binary_chaos: {
     top: '#2a1838',
@@ -72,6 +88,10 @@ const SKY_PALETTES: Record<EraPhase, SkyPalette> = {
     exposure: 1.12,
     bloom: 0.55,
     darkness: 0.05,
+    cloudCover: 0.18,
+    cloudBright: 0.88,
+    cloudColor: '#e8c8b0',
+    galaxy: 0.05,
   },
   tri_solar: {
     top: '#4e1a10',
@@ -83,6 +103,10 @@ const SKY_PALETTES: Record<EraPhase, SkyPalette> = {
     exposure: 1.18,
     bloom: 0.8,
     darkness: 0,
+    cloudCover: 0.12,
+    cloudBright: 0.95,
+    cloudColor: '#ffe0c8',
+    galaxy: 0,
   },
   flying_star: {
     top: '#5c1008',
@@ -94,6 +118,10 @@ const SKY_PALETTES: Record<EraPhase, SkyPalette> = {
     exposure: 1.3,
     bloom: 1.05,
     darkness: 0,
+    cloudCover: 0.05,
+    cloudBright: 1.05,
+    cloudColor: '#ffc8a8',
+    galaxy: 0,
   },
   eclipse_relief: {
     top: '#0e141c',
@@ -105,6 +133,10 @@ const SKY_PALETTES: Record<EraPhase, SkyPalette> = {
     exposure: 0.9,
     bloom: 0.2,
     darkness: 0.7,
+    cloudCover: 0.38,
+    cloudBright: 0.65,
+    cloudColor: '#788090',
+    galaxy: 0.35,
   },
   stable_golden: {
     top: '#4f7e8a',
@@ -116,6 +148,10 @@ const SKY_PALETTES: Record<EraPhase, SkyPalette> = {
     exposure: 1.02,
     bloom: 0.4,
     darkness: 0,
+    cloudCover: 0.72,
+    cloudBright: 1.15,
+    cloudColor: '#f4f8ff',
+    galaxy: 0,
   },
 };
 
@@ -154,6 +190,7 @@ export class OrbitalDirector {
     status: 'cold',
   };
   private pendingTransition: EraTransition | null = null;
+  private presentation: 'world' | 'cutscene' = 'world';
 
   constructor(
     private readonly scene: THREE.Scene,
@@ -238,19 +275,31 @@ export class OrbitalDirector {
       this.sunC,
     );
 
+    const cutscene = this.presentation === 'cutscene';
     for (const sun of this.suns) {
-      sun.updateTransform(anchor);
+      if (cutscene) {
+        sun.mesh.visible = false;
+        sun.glow.visible = false;
+        sun.glowOuter.visible = false;
+        sun.glowCorona.visible = false;
+        if (sun.light) {
+          sun.light.intensity = 0;
+        }
+      } else {
+        sun.updateTransform(anchor);
+      }
     }
     let sunEnergy = 0;
     for (let i = 0; i < this.suns.length; i += 1) {
       const sun = this.suns[i]!;
       const input = this.skySunInputs[i]!;
-      const visible = sun.active && sun.elevation > -0.12;
+      const visible = !cutscene && sun.active && sun.elevation > -0.12;
       input.intensity = visible ? sun.intensity : 0;
       input.apparentScale = sun.apparentScale;
       sunEnergy += input.intensity;
     }
     this.sky.setSuns(this.skySunInputs);
+    this.sky.setSunScatterScale(cutscene ? 0 : 1);
     const palette = SKY_PALETTES[this.eraState.phase];
     this.sky.setDarkness(Math.max(palette.darkness - sunEnergy * 0.35, 0));
 
@@ -358,6 +407,11 @@ export class OrbitalDirector {
   }
 
   /** Debug/QA only: jump straight into a phase mid-way through its duration. */
+  /** Hide world-scale sun disks during intro/epilogue diagram shots. */
+  setPresentation(mode: 'world' | 'cutscene'): void {
+    this.presentation = mode;
+  }
+
   debugSetPhase(phase: EraPhase): void {
     const era: EraKind = phase === 'stable_golden' ? 'stable' : 'chaotic';
     this.eraState.applySnapshot({
@@ -388,6 +442,14 @@ export class OrbitalDirector {
   private applyAtmosphere(): void {
     const palette = SKY_PALETTES[this.eraState.phase];
     this.sky.setPalette(palette.top, palette.horizon, palette.bottom);
+    if (this.presentation === 'world') {
+      this.sky.setClouds({
+        cover: palette.cloudCover,
+        brightness: palette.cloudBright,
+        color: palette.cloudColor,
+      });
+      this.sky.setGalaxyStrength(palette.galaxy);
+    }
     this.fog.color.set(palette.fog);
     this.fog.density = THREE.MathUtils.lerp(
       this.fog.density,

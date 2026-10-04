@@ -45,10 +45,16 @@ function createLimbDiskMaterial(core: string, limb: string): THREE.ShaderMateria
   });
 }
 
+export interface CelestialSunVisualOptions {
+  /** Intro N-body diagram: one tight halo so three stars read as three, not a dozen. */
+  diagram?: boolean;
+}
+
 /** Limb-darkened disk + layered halos (shared by sky suns and intro orbit diagram). */
 export function buildCelestialSunVisual(
   palette: CelestialSunPalette,
   diskRadius = 1,
+  options: CelestialSunVisualOptions = {},
 ): THREE.Group {
   const group = new THREE.Group();
   group.name = 'celestial-sun';
@@ -78,12 +84,18 @@ export function buildCelestialSunVisual(
     return sprite;
   };
 
-  const inner = makeGlow(3.2, 0.95, palette.emissive);
-  const outer = makeGlow(6.5, 0.55, palette.core);
-  const corona = makeGlow(10, 0.28, palette.limb);
-  group.add(inner, outer, corona);
+  const diagram = options.diagram === true;
+  const inner = makeGlow(diagram ? 2.4 : 3.2, diagram ? 0.72 : 0.95, palette.emissive);
+  group.add(inner);
+  let outer: THREE.Sprite | null = null;
+  let corona: THREE.Sprite | null = null;
+  if (!diagram) {
+    outer = makeGlow(6.5, 0.55, palette.core);
+    corona = makeGlow(10, 0.28, palette.limb);
+    group.add(outer, corona);
+  }
 
-  const light = new THREE.PointLight(palette.core, 1.2, diskRadius * 28, 2);
+  const light = new THREE.PointLight(palette.core, diagram ? 0.35 : 1.2, diskRadius * 28, 2);
   group.add(light);
 
   group.userData.sunVisual = {
@@ -105,8 +117,8 @@ export function updateCelestialSunVisual(
   const data = group.userData.sunVisual as {
     diskMat: THREE.ShaderMaterial;
     inner: THREE.Sprite;
-    outer: THREE.Sprite;
-    corona: THREE.Sprite;
+    outer: THREE.Sprite | null;
+    corona: THREE.Sprite | null;
     light: THREE.PointLight;
   } | undefined;
   if (!data) {
@@ -116,6 +128,10 @@ export function updateCelestialSunVisual(
   data.diskMat.uniforms.uBoost.value = (0.65 + intensity * 0.35) * flicker;
   data.light.intensity = (0.8 + intensity * 1.4) * flicker;
   (data.inner.material as THREE.SpriteMaterial).opacity = THREE.MathUtils.clamp(0.5 + intensity * 0.4, 0.4, 1);
-  (data.outer.material as THREE.SpriteMaterial).opacity = THREE.MathUtils.clamp(0.25 + intensity * 0.35, 0.2, 0.75);
-  (data.corona.material as THREE.SpriteMaterial).opacity = THREE.MathUtils.clamp(0.12 + intensity * 0.22, 0.1, 0.45);
+  if (data.outer) {
+    (data.outer.material as THREE.SpriteMaterial).opacity = THREE.MathUtils.clamp(0.25 + intensity * 0.35, 0.2, 0.75);
+  }
+  if (data.corona) {
+    (data.corona.material as THREE.SpriteMaterial).opacity = THREE.MathUtils.clamp(0.12 + intensity * 0.22, 0.1, 0.45);
+  }
 }
