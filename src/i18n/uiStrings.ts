@@ -108,3 +108,16 @@ export function mobileSheetCloseLabel(locale: Locale): string {
 export function witnessSpeakerLabel(locale: Locale): string {
   return pickLocale(locale, { en: 'The Witness', zh: '见证者', ja: '見証者' }, 'The Witness');
 }
+
+/** Shown during the 3D orbit diagram in the opening cutscene. */
+export function orbitDiagramCaption(locale: Locale): string {
+  return pickLocale(
+    locale,
+    {
+      en: 'No stable orbit — only passing epochs. Three suns and one world tug each other in three dimensions.',
+      zh: '没有稳定轨道——只有短暂的纪元。三颗太阳与一颗世界在三维中相互牵引。',
+      ja: '安定した軌道はない——通過する紀元だけ。三つの太陽と一つの世界が三次元で引き合う。',
+    },
+    'No stable orbit — only passing epochs. Three suns and one world tug each other in three dimensions.',
+  );
+}

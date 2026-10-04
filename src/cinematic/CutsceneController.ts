@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { NarrationDirector } from '../audio/NarrationDirector';
 import type { Locale } from '../i18n/locale';
-import { witnessSpeakerLabel } from '../i18n/uiStrings';
+import { orbitDiagramCaption, witnessSpeakerLabel } from '../i18n/uiStrings';
 import type { OrbitalDirector } from '../orbital/OrbitalDirector';
 import type { RenderPipeline } from '../render/RenderPipeline';
 import type { Sky } from '../world/Sky';
@@ -53,11 +53,12 @@ export class CutsceneController {
     lookAt: new THREE.Vector3(0, 28, 22),
   };
   private readonly cameraOrbit = {
-    position: new THREE.Vector3(0, 17, 10),
+    position: new THREE.Vector3(5.5, 19, 8),
     lookAt: new THREE.Vector3(0, 24, 14),
   };
   private readonly cameraPos = new THREE.Vector3();
   private readonly cameraTarget = new THREE.Vector3();
+  private readonly orbitFocus = new THREE.Vector3();
   private readonly cameraGoal = {
     position: new THREE.Vector3(),
     lookAt: new THREE.Vector3(),
@@ -73,6 +74,7 @@ export class CutsceneController {
     private readonly narration: NarrationDirector,
     private readonly overlay: HTMLElement,
     private readonly speakerEl: HTMLElement,
+    private readonly orbitCaptionEl: HTMLElement,
     private readonly subtitleEl: HTMLElement,
     skipButton: HTMLButtonElement,
     private readonly getVolume: () => number,
@@ -150,6 +152,17 @@ export class CutsceneController {
     this.witness.rotation.y = Math.PI;
   }
 
+  private syncOrbitCaption(beat: CutsceneBeat, locale: Locale): void {
+    const show = beat.camera === 'orbit' || beat.camera === 'sky';
+    if (show) {
+      this.orbitCaptionEl.textContent = orbitDiagramCaption(locale);
+      this.orbitCaptionEl.classList.remove('hidden');
+    } else {
+      this.orbitCaptionEl.textContent = '';
+      this.orbitCaptionEl.classList.add('hidden');
+    }
+  }
+
   private setCameraGoal(mode: CutsceneCameraMode, instant = false): void {
     const preset = mode === 'orbit'
       ? this.cameraOrbit
@@ -173,6 +186,7 @@ export class CutsceneController {
     if (beat.camera) {
       this.setCameraGoal(beat.camera);
     }
+    this.syncOrbitCaption(beat, locale);
     this.speakerEl.textContent = witnessSpeakerLabel(locale);
     this.subtitleEl.textContent = beat.subtitle;
     this.session!.speechDone = !this.narration.isEnabled();
@@ -237,6 +251,13 @@ export class CutsceneController {
     }
 
     const camLerp = 1 - Math.exp(-delta * 2.2);
+    if ((beat.camera === 'orbit' || beat.camera === 'sky') && this.orbitVisual) {
+      const preset = beat.camera === 'orbit' ? this.cameraOrbit : this.cameraSky;
+      this.cameraGoal.lookAt.copy(preset.lookAt);
+      this.orbitVisual.getFocusOffset(this.orbitFocus);
+      this.orbitVisual.group.localToWorld(this.orbitFocus);
+      this.cameraGoal.lookAt.lerp(this.orbitFocus, 0.42);
+    }
     this.cameraPos.lerp(this.cameraGoal.position, camLerp);
     this.cameraTarget.lerp(this.cameraGoal.lookAt, camLerp);
     this.camera.position.copy(this.cameraPos);
@@ -292,6 +313,8 @@ export class CutsceneController {
     this.session = null;
     this.overlay.classList.add('hidden');
     this.speakerEl.textContent = '';
+    this.orbitCaptionEl.textContent = '';
+    this.orbitCaptionEl.classList.add('hidden');
     this.subtitleEl.textContent = '';
     if (this.witness) {
       this.scene.remove(this.witness);

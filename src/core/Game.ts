@@ -429,9 +429,10 @@ export class Game {
 
     const cutsceneOverlay = document.querySelector<HTMLElement>('#cutscene-overlay');
     const cutsceneSpeaker = document.querySelector<HTMLElement>('#cutscene-speaker');
+    const cutsceneOrbitCaption = document.querySelector<HTMLElement>('#cutscene-orbit-caption');
     const cutsceneSubtitle = document.querySelector<HTMLElement>('#cutscene-subtitle');
     const cutsceneSkip = document.querySelector<HTMLButtonElement>('#cutscene-skip');
-    if (!cutsceneOverlay || !cutsceneSpeaker || !cutsceneSubtitle || !cutsceneSkip) {
+    if (!cutsceneOverlay || !cutsceneSpeaker || !cutsceneOrbitCaption || !cutsceneSubtitle || !cutsceneSkip) {
       throw new Error('Missing cutscene overlay elements.');
     }
     this.cutscene = new CutsceneController(
@@ -444,6 +445,7 @@ export class Game {
       this.narration,
       cutsceneOverlay,
       cutsceneSpeaker,
+      cutsceneOrbitCaption,
       cutsceneSubtitle,
       cutsceneSkip,
       () => MetaProgress.loadMasterVolume(),

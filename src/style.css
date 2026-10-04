@@ -274,6 +274,18 @@ h1 {
   display: none;
 }
 
+.cutscene-orbit-caption {
+  max-width: 36rem;
+  margin: 0 auto 0.65rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  font-style: italic;
+  color: #a89880;
+  text-align: center;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+}
+
 .cutscene-speaker {
   max-width: 42rem;
   margin: 0 auto 0.35rem;
