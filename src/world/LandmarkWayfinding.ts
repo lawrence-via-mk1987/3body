@@ -9,7 +9,7 @@ import {
   PIT_REGISTRAR,
   SPAWN_HINT,
 } from './landmarks';
-import { applyNpcGlow, buildHumanoidNpc, REGISTRAR_STYLE } from './HumanoidNpc';
+import { applyNpcGlow, buildHumanoidNpc, stepHumanoidIdle, REGISTRAR_STYLE } from './HumanoidNpc';
 
 export class LandmarkWayfinding {
   readonly group = new THREE.Group();
@@ -126,20 +126,27 @@ export class LandmarkWayfinding {
   }
 
   private buildRegistrar(): void {
-    const figure = buildHumanoidNpc(REGISTRAR_STYLE, (root) => {
-      const scrollMat = new THREE.MeshStandardMaterial({
-        color: REGISTRAR_STYLE.accent,
-        emissive: REGISTRAR_STYLE.accentEmissive,
-        emissiveIntensity: 0.35,
-        roughness: 0.85,
-      });
-      const scroll = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.38, 0.06), scrollMat);
-      scroll.position.set(-0.42, 1.12, 0.2);
-      scroll.rotation.y = 0.35;
-      root.add(scroll);
+    const figure = buildHumanoidNpc(REGISTRAR_STYLE, 'upright', (hands) => {
+      const scroll = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.04, 0.04, 0.28, 10),
+        new THREE.MeshStandardMaterial({ color: '#e4d4b4', roughness: 0.75 }),
+      );
+      // Stand the scroll upright in figure space, just in front of the palm.
+      hands.right.updateWorldMatrix(true, false);
+      const handQ = new THREE.Quaternion();
+      hands.right.getWorldQuaternion(handQ);
+      scroll.quaternion.copy(handQ).invert();
+      scroll.position.set(0, 0.02, 0.07);
+      const tie = new THREE.Mesh(
+        new THREE.TorusGeometry(0.045, 0.01, 5, 10),
+        new THREE.MeshStandardMaterial({ color: REGISTRAR_STYLE.accent, roughness: 0.6 }),
+      );
+      tie.quaternion.copy(scroll.quaternion);
+      tie.rotateX(Math.PI / 2);
+      tie.position.copy(scroll.position);
+      hands.right.add(scroll, tie);
     });
     this.registrarGroup.add(figure);
-    this.registrarGroup.scale.setScalar(1.35);
     const regY = this.terrain.getHeightAt(PIT_REGISTRAR.x, PIT_REGISTRAR.z);
     this.registrarGroup.position.set(PIT_REGISTRAR.x, regY, PIT_REGISTRAR.z);
     this.registrarGroup.rotation.y = Math.atan2(
@@ -204,8 +211,9 @@ export class LandmarkWayfinding {
     ) < PIT_REGISTRAR.talkRadius + 4;
     applyNpcGlow(
       this.registrarGroup,
-      nearRegistrar ? 0.48 : 0.24,
+      nearRegistrar ? 0.55 : 0.3,
     );
+    stepHumanoidIdle(this.registrarGroup, this.pulseTime);
   }
 
   isNearRegistrar(position: THREE.Vector3): boolean {

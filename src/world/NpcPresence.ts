@@ -33,7 +33,7 @@ function makeLabelSprite(text: string): THREE.Sprite {
   ctx.fillText(text, 128, 32);
   const texture = new THREE.CanvasTexture(canvas);
   texture.needsUpdate = true;
-  const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+  const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: true });
   const sprite = new THREE.Sprite(material);
   sprite.scale.set(6, 1.5, 1);
   sprite.renderOrder = 10;
@@ -50,48 +50,45 @@ export class NpcPresence {
       const root = new THREE.Group();
       const y = terrain.getHeightAt(site.x, site.z);
 
+      // A short stake beside the figure. The person is the landmark; the name is secondary.
       const pole = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.08, 0.12, 5.5, 8),
+        new THREE.CylinderGeometry(0.035, 0.05, 2.1, 6),
         new THREE.MeshStandardMaterial({
           color: site.color,
           emissive: site.emissive,
-          emissiveIntensity: 0.45,
-          transparent: true,
-          opacity: 0.85,
+          emissiveIntensity: 0.35,
           roughness: 0.8,
         }),
       );
-      pole.position.y = 2.75;
+      pole.position.set(0.85, 1.05, 0);
 
-      const halo = new THREE.Mesh(
-        new THREE.TorusGeometry(1.2, 0.08, 8, 32),
+      const finial = new THREE.Mesh(
+        new THREE.SphereGeometry(0.07, 8, 6),
         new THREE.MeshStandardMaterial({
           color: site.emissive,
           emissive: site.emissive,
-          emissiveIntensity: 0.7,
-          transparent: true,
-          opacity: 0.75,
+          emissiveIntensity: 0.6,
         }),
       );
-      halo.rotation.x = Math.PI / 2;
-      halo.position.y = 5.2;
+      finial.position.set(0.85, 2.12, 0);
 
       const ring = new THREE.Mesh(
-        new THREE.RingGeometry(2.5, 3.2, 32),
+        new THREE.RingGeometry(1.15, 1.4, 28),
         new THREE.MeshBasicMaterial({
           color: site.emissive,
           transparent: true,
-          opacity: 0.35,
+          opacity: 0.28,
           side: THREE.DoubleSide,
         }),
       );
       ring.rotation.x = -Math.PI / 2;
-      ring.position.y = 0.08;
+      ring.position.y = 0.06;
 
       const label = makeLabelSprite(site.label);
-      label.position.y = 6.2;
+      label.scale.set(1.5, 0.38, 1);
+      label.position.set(0.85, 2.45, 0);
 
-      root.add(pole, halo, ring, label);
+      root.add(pole, finial, ring, label);
       root.position.set(site.x, y, site.z);
       root.userData.npcId = site.id;
       if (site.id === 'grove') {

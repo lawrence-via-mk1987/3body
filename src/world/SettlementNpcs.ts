@@ -5,6 +5,7 @@ import { GROVE_KEEPER, LAST_PREDICTOR } from './landmarks';
 import {
   applyNpcGlow,
   buildHumanoidNpc,
+  stepHumanoidIdle,
   GROVE_KEEPER_STYLE,
   PREDICTOR_STYLE,
 } from './HumanoidNpc';
@@ -21,50 +22,53 @@ export class SettlementNpcs {
   }
 
   private buildPredictor(terrain: Terrain): void {
-    const figure = buildHumanoidNpc(PREDICTOR_STYLE, (root) => {
+    const figure = buildHumanoidNpc(PREDICTOR_STYLE, 'skyward', (hands) => {
+      const wood = new THREE.MeshStandardMaterial({ color: '#6a5038', roughness: 0.9 });
       const dialMat = new THREE.MeshStandardMaterial({
-        color: PREDICTOR_STYLE.accent,
+        color: '#b08a4a',
         emissive: PREDICTOR_STYLE.accentEmissive,
-        emissiveIntensity: 0.55,
+        emissiveIntensity: 0.45,
         roughness: 0.35,
+        metalness: 0.6,
       });
-      const dial = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.07, 6, 24), dialMat);
-      dial.rotation.x = Math.PI / 2;
-      dial.position.set(0.48, 1.28, 0.28);
-      root.add(dial);
-
-      const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 1.1, 6), dialMat);
-      staff.position.set(0.52, 0.85, 0.22);
-      staff.rotation.z = -0.15;
-      root.add(staff);
+      const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 1.7, 7), wood);
+      staff.position.y = -0.15;
+      staff.castShadow = true;
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.012, 6, 20), dialMat);
+      ring.position.y = 0.55;
+      const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.01, 6, 16), dialMat);
+      ring2.position.y = 0.55;
+      ring2.rotation.x = 1.1;
+      hands.right.add(staff, ring, ring2);
     });
     this.predictorGroup.add(figure);
-    this.predictorGroup.scale.setScalar(1.35);
     const y = terrain.getHeightAt(LAST_PREDICTOR.x, LAST_PREDICTOR.z);
     this.predictorGroup.position.set(LAST_PREDICTOR.x, y, LAST_PREDICTOR.z);
     this.predictorGroup.rotation.y = -0.6;
   }
 
   private buildGroveKeeper(terrain: Terrain): void {
-    const figure = buildHumanoidNpc(GROVE_KEEPER_STYLE, (root) => {
+    const figure = buildHumanoidNpc(GROVE_KEEPER_STYLE, 'tending', (hands) => {
       const vineMat = new THREE.MeshStandardMaterial({
-        color: GROVE_KEEPER_STYLE.accent,
+        color: '#6aaa48',
         emissive: GROVE_KEEPER_STYLE.accentEmissive,
-        emissiveIntensity: 0.4,
-        roughness: 0.9,
+        emissiveIntensity: 0.25,
+        roughness: 0.85,
       });
-      const vine = new THREE.Mesh(new THREE.TorusGeometry(0.38, 0.05, 6, 16), vineMat);
-      vine.rotation.x = Math.PI / 2.3;
-      vine.position.y = 1.35;
-      root.add(vine);
-
-      const sprout = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.35, 5), vineMat);
-      sprout.position.set(-0.42, 1.05, 0.15);
-      sprout.rotation.z = 0.4;
-      root.add(sprout);
+      for (let i = 0; i < 4; i += 1) {
+        const sprig = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.26, 5), vineMat);
+        sprig.position.set((i - 1.5) * 0.035, -0.1, 0.02);
+        sprig.rotation.z = (i - 1.5) * 0.18;
+        hands.left.add(sprig);
+      }
+      const basket = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.1, 0.08, 0.1, 8, 1, true),
+        new THREE.MeshStandardMaterial({ color: '#8a6840', roughness: 0.95, side: THREE.DoubleSide }),
+      );
+      basket.position.y = -0.08;
+      hands.belt.add(basket);
     });
     this.groveKeeperGroup.add(figure);
-    this.groveKeeperGroup.scale.setScalar(1.35);
     const y = terrain.getHeightAt(GROVE_KEEPER.x, GROVE_KEEPER.z);
     this.groveKeeperGroup.position.set(GROVE_KEEPER.x, y, GROVE_KEEPER.z);
     this.groveKeeperGroup.rotation.y = 2.2;
@@ -95,6 +99,7 @@ export class SettlementNpcs {
       ? nearBoost + Math.sin(pulseTime * 3) * 0.1
       : base + Math.sin(pulseTime * 2) * 0.05;
     applyNpcGlow(group, intensity);
+    stepHumanoidIdle(group, pulseTime);
   }
 
   isNearPredictor(position: THREE.Vector3): boolean {

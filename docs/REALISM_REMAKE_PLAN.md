@@ -136,6 +136,15 @@ coordinates are unchanged. If authored glTF art arrives later, it slots in behin
 
 **Done when:** the registrar reads as a person from the distance in the current mobile screenshot, and Talk still works.
 
+**Status: shipped (procedural, not glTF).** `buildHumanoidNpc` now makes a ~1.85 m settler: a folded robe
+with the shared cloth texture, a cowl and hood whose opening is a shadowed slit, and bare hands.
+Posture carries the role — the registrar holds a tally scroll at the chest, the predictor a staff with
+a small armillary and the hood tipped toward the sky, the grove keeper leans over a basket of cuttings.
+A slow idle (breath, sway, a turn of the hood) runs from the existing update loops. The 1.35× scale is
+gone, so they stand at the player's eye line. Name stakes are short, offset beside the figure, and the
+label no longer draws over the hood. The Last Predictor stands just outside the observatory door
+(`landmarks.ts`); the old spot was inside the drum, and the talk radius still covers the approach.
+
 ### Phase 4 — Era dressing and juice
 
 - Stable Era: grass instances, wet ground near the pool, softer sun.
