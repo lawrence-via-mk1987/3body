@@ -60,12 +60,12 @@ export class MetaProgress {
     try {
       const raw = localStorage.getItem(VOLUME_KEY);
       if (raw === null) {
-        return 0.55;
+        return 0.78;
       }
       const value = Number.parseFloat(raw);
-      return Number.isFinite(value) ? THREE.MathUtils.clamp(value, 0, 1) : 0.55;
+      return Number.isFinite(value) ? THREE.MathUtils.clamp(value, 0, 1) : 0.78;
     } catch {
-      return 0.55;
+      return 0.78;
     }
   }
 

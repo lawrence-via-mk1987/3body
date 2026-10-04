@@ -153,7 +153,7 @@ export class NarrationDirector {
     utterance.lang = prosody.lang;
     utterance.rate = prosody.rate;
     utterance.pitch = prosody.pitch;
-    utterance.volume = Math.min(1, Math.max(0.15, this.queueVolume * 0.95));
+    utterance.volume = Math.min(1, Math.max(0.2, this.queueVolume));
 
     const voice = this.resolveVoice(this.queueLocale);
     if (voice) {

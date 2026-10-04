@@ -3,16 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>3body — Trisolarian Survival</title>
+    <title>三体游戏 · 三体生存</title>
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
     <div id="overlay">
       <div class="panel menu-panel">
         <p class="eyebrow">Web demo · Flow polish</p>
-        <h1>Trisolarian Survival</h1>
-        <p class="tagline">
-          Three suns. Chaotic skies. Endure until the next Stable Era.
+        <h1 id="menu-title" lang="zh-Hans" class="menu-title">三体游戏</h1>
+        <p id="menu-tagline" class="tagline menu-tagline">
+          三颗太阳，无恒纪元——活到下一个恒纪元。
         </p>
 
         <div class="menu-actions">
@@ -30,7 +30,7 @@
 
         <div class="menu-settings">
           <label class="volume-label" for="master-volume">Master volume</label>
-          <input id="master-volume" type="range" min="0" max="100" value="55" />
+          <input id="master-volume" type="range" min="0" max="100" value="78" />
           <p id="language-label" class="volume-label">Language</p>
           <div class="locale-toggle" role="group" aria-labelledby="language-label">
             <button id="locale-en" type="button" class="locale-btn active" aria-pressed="true">English</button>
@@ -113,7 +113,7 @@
         <p id="pause-checkpoint-line" class="pause-checkpoint-line">No checkpoint in this browser.</p>
         <div class="pause-settings">
           <label class="volume-label" for="pause-volume">Master volume</label>
-          <input id="pause-volume" type="range" min="0" max="100" value="55" />
+          <input id="pause-volume" type="range" min="0" max="100" value="78" />
         </div>
         <button id="pause-resume" type="button">Resume</button>
         <button id="pause-save" type="button" class="secondary-btn">Save checkpoint</button>

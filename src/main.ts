@@ -1,7 +1,7 @@
 import { NarrationDirector } from './audio/NarrationDirector';
 import { Game } from './core/Game';
 import { cinematicSeen, loadLocale, loadMusicEnabled, saveMusicEnabled } from './i18n/locale';
-import { getMobileChromeCopy } from './i18n/uiStrings';
+import { getMenuTagline, getMobileChromeCopy } from './i18n/uiStrings';
 import { EpilogueOverlay } from './ui/EpilogueOverlay';
 import { IntroCinematic } from './ui/IntroCinematic';
 import { LocaleMenu } from './ui/LocaleMenu';
@@ -134,7 +134,16 @@ const sheetStatus = document.querySelector<HTMLParagraphElement>('#sheet-status'
 const deviceProfile = detectDeviceProfile();
 applyDeviceProfileToDocument(deviceProfile);
 
+const menuTaglineEl = document.querySelector<HTMLParagraphElement>('#menu-tagline');
+
+function applyMenuBranding(locale: import('./i18n/locale').Locale): void {
+  if (menuTaglineEl) {
+    menuTaglineEl.textContent = getMenuTagline(locale);
+  }
+}
+
 function applyMenuControlsHint(locale: import('./i18n/locale').Locale): void {
+  applyMenuBranding(locale);
   if (deviceProfile.prefersTouchControls) {
     const mobile = getMobileChromeCopy(locale);
     if (menuControlsHint) {

@@ -1,4 +1,5 @@
 import type { EraKind, EraPhase } from '../orbital/types';
+import { masterGainFromSlider } from './audioGain';
 
 type AudioLayer = {
   gain: GainNode;
@@ -21,7 +22,7 @@ export class AudioDirector {
   private chaosMusic: AudioLayer | null = null;
   private stableMusic: AudioLayer | null = null;
   private started = false;
-  private masterVolume = 0.55;
+  private masterVolume = 0.78;
   private musicEnabled = true;
   private menuActive = false;
   private duckMultiplier = 1;
@@ -52,7 +53,7 @@ export class AudioDirector {
     this.musicBus.gain.setTargetAtTime(target, this.context.currentTime, 0.35);
   }
 
-  async start(initialVolume = 0.55): Promise<void> {
+  async start(initialVolume = 0.78): Promise<void> {
     this.masterVolume = initialVolume;
     if (this.started && this.context) {
       return;
@@ -60,7 +61,7 @@ export class AudioDirector {
 
     this.context = new AudioContext();
     this.masterGain = this.context.createGain();
-    this.masterGain.gain.value = initialVolume;
+    this.masterGain.gain.value = masterGainFromSlider(initialVolume);
     this.masterGain.connect(this.context.destination);
 
     this.musicBus = this.context.createGain();
@@ -81,7 +82,7 @@ export class AudioDirector {
     this.started = true;
   }
 
-  async unlockFromGesture(initialVolume = 0.55): Promise<boolean> {
+  async unlockFromGesture(initialVolume = 0.78): Promise<boolean> {
     await this.start(initialVolume);
     if (!this.context || !this.masterGain) {
       return false;
@@ -89,7 +90,11 @@ export class AudioDirector {
     if (this.context.state === 'suspended') {
       await this.context.resume();
     }
-    this.masterGain.gain.setTargetAtTime(this.masterVolume, this.context.currentTime, 0.05);
+    this.masterGain.gain.setTargetAtTime(
+      masterGainFromSlider(this.masterVolume),
+      this.context.currentTime,
+      0.05,
+    );
     return this.context.state === 'running';
   }
 
@@ -111,7 +116,11 @@ export class AudioDirector {
       return;
     }
 
-    this.masterGain.gain.setTargetAtTime(this.masterVolume, this.context.currentTime, 0.6);
+    this.masterGain.gain.setTargetAtTime(
+      masterGainFromSlider(this.masterVolume),
+      this.context.currentTime,
+      0.6,
+    );
     void this.context.resume();
   }
 
@@ -120,7 +129,11 @@ export class AudioDirector {
     if (!this.context || !this.masterGain) {
       return;
     }
-    this.masterGain.gain.setTargetAtTime(volume, this.context.currentTime, 0.08);
+    this.masterGain.gain.setTargetAtTime(
+      masterGainFromSlider(volume),
+      this.context.currentTime,
+      0.08,
+    );
   }
 
   getMasterVolume(): number {
@@ -137,9 +150,9 @@ export class AudioDirector {
     const isDangerous = phase === 'tri_solar' || phase === 'flying_star' || phase === 'scorch';
     const isCold = phase === 'deep_cold' || phase === 'eclipse_relief';
 
-    const windLevel = isCold ? 0.22 : isDangerous ? 0.1 : 0.14;
-    const solarLevel = isDangerous ? 0.34 : isStable ? 0.06 : 0.14 + Math.max(temperature, 0) * 0.04;
-    const stableLevel = isStable ? 0.28 : 0;
+    const windLevel = isCold ? 0.38 : isDangerous ? 0.18 : 0.24;
+    const solarLevel = isDangerous ? 0.52 : isStable ? 0.12 : 0.24 + Math.max(temperature, 0) * 0.06;
+    const stableLevel = isStable ? 0.42 : 0;
 
     this.windLayer.gain.gain.setTargetAtTime(windLevel, now, 0.8);
     this.solarLayer.gain.gain.setTargetAtTime(solarLevel, now, 0.8);
@@ -233,7 +246,7 @@ export class AudioDirector {
     this.musicBus.gain.setTargetAtTime(this.duckMultiplier, now, 0.35);
 
     if (this.menuActive) {
-      this.menuMusic.gain.gain.setTargetAtTime(0.11, now, 1.2);
+      this.menuMusic.gain.gain.setTargetAtTime(0.22, now, 1.2);
       this.chaosMusic.gain.gain.setTargetAtTime(0, now, 0.8);
       this.stableMusic.gain.gain.setTargetAtTime(0, now, 0.8);
       return;
@@ -247,9 +260,9 @@ export class AudioDirector {
 
     if (isStable) {
       this.chaosMusic.gain.gain.setTargetAtTime(0, now, 1.4);
-      this.stableMusic.gain.gain.setTargetAtTime(0.13, now, 1.6);
+      this.stableMusic.gain.gain.setTargetAtTime(0.24, now, 1.6);
     } else {
-      const chaosLevel = (this.musicArpeggio ? 0.09 : 0.05) + (isDangerous ? 0.05 : 0) + heatBoost;
+      const chaosLevel = (this.musicArpeggio ? 0.17 : 0.1) + (isDangerous ? 0.08 : 0) + heatBoost;
       this.chaosMusic.gain.gain.setTargetAtTime(chaosLevel, now, 1.1);
       this.stableMusic.gain.gain.setTargetAtTime(0, now, 0.9);
     }

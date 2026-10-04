@@ -84,6 +84,23 @@ h1 {
   margin-bottom: 0.75rem;
 }
 
+.menu-title {
+  font-family: 'Noto Serif SC', 'Songti SC', 'SimSun', Georgia, 'Times New Roman', serif;
+  font-size: clamp(2.35rem, 6vw, 3.15rem);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-indent: 0.14em;
+  color: #f4e8d4;
+  text-shadow: 0 0 28px rgba(226, 176, 127, 0.22);
+  margin-bottom: 0.5rem;
+}
+
+.menu-tagline {
+  font-size: clamp(0.95rem, 2.6vw, 1.05rem);
+  color: #c9b59d;
+  margin-bottom: 1.25rem;
+}
+
 .tagline {
   color: #d8c7b2;
   line-height: 1.6;

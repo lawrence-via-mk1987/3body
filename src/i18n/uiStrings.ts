@@ -45,6 +45,19 @@ export function getMobileChromeCopy(locale: Locale): MobileChromeCopy {
   return pickLocale(locale, MOBILE, MOBILE.en);
 }
 
+/** Subtitle under 三体游戏 (title stays Chinese). */
+export function getMenuTagline(locale: Locale): string {
+  return pickLocale(
+    locale,
+    {
+      en: 'Three suns, no fixed days—survive until the Stable Era.',
+      zh: '三颗太阳，无恒纪元——活到下一个恒纪元。',
+      ja: '三つの太陽、定まらぬ空——恒纪元まで生き延びよ。',
+    },
+    'Three suns, no fixed days—survive until the Stable Era.',
+  );
+}
+
 export function dialogueCloseHint(locale: Locale): string {
   return pickLocale(locale, {
     en: 'Press Esc or Close to leave.',
