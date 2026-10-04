@@ -79,105 +79,76 @@ export interface GroundTextureSet {
   roughness: THREE.CanvasTexture;
 }
 
-export function createGroundTextures(size: number, anisotropy: number): GroundTextureSet {
+/** Per-texel description returned by a surface sampler. */
+interface SurfaceSample {
+  color: THREE.Color;
+  height: number;
+  roughness: number;
+}
+
+type SurfaceSampler = (u: number, v: number, x: number, y: number, out: SurfaceSample) => void;
+
+function makeCanvas(size: number): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; img: ImageData } {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  return { canvas, ctx, img: ctx.createImageData(size, size) };
+}
+
+/**
+ * Shared baker: runs a sampler over a tileable UV grid and emits albedo, a normal map derived
+ * from the sampled height field, and a roughness map.
+ */
+function bakeSurface(size: number, anisotropy: number, normalStrength: number, sampler: SurfaceSampler): GroundTextureSet {
   const height = new Float32Array(size * size);
-  const albedoCanvas = document.createElement('canvas');
-  albedoCanvas.width = size;
-  albedoCanvas.height = size;
-  const albedoCtx = albedoCanvas.getContext('2d')!;
-  const albedoImg = albedoCtx.createImageData(size, size);
-
-  const roughCanvas = document.createElement('canvas');
-  roughCanvas.width = size;
-  roughCanvas.height = size;
-  const roughCtx = roughCanvas.getContext('2d')!;
-  const roughImg = roughCtx.createImageData(size, size);
-
-  const dustLow = new THREE.Color('#6b4a33');
-  const dustHigh = new THREE.Color('#a8785a');
-  const grit = new THREE.Color('#4c3627');
-  const crackDark = new THREE.Color('#2b1c14');
-  const stoneCool = new THREE.Color('#7a6a5c');
-  const tmp = new THREE.Color();
+  const albedo = makeCanvas(size);
+  const rough = makeCanvas(size);
+  const sample: SurfaceSample = { color: new THREE.Color(), height: 0, roughness: 1 };
 
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
-      const u = x / size;
-      const v = y / size;
-
-      const dust = tileableFbm(u, v, 5, 4);
-      const fine = tileableFbm(u + 0.37, v + 0.61, 4, 24);
-      const { f1, f2 } = tileableCells(u, v, 14);
-      const crackWidth = 0.05 + fine * 0.04;
-      // Cracked clay only where the ground once held water; elsewhere the dust buries it.
-      const crackRegion = THREE.MathUtils.smoothstep(tileableFbm(u + 0.15, v + 0.9, 3, 2), 0.4, 0.66);
-      const crack = (1 - THREE.MathUtils.smoothstep(f2 - f1, 0, crackWidth)) * crackRegion;
-      const plateDome = THREE.MathUtils.clamp(1 - f1 * 1.6, 0, 1) * crackRegion;
-      const stoneMask = THREE.MathUtils.smoothstep(tileableFbm(u + 0.8, v + 0.2, 3, 3), 0.56, 0.72);
-
-      // Height: dust undulation + plate domes, carved by cracks and sprinkled with grit.
-      let h = dust * 0.6 + plateDome * 0.2 + fine * 0.2;
-      h -= crack * 0.35;
-      h += (hash2(x, y) - 0.5) * 0.06;
-      height[y * size + x] = h;
-
-      tmp.copy(dustLow).lerp(dustHigh, THREE.MathUtils.clamp(dust * 1.15, 0, 1));
-      tmp.lerp(grit, THREE.MathUtils.clamp((fine - 0.45) * 1.8, 0, 1) * 0.55);
-      tmp.lerp(stoneCool, stoneMask * 0.6);
-      tmp.lerp(crackDark, crack * 0.5);
-      const speck = hash2(x * 3.1, y * 7.7);
-      if (speck > 0.985) {
-        tmp.lerp(stoneCool, 0.7);
-      }
-
+      sampler(x / size, y / size, x, y, sample);
+      height[y * size + x] = sample.height;
       const i = (y * size + x) * 4;
-      albedoImg.data[i] = Math.round(tmp.r * 255);
-      albedoImg.data[i + 1] = Math.round(tmp.g * 255);
-      albedoImg.data[i + 2] = Math.round(tmp.b * 255);
-      albedoImg.data[i + 3] = 255;
-
-      const rough = THREE.MathUtils.clamp(0.82 + crack * 0.12 - stoneMask * 0.18 + (fine - 0.5) * 0.1, 0.55, 1);
-      const r8 = Math.round(rough * 255);
-      roughImg.data[i] = r8;
-      roughImg.data[i + 1] = r8;
-      roughImg.data[i + 2] = r8;
-      roughImg.data[i + 3] = 255;
+      albedo.img.data[i] = Math.round(THREE.MathUtils.clamp(sample.color.r, 0, 1) * 255);
+      albedo.img.data[i + 1] = Math.round(THREE.MathUtils.clamp(sample.color.g, 0, 1) * 255);
+      albedo.img.data[i + 2] = Math.round(THREE.MathUtils.clamp(sample.color.b, 0, 1) * 255);
+      albedo.img.data[i + 3] = 255;
+      const r8 = Math.round(THREE.MathUtils.clamp(sample.roughness, 0, 1) * 255);
+      rough.img.data[i] = r8;
+      rough.img.data[i + 1] = r8;
+      rough.img.data[i + 2] = r8;
+      rough.img.data[i + 3] = 255;
     }
   }
-  albedoCtx.putImageData(albedoImg, 0, 0);
-  roughCtx.putImageData(roughImg, 0, 0);
+  albedo.ctx.putImageData(albedo.img, 0, 0);
+  rough.ctx.putImageData(rough.img, 0, 0);
 
-  const normalCanvas = document.createElement('canvas');
-  normalCanvas.width = size;
-  normalCanvas.height = size;
-  const normalCtx = normalCanvas.getContext('2d')!;
-  const normalImg = normalCtx.createImageData(size, size);
-  const strength = 2.6;
+  const normal = makeCanvas(size);
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
       const xl = height[y * size + ((x - 1 + size) % size)];
       const xr = height[y * size + ((x + 1) % size)];
       const yu = height[((y - 1 + size) % size) * size + x];
       const yd = height[((y + 1) % size) * size + x];
-      const nx = (xl - xr) * strength;
-      const ny = (yu - yd) * strength;
-      const nz = 1;
-      const len = Math.hypot(nx, ny, nz);
+      const nx = (xl - xr) * normalStrength;
+      const ny = (yu - yd) * normalStrength;
+      const len = Math.hypot(nx, ny, 1);
       const i = (y * size + x) * 4;
-      normalImg.data[i] = Math.round(((nx / len) * 0.5 + 0.5) * 255);
-      normalImg.data[i + 1] = Math.round(((ny / len) * 0.5 + 0.5) * 255);
-      normalImg.data[i + 2] = Math.round(((nz / len) * 0.5 + 0.5) * 255);
-      normalImg.data[i + 3] = 255;
+      normal.img.data[i] = Math.round(((nx / len) * 0.5 + 0.5) * 255);
+      normal.img.data[i + 1] = Math.round(((ny / len) * 0.5 + 0.5) * 255);
+      normal.img.data[i + 2] = Math.round(((1 / len) * 0.5 + 0.5) * 255);
+      normal.img.data[i + 3] = 255;
     }
   }
-  normalCtx.putImageData(normalImg, 0, 0);
+  normal.ctx.putImageData(normal.img, 0, 0);
 
-  const albedo = new THREE.CanvasTexture(albedoCanvas);
-  albedo.colorSpace = THREE.SRGBColorSpace;
-  const normal = new THREE.CanvasTexture(normalCanvas);
-  const roughness = new THREE.CanvasTexture(roughCanvas);
-
-  for (const tex of [albedo, normal, roughness]) {
+  const albedoTex = new THREE.CanvasTexture(albedo.canvas);
+  albedoTex.colorSpace = THREE.SRGBColorSpace;
+  const normalTex = new THREE.CanvasTexture(normal.canvas);
+  const roughTex = new THREE.CanvasTexture(rough.canvas);
+  for (const tex of [albedoTex, normalTex, roughTex]) {
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.RepeatWrapping;
     tex.anisotropy = anisotropy;
@@ -186,8 +157,108 @@ export function createGroundTextures(size: number, anisotropy: number): GroundTe
     tex.magFilter = THREE.LinearFilter;
     tex.needsUpdate = true;
   }
+  return { albedo: albedoTex, normal: normalTex, roughness: roughTex };
+}
 
-  return { albedo, normal, roughness };
+export function createGroundTextures(size: number, anisotropy: number): GroundTextureSet {
+  const dustLow = new THREE.Color('#6b4a33');
+  const dustHigh = new THREE.Color('#a8785a');
+  const grit = new THREE.Color('#4c3627');
+  const crackDark = new THREE.Color('#2b1c14');
+  const stoneCool = new THREE.Color('#7a6a5c');
+
+  return bakeSurface(size, anisotropy, 2.6, (u, v, x, y, out) => {
+    const dust = tileableFbm(u, v, 5, 4);
+    const fine = tileableFbm(u + 0.37, v + 0.61, 4, 24);
+    const { f1, f2 } = tileableCells(u, v, 14);
+    const crackWidth = 0.05 + fine * 0.04;
+    // Cracked clay only where the ground once held water; elsewhere the dust buries it.
+    const crackRegion = THREE.MathUtils.smoothstep(tileableFbm(u + 0.15, v + 0.9, 3, 2), 0.4, 0.66);
+    const crack = (1 - THREE.MathUtils.smoothstep(f2 - f1, 0, crackWidth)) * crackRegion;
+    const plateDome = THREE.MathUtils.clamp(1 - f1 * 1.6, 0, 1) * crackRegion;
+    const stoneMask = THREE.MathUtils.smoothstep(tileableFbm(u + 0.8, v + 0.2, 3, 3), 0.56, 0.72);
+
+    // Height: dust undulation + plate domes, carved by cracks and sprinkled with grit.
+    let h = dust * 0.6 + plateDome * 0.2 + fine * 0.2;
+    h -= crack * 0.35;
+    h += (hash2(x, y) - 0.5) * 0.06;
+    out.height = h;
+
+    out.color.copy(dustLow).lerp(dustHigh, THREE.MathUtils.clamp(dust * 1.15, 0, 1));
+    out.color.lerp(grit, THREE.MathUtils.clamp((fine - 0.45) * 1.8, 0, 1) * 0.55);
+    out.color.lerp(stoneCool, stoneMask * 0.6);
+    out.color.lerp(crackDark, crack * 0.5);
+    if (hash2(x * 3.1, y * 7.7) > 0.985) {
+      out.color.lerp(stoneCool, 0.7);
+    }
+    out.roughness = 0.82 + crack * 0.12 - stoneMask * 0.18 + (fine - 0.5) * 0.1;
+  });
+}
+
+/** Weathered basalt: flaky grain, pitting, pale mineral veins. Non-directional, for triplanar use. */
+export function createStoneTextures(size: number, anisotropy: number): GroundTextureSet {
+  const base = new THREE.Color('#857666');
+  const dark = new THREE.Color('#4a3e36');
+  const pale = new THREE.Color('#b4a896');
+  const rust = new THREE.Color('#8a5e42');
+
+  return bakeSurface(size, anisotropy, 3.2, (u, v, x, y, out) => {
+    const grain = tileableFbm(u, v, 5, 6);
+    const flakes = tileableCells(u + 0.3, v + 0.7, 9);
+    const flake = THREE.MathUtils.smoothstep(flakes.f2 - flakes.f1, 0, 0.12);
+    const pits = tileableCells(u + 0.6, v + 0.1, 26);
+    const pit = 1 - THREE.MathUtils.smoothstep(pits.f1, 0.08, 0.3);
+    const vein = Math.pow(1 - Math.abs(tileableFbm(u + 0.2, v + 0.4, 3, 3) - 0.5) * 2, 8);
+    const rustMask = THREE.MathUtils.smoothstep(tileableFbm(u + 0.9, v + 0.3, 3, 2), 0.55, 0.75);
+
+    out.height = grain * 0.5 + flake * 0.3 - pit * 0.35 + (hash2(x, y) - 0.5) * 0.05;
+    out.color.copy(base).lerp(pale, THREE.MathUtils.clamp((grain - 0.4) * 1.6, 0, 1) * 0.5);
+    out.color.lerp(dark, (1 - flake) * 0.45 + pit * 0.5);
+    out.color.lerp(pale, vein * 0.5);
+    out.color.lerp(rust, rustMask * 0.4);
+    out.roughness = 0.78 + pit * 0.15 - vein * 0.2 + (grain - 0.5) * 0.12;
+  });
+}
+
+/** Sun-bleached timber: long grain along V, checking cracks, grey weathering. */
+export function createWoodTextures(size: number, anisotropy: number): GroundTextureSet {
+  const heart = new THREE.Color('#5a3f2a');
+  const bleached = new THREE.Color('#8f7c62');
+  const crackCol = new THREE.Color('#2a1c12');
+
+  return bakeSurface(size, anisotropy, 2.2, (u, v, x, y, out) => {
+    // Grain: stretch noise along v so streaks run the length of a post.
+    const grain = tileableFbm(u * 1.0, v * 0.12, 4, 10);
+    const streak = Math.sin((u + grain * 0.35) * Math.PI * 2 * 9) * 0.5 + 0.5;
+    const checking = Math.pow(1 - Math.abs(tileableFbm(u * 0.5 + 0.3, v * 0.1, 3, 14) - 0.5) * 2, 10);
+    const weather = tileableFbm(u + 0.4, v + 0.2, 3, 3);
+
+    out.height = streak * 0.3 + grain * 0.4 - checking * 0.5 + (hash2(x, y) - 0.5) * 0.04;
+    out.color.copy(heart).lerp(bleached, THREE.MathUtils.clamp(weather * 1.3, 0, 1));
+    out.color.multiplyScalar(0.85 + streak * 0.25);
+    out.color.lerp(crackCol, checking * 0.7);
+    out.roughness = 0.86 + checking * 0.1 - streak * 0.06;
+  });
+}
+
+/** Heavy woven cloth: weave bumps, patches, dust staining. */
+export function createClothTextures(size: number, anisotropy: number, base: string, stain: string): GroundTextureSet {
+  const baseCol = new THREE.Color(base);
+  const stainCol = new THREE.Color(stain);
+  const thread = new THREE.Color('#1c1612');
+
+  return bakeSurface(size, anisotropy, 1.4, (u, v, x, y, out) => {
+    const weaveU = Math.sin(u * Math.PI * 2 * 48) * 0.5 + 0.5;
+    const weaveV = Math.sin(v * Math.PI * 2 * 48) * 0.5 + 0.5;
+    const weave = weaveU * weaveV;
+    const stains = tileableFbm(u, v, 4, 3);
+    const wear = THREE.MathUtils.smoothstep(tileableFbm(u + 0.5, v + 0.8, 3, 5), 0.6, 0.8);
+
+    out.height = weave * 0.6 + stains * 0.2 + (hash2(x, y) - 0.5) * 0.08;
+    out.color.copy(baseCol).lerp(stainCol, THREE.MathUtils.clamp(stains * 1.4 - 0.2, 0, 1));
+    out.color.lerp(thread, (1 - weave) * 0.25 + wear * 0.3);
+    out.roughness = 0.92 - wear * 0.05;
+  });
 }
 
 /** Radial glow with a hot core and long soft falloff, used for sun halos. */
