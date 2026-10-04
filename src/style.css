@@ -84,21 +84,125 @@ h1 {
   margin-bottom: 0.75rem;
 }
 
+.menu-logo-block {
+  position: relative;
+  text-align: center;
+  margin: -0.35rem -1rem 1.15rem;
+  padding: 1.35rem 0.75rem 1.15rem;
+  overflow: hidden;
+  border-radius: 2px;
+}
+
+.menu-logo-backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(18, 42, 58, 0.55) 0%, rgba(18, 42, 58, 0.55) 48%, rgba(92, 22, 18, 0.5) 52%, rgba(72, 14, 12, 0.55) 100%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 88%, transparent 100%);
+}
+
+.menu-logo-backdrop::after {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 50%;
+  height: 1px;
+  transform: translateY(-50%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(244, 232, 212, 0.15) 20%,
+    rgba(244, 232, 212, 0.35) 50%,
+    rgba(244, 232, 212, 0.15) 80%,
+    transparent
+  );
+}
+
+.menu-logo-eyebrow {
+  position: relative;
+  margin-bottom: 0.85rem;
+  color: #b89a78;
+}
+
+.menu-logo {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.menu-logo-cn-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.45rem, 3vw, 0.85rem);
+  width: 100%;
+  max-width: 22rem;
+  margin: 0 auto;
+}
+
+.menu-logo-whisker {
+  flex: 1 1 2.5rem;
+  height: 2px;
+  max-width: 4.25rem;
+  border-radius: 1px;
+}
+
+.menu-logo-whisker-left {
+  background: linear-gradient(90deg, transparent 0%, rgba(244, 236, 220, 0.92) 100%);
+}
+
+.menu-logo-whisker-right {
+  background: linear-gradient(90deg, rgba(244, 236, 220, 0.92) 0%, transparent 100%);
+}
+
 .menu-title {
-  font-family: 'Noto Serif SC', 'Songti SC', 'SimSun', Georgia, 'Times New Roman', serif;
-  font-size: clamp(2.35rem, 6vw, 3.15rem);
+  flex: 0 0 auto;
+  margin: 0;
+  font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-size: clamp(2.05rem, 7.5vw, 2.85rem);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  color: #f6f0e4;
+  text-shadow:
+    0 0 32px rgba(200, 160, 120, 0.25),
+    0 2px 12px rgba(0, 0, 0, 0.45);
+}
+
+.menu-logo-en {
+  margin: 0.35rem 0 0;
+  font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  font-size: clamp(1.05rem, 3.2vw, 1.28rem);
   font-weight: 600;
-  letter-spacing: 0.14em;
-  text-indent: 0.14em;
-  color: #f4e8d4;
-  text-shadow: 0 0 28px rgba(226, 176, 127, 0.22);
-  margin-bottom: 0.5rem;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  text-transform: uppercase;
+  color: #f0e8dc;
+  line-height: 1.2;
+}
+
+.menu-logo-en-sub {
+  margin: 0;
+  font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  font-size: clamp(0.72rem, 2.2vw, 0.82rem);
+  font-weight: 500;
+  letter-spacing: 0.62em;
+  text-indent: 0.62em;
+  text-transform: uppercase;
+  color: rgba(240, 232, 220, 0.72);
+  line-height: 1;
 }
 
 .menu-tagline {
   font-size: clamp(0.95rem, 2.6vw, 1.05rem);
   color: #c9b59d;
   margin-bottom: 1.25rem;
+  text-align: center;
+  line-height: 1.55;
 }
 
 .tagline {
