@@ -1,3 +1,5 @@
+import { resolveRenderQuality } from './renderQuality';
+
 export type DeviceKind = 'mobile' | 'tablet' | 'desktop';
 
 export interface DeviceProfile {
@@ -36,8 +38,11 @@ export function detectDeviceProfile(): DeviceProfile {
 }
 
 export function applyDeviceProfileToDocument(profile: DeviceProfile): void {
+  const quality = resolveRenderQuality(profile);
   document.body.dataset.device = profile.kind;
   document.body.dataset.touchControls = profile.prefersTouchControls ? 'true' : 'false';
+  document.body.dataset.renderTier = quality.tier;
+  document.body.dataset.ssao = quality.ssao ? 'on' : 'off';
   if (profile.prefersTouchControls) {
     document.body.classList.add('touch-ui');
   }
