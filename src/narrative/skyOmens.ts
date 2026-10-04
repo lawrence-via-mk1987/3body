@@ -2,41 +2,39 @@ import type { Locale } from '../i18n/locale';
 import type { EraPhase } from '../orbital/types';
 import type { TemperatureSample } from '../orbital/types';
 
-export function omenForPhaseEnter(phase: EraPhase, locale: Locale): string | null {
-  if (locale === 'zh') {
-    switch (phase) {
-      case 'flying_star':
-        return '预兆：地平线记得红色。';
-      case 'scorch':
-        return '预兆：空气即将夺走你存下的每一滴水。';
-      case 'tri_solar':
-        return '预兆：三颗太阳在争辩——快找阴影。';
-      case 'deep_cold':
-        return '预兆：夜要吸走你最后一点热。';
-      default:
-        return null;
-    }
-  }
+const PHASE_OMENS: Record<Locale, Partial<Record<EraPhase, string>>> = {
+  en: {
+    flying_star: 'Omen: the horizon remembers red.',
+    scorch: 'Omen: the air will boil what water you keep.',
+    tri_solar: 'Omen: three suns argue — find shadow soon.',
+    deep_cold: 'Omen: the night wants your heat.',
+  },
+  zh: {
+    flying_star: '预兆：地平线记得红色。',
+    scorch: '预兆：空气即将夺走你存下的每一滴水。',
+    tri_solar: '预兆：三颗太阳在争辩——快找阴影。',
+    deep_cold: '预兆：夜要吸走你最后一点热。',
+  },
+  ja: {
+    flying_star: '前兆：地平線は赤を覚えている。',
+    scorch: '前兆：空気が蓄えた水をすべて奪い去る。',
+    tri_solar: '前兆：三つの太陽が争う——早く影を探せ。',
+    deep_cold: '前兆：夜が最後の熱を欲している。',
+  },
+};
 
-  switch (phase) {
-    case 'flying_star':
-      return 'Omen: the horizon remembers red.';
-    case 'scorch':
-      return 'Omen: the air will boil what water you keep.';
-    case 'tri_solar':
-      return 'Omen: three suns argue — find shadow soon.';
-    case 'deep_cold':
-      return 'Omen: the night wants your heat.';
-    default:
-      return null;
-  }
+const LETHAL_OMEN: Record<Locale, string> = {
+  en: 'Omen: the surface is no longer for the living — fold or shelter.',
+  zh: '预兆：表面已非生者之地——折叠或躲入掩体。',
+  ja: '前兆：地表はもはや生者の場所ではない——折りたたむか掩蔽へ。',
+};
+
+export function omenForPhaseEnter(phase: EraPhase, locale: Locale): string | null {
+  return PHASE_OMENS[locale]?.[phase] ?? PHASE_OMENS.en[phase] ?? null;
 }
 
 export function omenForLethalTemperature(locale: Locale): string | null {
-  if (locale === 'zh') {
-    return '预兆：表面已非生者之地——折叠或躲入掩体。';
-  }
-  return 'Omen: the surface is no longer for the living — fold or shelter.';
+  return LETHAL_OMEN[locale] ?? LETHAL_OMEN.en;
 }
 
 export function shouldWarnLethal(sample: TemperatureSample, warnedThisPhase: boolean): boolean {

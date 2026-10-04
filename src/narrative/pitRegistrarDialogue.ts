@@ -89,3 +89,48 @@ export const PIT_REGISTRAR_DIALOGUE_ZH: DialogueTree = {
     choices: [],
   },
 };
+
+export const PIT_REGISTRAR_DIALOGUE_JA: DialogueTree = {
+  greet: {
+    id: 'greet',
+    speaker: '大穴の登録係',
+    body:
+      '開いた空の匂いがする。よい——まだ展開しているということだ。'
+      + '待つことを選んだ者の数を記している。石碑は F で読め。'
+      + '足元の輪は E で脱水——決して石の上に立つな。',
+    choices: [
+      { id: 'flying', label: '飛星のときどう生き延びる？', nextId: 'flying_star' },
+      { id: 'fold', label: '列と一緒に折りたたむべき？', nextId: 'fold_rows', sideEffect: 'fold_lesson' },
+      { id: 'bye', label: '耐える。', nextId: 'farewell', sideEffect: 'mark_spoke' },
+    ],
+  },
+  flying_star: {
+    id: 'flying_star',
+    speaker: '大穴の登録係',
+    body:
+      '地平線が赤く光り、一つの太陽が空を飲み込むとき、地表の死は速い。'
+      + '輪の上に立ち E を押し、体を羊皮紙にせよ。折りたたみ中は動けない——'
+      + 'しかし熱は、もはや沸騰する水のないものを奪えない。予報が和らぐまで眠れ。',
+    choices: [
+      { id: 'back', label: 'もう一つ…', nextId: 'greet' },
+      { id: 'bye2', label: 'ありがとう。', nextId: 'farewell', sideEffect: 'mark_spoke' },
+    ],
+  },
+  fold_rows: {
+    id: 'fold_rows',
+    speaker: '大穴の登録係',
+    body:
+      '列は命令ではない——記憶だ。文明は共に折りたたみ、誰も他者が燃えるのを見なくて済む。'
+      + '水分が尽きかけ、穴のビーコンが琥珀色なら、輪に加わるのは知恵であり、敗北ではない。',
+    choices: [
+      { id: 'back2', label: 'もう一つ…', nextId: 'greet' },
+      { id: 'bye3', label: '分かった。', nextId: 'farewell', sideEffect: 'mark_spoke' },
+    ],
+  },
+  farewell: {
+    id: 'farewell',
+    speaker: '大穴の登録係',
+    body: '行け。太陽がまた数え始めた。',
+    choices: [],
+  },
+};

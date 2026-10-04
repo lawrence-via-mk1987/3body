@@ -193,6 +193,96 @@ const BEATS: Record<Locale, StoryBeatCopy[]> = {
       journalTitle: '信 — 循环终结',
     },
   ],
+  ja: [
+    {
+      id: 'letter_witness',
+      eyebrow: '手紙 I · 前のサイクル',
+      title: '次に展開する者へ',
+      body:
+        '肺いっぱいに空気を吸いながらこれを読んでいるなら、私はすでに折りたたまれているか灰だ。'
+        + '私は予測をやめ、聴くことを学んだ賢者だった。空は邪悪ではない——無関心だ。'
+        + '東の道標を探せ。壊れた天文台を合わせよ。金色が戻るまで耐えよ。'
+        + 'その次のサイクルのために記録を残せ。',
+      journalTitle: '手紙 I — 次に展開する者へ',
+    },
+    {
+      id: 'letter_waystone',
+      eyebrow: '手紙 II · 地図',
+      title: '道標を見つけた',
+      body:
+        'よい。死者は穴、林、ドームを標し、生者が盲目にさ迷わぬようにした。'
+        + '北西の穴で折りたたむ。南東の天文台で耐えられる真実を。南西の林は恒紀元でのみ目を覚ます。'
+        + '物語は一枚の碑にあるのではない——それらを結ぶ道にある。',
+      journalTitle: '手紙 II — 道標の道',
+    },
+    {
+      id: 'letter_fold',
+      eyebrow: '手紙 III · 穴',
+      title: '折りたたむを選んだ',
+      body:
+        '脱水は降伏ではない。太陽に沸騰する血を捧げないことだ。'
+        + '私は見知らぬ者の傍で折りたたまれ、彼らは羊皮紙の家族になった。予報が和らぐまで眠れ。'
+        + '一度も折りたたまないなら勇敢だ——あるいは運がいい。三体星では運は尽きる。',
+      journalTitle: '手紙 III — 折りたたむことについて',
+    },
+    {
+      id: 'letter_stable',
+      eyebrow: '手紙 IV · 恒紀元',
+      title: '空が一時許す',
+      body:
+        '恒紀元。心は続くと嘘をつく——続かない。'
+        + '林で水を飲め。守り人と話せ。穏やかな太陽を要する文字を読め。'
+        + '私は木を植えなかった——誰かが再び緑を見るかもしれないという考えを植えた。君はそれを見ている。',
+      journalTitle: '手紙 IV — 恒紀元',
+    },
+    {
+      id: 'letter_predictor',
+      eyebrow: '手紙 V · 天文台',
+      title: 'ダイヤルは——今のところ——保つ',
+      body:
+        '末代の予測者と私は争った。彼は数字が三つの太陽を飼いならすと信じた。'
+        + '私たちはより狭い疑いで折り合った。予報ストリップを使え——まだ嘘をつくが、以前ほど大胆ではない。'
+        + '地平線が赤くなるとき、誇りより掩蔽を信じよ。',
+      journalTitle: '手紙 V — より狭い疑い',
+    },
+    {
+      id: 'letter_threads',
+      eyebrow: '手紙 VI · 記憶',
+      title: '他サイクルの糸',
+      body:
+        '三つの碑を回収した——すでに型が見える。各文明が異なる手で同じ警告を書いた。'
+        + '熱。渇き。希望。無知から彼らの過ちを繰り返しているのではない——同じ空の下で生きているだけだ。',
+      journalTitle: '手紙 VI — 糸',
+    },
+    {
+      id: 'letter_grove_call',
+      eyebrow: '手紙 VII · 林',
+      title: '最後の碑の前に',
+      body:
+        '最終ログは罰するために隠されているのではない。穏やかな太陽の下でしかその言葉に耐えられないからだ。'
+        + '池のきらめきを探せ。守り人を探せ。今だけ二つの碑が目を覚ます：林の希望と最終ログ。'
+        + '読んだら、一文を次の乱紀元へ運べ。',
+      journalTitle: '手紙 VII — 林の呼び声',
+    },
+    {
+      id: 'letter_final',
+      eyebrow: '手紙 VIII · 規律',
+      title: '希望を運び去る',
+      body:
+        '穏やかな太陽の下で最終ログを読んだ。それがこのサイクルの勝利のすべてだ。'
+        + '三体の空は再び変わる。水を蓄えよ。穴を標せ。次の旅人に見上げることを教え——地平線が赤く光るときは目をそらすことを。',
+      journalTitle: '手紙 VIII — 最終ログを読んだ',
+    },
+    {
+      id: 'letter_death',
+      eyebrow: '手紙 · 未完',
+      title: 'このサイクルは展開したまま終わる',
+      body:
+        '空はこの体を奪ったが、学んだことまでは奪わない。発見した文字と手紙はサイクルを越えて手記に残る。'
+        + '再び始めよ。登録係はまだ数え、予測者はまだ待ち、林は災厄のあいだの緑を覚えている。',
+      journalTitle: '手紙 — サイクル終了',
+    },
+  ],
 };
 
 export interface StoryObjectiveContext {
@@ -204,7 +294,7 @@ export interface StoryObjectiveContext {
 }
 
 export function getStoryBeat(locale: Locale, id: StoryBeatId): StoryBeatCopy | null {
-  return BEATS[locale].find((beat) => beat.id === id) ?? null;
+  return BEATS[locale]?.find((beat) => beat.id === id) ?? BEATS.en.find((beat) => beat.id === id) ?? null;
 }
 
 export function witnessBeatForCycle(locale: Locale, cycle: number): StoryBeatCopy | null {
@@ -221,6 +311,15 @@ export function witnessBeatForCycle(locale: Locale, cycle: number): StoryBeatCop
         + '向东找路石，校准破碎的天文台，忍耐至金色回归，并为再下一个循环留下记录。',
     };
   }
+  if (locale === 'ja') {
+    return {
+      ...base,
+      body:
+        `君は文明 #${cycle} として展開する。肺いっぱいに空気を吸いながらこれを読んでいるなら、私はすでに折りたたまれているか灰だ。`
+        + '私は予測をやめ、聴くことを学んだ賢者だった。空は邪悪ではない——無関心だ。'
+        + '東の道標を探せ。壊れた天文台を合わせよ。金色が戻るまで耐えよ。その次のサイクルのために記録を残せ。',
+    };
+  }
   return {
     ...base,
     body:
@@ -232,7 +331,8 @@ export function witnessBeatForCycle(locale: Locale, cycle: number): StoryBeatCop
 }
 
 export function getUnlockedBeats(locale: Locale, ids: readonly StoryBeatId[]): StoryBeatCopy[] {
-  const map = new Map(BEATS[locale].map((beat) => [beat.id, beat]));
+  const beats = BEATS[locale] ?? BEATS.en;
+  const map = new Map(beats.map((beat) => [beat.id, beat]));
   return ids.map((id) => map.get(id)).filter((beat): beat is StoryBeatCopy => Boolean(beat));
 }
 
@@ -251,6 +351,22 @@ export function resolveStoryObjective(locale: Locale, ctx: StoryObjectiveContext
       return '章节：恒纪元中前往西南林，找到最终日志';
     }
     return '章节：你已读完最终日志——把希望带入下一循环';
+  }
+
+  if (locale === 'ja') {
+    if (!ctx.hasWaystone) {
+      return '章：東の道標を探す（F で読む）';
+    }
+    if (!ctx.predictorCalibrated) {
+      return '章：南東の天文台で予報を合わせる（T — 予測者）';
+    }
+    if (!ctx.enteredStableThisRun) {
+      return '章：乱紀元を耐え、恒紀元を待つ';
+    }
+    if (!ctx.hasFinalLog) {
+      return '章：恒紀元に南西の林へ行き、最終ログを見つける';
+    }
+    return '章：最終ログを読んだ——希望を次のサイクルへ運べ';
   }
 
   if (!ctx.hasWaystone) {

@@ -1,6 +1,7 @@
 import type { NarrationDirector } from '../audio/NarrationDirector';
 import type { VoiceRole } from '../audio/voiceProfiles';
 import type { Locale } from '../i18n/locale';
+import { dialogueCloseHint } from '../i18n/uiStrings';
 import type { DialogueChoice, DialogueNode } from '../narrative/dialogueTypes';
 
 export class DialoguePanel {
@@ -103,9 +104,7 @@ export class DialoguePanel {
     if (node.choices.length === 0) {
       const hint = document.createElement('p');
       hint.className = 'dialogue-end-hint';
-      hint.textContent = locale === 'zh'
-        ? '按 Esc 或关闭离开。'
-        : 'Press Esc or Close to leave.';
+      hint.textContent = dialogueCloseHint(locale);
       this.choicesEl.append(hint);
     }
   }

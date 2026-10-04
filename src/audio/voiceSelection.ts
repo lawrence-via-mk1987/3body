@@ -42,6 +42,26 @@ const ZH_AVOID = [
   /compact/i,
 ];
 
+const JA_PREFER = [
+  /kyoko/i,
+  /otoya/i,
+  /nanami/i,
+  /google.*japanese/i,
+  /microsoft.*nanami/i,
+  /microsoft.*ichiro/i,
+  /microsoft.*keita/i,
+  /haruka/i,
+];
+
+const JA_AVOID = [
+  /en-/i,
+  /english/i,
+  /espeak/i,
+  /compact/i,
+  /chinese/i,
+  /mandarin/i,
+];
+
 function scoreVoice(voice: SpeechSynthesisVoice, locale: Locale): number {
   const lang = voice.lang.toLowerCase();
   const name = voice.name;
@@ -65,6 +85,24 @@ function scoreVoice(voice: SpeechSynthesisVoice, locale: Locale): number {
       }
     }
     for (const pattern of ZH_AVOID) {
+      if (pattern.test(name)) {
+        score -= 35;
+      }
+    }
+  } else if (locale === 'ja') {
+    if (lang.startsWith('ja-jp')) {
+      score += 55;
+    } else if (lang.startsWith('ja')) {
+      score += 40;
+    } else {
+      return -100;
+    }
+    for (const pattern of JA_PREFER) {
+      if (pattern.test(name)) {
+        score += 22;
+      }
+    }
+    for (const pattern of JA_AVOID) {
       if (pattern.test(name)) {
         score -= 35;
       }
@@ -124,6 +162,9 @@ export function narrationProsody(locale: Locale): {
 } {
   if (locale === 'zh') {
     return { lang: 'zh-CN', rate: 0.86, pitch: 0.94 };
+  }
+  if (locale === 'ja') {
+    return { lang: 'ja-JP', rate: 0.88, pitch: 0.96 };
   }
   return { lang: 'en-US', rate: 0.8, pitch: 0.92 };
 }

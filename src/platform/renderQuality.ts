@@ -20,6 +20,8 @@ export interface RenderQuality {
   heatHaze: boolean;
   /** Cold-phase breath in front of the camera. Off on phones. */
   breath: boolean;
+  /** Slow chaos arpeggio in procedural music beds; off on phones. */
+  musicArpeggio: boolean;
 }
 
 export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
@@ -37,6 +39,7 @@ export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
       grassBlades: 180,
       heatHaze: false,
       breath: false,
+      musicArpeggio: false,
     };
   }
   if (profile.kind === 'tablet') {
@@ -53,6 +56,7 @@ export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
       grassBlades: 360,
       heatHaze: false,
       breath: true,
+      musicArpeggio: true,
     };
   }
   return {
@@ -68,5 +72,6 @@ export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
     grassBlades: 700,
     heatHaze: true,
     breath: true,
+    musicArpeggio: true,
   };
 }

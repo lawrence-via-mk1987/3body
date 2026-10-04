@@ -68,6 +68,33 @@ const STEPS: Record<Locale, QuestStepCopy[]> = {
       detail: '仅恒纪元——林边池旁的发光石碑。',
     },
   ],
+  ja: [
+    {
+      id: 'find_waystone',
+      title: '道標を探す',
+      detail: '東へ——光るマーカー。近づいたら読む（F）。',
+    },
+    {
+      id: 'calibrate_predictor',
+      title: '空を合わせる',
+      detail: '南東の天文台——末代の予測者と話す（T）。',
+    },
+    {
+      id: 'endure_chaos',
+      title: '乱紀元を耐える',
+      detail: '掩蔽、穴で折りたたむ、または待つ——金色が戻るまで。',
+    },
+    {
+      id: 'grove_stable',
+      title: '恒紀元を使う',
+      detail: '南西の林——池で水を飲み、恒紀元の碑を読む。',
+    },
+    {
+      id: 'read_final_log',
+      title: '最終ログを読む',
+      detail: '恒紀元のみ——林の池そばの光る石碑。',
+    },
+  ],
 };
 
 const LOG_ACTION_HINTS: Record<Locale, Record<string, string>> = {
@@ -99,14 +126,33 @@ const LOG_ACTION_HINTS: Record<Locale, Record<string, string>> = {
     grove_hope: '下一步：恒纪元中在池边找最终日志。',
     final_log: '本循环完成——读完后进入下一文明。',
   },
+  ja: {
+    waystone:
+      '次：コンパスに従い南東の天文台へ。末代の予測者と話し（T）、予報を合わせよ。',
+    observatory:
+      '次：予測者と合わせよ（T）。その後乱紀元を耐えよ——穴で折りたたむ（E）か、空が厳しいときは洞に避難。',
+    shelter_ruin:
+      '次：近くの洞（-5, 10）が熱と寒を和らげる。次の赤い空のために覚えておけ。',
+    dehydration_rows:
+      '次：穴の琥珀色の輪の上に立て——熱や渇きが尖るとき「使用」（E）で折りたため。',
+    cave_refuge:
+      '次：温度が致死になるときはこの洞の中にいろ。必要に応じて天文台か穴へ向かえ。',
+    traveler_stone:
+      '次：北西の穴か南東の天文台——順序は選べるが、空を信じる前に合わせよ。',
+    grove_hope:
+      '次：池の下流で最終ログを探せ（恒紀元）。乱紀元が戻る前に読め。',
+    final_log:
+      'サイクル完了——エピローグを読み、学んだことを携えて次の文明へ。',
+  },
 };
 
 export function getQuestSteps(locale: Locale): QuestStepCopy[] {
-  return STEPS[locale];
+  return STEPS[locale] ?? STEPS.en;
 }
 
 export function getLogActionHint(locale: Locale, logId: string): string | null {
-  return LOG_ACTION_HINTS[locale][logId] ?? null;
+  const table = LOG_ACTION_HINTS[locale] ?? LOG_ACTION_HINTS.en;
+  return table[logId] ?? null;
 }
 
 export interface QuestProgressInput {
@@ -149,11 +195,19 @@ export function getActiveQuestStep(
 export function getQuestObjectiveLine(locale: Locale, input: QuestProgressInput): string {
   const active = getActiveQuestStep(locale, input);
   if (!active) {
-    return locale === 'zh'
-      ? '章节：本循环目标已完成——再启或追求新的 counsel 结局'
-      : 'Chapter: Cycle goals complete — restart or chase counsel endings';
+    if (locale === 'zh') {
+      return '章节：本循环目标已完成——再启或追求新的 counsel 结局';
+    }
+    if (locale === 'ja') {
+      return '章：このサイクルの目標は完了——再開するか、counsel エンディングを追え';
+    }
+    return 'Chapter: Cycle goals complete — restart or chase counsel endings';
   }
-  return locale === 'zh'
-    ? `章节：${active.title} — ${active.detail}`
-    : `Chapter: ${active.title} — ${active.detail}`;
+  if (locale === 'zh') {
+    return `章节：${active.title} — ${active.detail}`;
+  }
+  if (locale === 'ja') {
+    return `章：${active.title} — ${active.detail}`;
+  }
+  return `Chapter: ${active.title} — ${active.detail}`;
 }

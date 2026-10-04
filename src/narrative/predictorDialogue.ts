@@ -13,6 +13,17 @@ const PHASE_LABELS_ZH: Record<EraPhase, string> = {
   stable_golden: '恒纪元',
 };
 
+export const PHASE_LABELS_JA: Record<EraPhase, string> = {
+  deep_cold: '深寒',
+  thaw: '解氷',
+  scorch: '灼熱',
+  binary_chaos: '双星混沌',
+  tri_solar: '三体',
+  flying_star: '飛星',
+  eclipse_relief: '食の休息',
+  stable_golden: '恒紀元',
+};
+
 const CALIBRATION_DISTRACTORS: EraPhase[] = [
   'deep_cold',
   'thaw',
@@ -38,7 +49,24 @@ export function buildPredictorCalibrationNode(currentPhase: EraPhase, locale: Lo
     ...CALIBRATION_DISTRACTORS.filter((phase) => phase !== currentPhase),
   ]).slice(0, 4);
 
-  const labels = locale === 'zh' ? PHASE_LABELS_ZH : PHASE_LABELS;
+  const labels =
+    locale === 'zh' ? PHASE_LABELS_ZH : locale === 'ja' ? PHASE_LABELS_JA : PHASE_LABELS;
+
+  if (locale === 'ja') {
+    return {
+      id: 'calibrate',
+      speaker: '末代の予測者',
+      body:
+        '天文台は三声歌い、沈黙した。ダイヤル一枚を合わせてくれ——'
+        + '望む空ではなく、今の空を読め。頭上はどの位相だ？',
+      choices: options.map((phase) => ({
+        id: `pick_${phase}`,
+        label: labels[phase],
+        nextId: phase === currentPhase ? 'calibrate_success' : 'calibrate_fail',
+        sideEffect: phase === currentPhase ? 'predictor_calibrated' : undefined,
+      })),
+    };
+  }
 
   if (locale === 'zh') {
     return {
@@ -190,6 +218,67 @@ export const PREDICTOR_DIALOGUE_ZH: DialogueTree = {
     id: 'farewell',
     speaker: '末代预测者',
     body: '去吧。太阳又在计数了。',
+    choices: [],
+  },
+};
+
+export const PREDICTOR_DIALOGUE_JA: DialogueTree = {
+  greet: {
+    id: 'greet',
+    speaker: '末代の予測者',
+    body:
+      'また旅人か。機械は美を予測し、灰を届けた。'
+      + '空を正直に読めば、不確かさの錐を一度だけ狭められる。',
+    choices: [
+      { id: 'cal', label: '壊れたダイヤルを合わせる。', nextId: 'calibrate_dynamic' },
+      { id: 'why', label: '予測はなぜ失敗した？', nextId: 'why_fail' },
+      { id: 'bye', label: '行かなければ。', nextId: 'farewell', sideEffect: 'predictor_mark_spoke' },
+    ],
+  },
+  why_fail: {
+    id: 'why_fail',
+    speaker: '末代の予測者',
+    body:
+      '太陽を時計のように扱った。彼らは争いだ。三つの声が決して一致しない。'
+      + '数字は優雅だった。それでも飛星は一日早く来た。',
+    choices: [
+      { id: 'cal2', label: '合わせを試す。', nextId: 'calibrate_dynamic' },
+      { id: 'bye2', label: 'さらば。', nextId: 'farewell', sideEffect: 'predictor_mark_spoke' },
+    ],
+  },
+  calibrate_success: {
+    id: 'calibrate_success',
+    speaker: '末代の予測者',
+    body:
+      'ダイヤルは保つ。予報ストリップは以前ほど大胆に嘘をつかない——真理ではないが、より狭い疑いだ。'
+      + '次の文明に見上げること、そして自分の確信を疑うことを教えよ。',
+    choices: [
+      { id: 'done', label: 'ありがとう。', nextId: 'farewell', sideEffect: 'predictor_mark_spoke' },
+    ],
+  },
+  calibrate_fail: {
+    id: 'calibrate_fail',
+    speaker: '末代の予測者',
+    body:
+      '違う——空は君の当てたものではない。HUD を見よ：時代、位相、見通し。'
+      + 'ダイヤルがまだ回るうちにもう一度。',
+    choices: [
+      { id: 'retry', label: '再試行。', nextId: 'calibrate_dynamic' },
+      { id: 'leave', label: '今は去る。', nextId: 'farewell' },
+    ],
+  },
+  already_calibrated: {
+    id: 'already_calibrated',
+    speaker: '末代の予測者',
+    body: '錐はこれ以上狭められない。残りは水、掩蔽、大穴で耐える混沌だ。',
+    choices: [
+      { id: 'ok', label: '覚えている。', nextId: 'farewell' },
+    ],
+  },
+  farewell: {
+    id: 'farewell',
+    speaker: '末代の予測者',
+    body: '行け。太陽がまた数え始めた。',
     choices: [],
   },
 };

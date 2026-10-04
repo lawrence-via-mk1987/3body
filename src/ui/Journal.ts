@@ -1,4 +1,11 @@
 import type { Locale } from '../i18n/locale';
+import {
+  journalEmptyEra,
+  journalEmptyLetters,
+  journalEmptyLogs,
+  journalLettersHeading,
+  journalQuestHeading,
+} from '../i18n/uiStrings';
 import type { LogDiscovery } from '../narrative/LogDiscovery';
 import type { RunJournal } from '../narrative/RunJournal';
 import { getLogCopy, type TextLog } from '../narrative/logs';
@@ -104,7 +111,7 @@ export class Journal {
     locale: Locale,
     questProgress: QuestProgressInput,
   ): void {
-    this.questHeading.textContent = locale === 'zh' ? '本循环目标' : 'This cycle';
+    this.questHeading.textContent = journalQuestHeading(locale);
     this.questList.replaceChildren();
     for (const step of getQuestSteps(locale)) {
       const done = isQuestStepComplete(step.id, questProgress);
@@ -120,9 +127,7 @@ export class Journal {
       this.questList.append(item);
     }
 
-    this.lettersHeading.textContent = locale === 'zh'
-      ? '上一循环智者的信'
-      : 'Letters from the prior sage';
+    this.lettersHeading.textContent = journalLettersHeading(locale);
 
     const total = discovery.getAllLogs().length;
     const found = discovery.getDiscoveredCount();
@@ -132,9 +137,7 @@ export class Journal {
     if (letterIds.length === 0) {
       const empty = document.createElement('li');
       empty.className = 'journal-empty';
-      empty.textContent = locale === 'zh'
-        ? '旅程中会解锁信件。'
-        : 'Letters unlock as you survive and discover the wasteland.';
+      empty.textContent = journalEmptyLetters(locale);
       this.letterList.append(empty);
     } else {
       for (const id of letterIds) {
@@ -160,9 +163,7 @@ export class Journal {
     if (eraEntries.length === 0) {
       const empty = document.createElement('li');
       empty.className = 'journal-empty';
-      empty.textContent = locale === 'zh'
-        ? '本循环尚无天空记录。'
-        : 'No sky events recorded yet this cycle.';
+      empty.textContent = journalEmptyEra(locale);
       this.eraList.append(empty);
     } else {
       for (const entry of eraEntries) {
@@ -190,9 +191,7 @@ export class Journal {
     if (discovered.length === 0) {
       const empty = document.createElement('li');
       empty.className = 'journal-empty';
-      empty.textContent = locale === 'zh'
-        ? '尚未找回文字。在发光标记处按 F。'
-        : 'No texts recovered yet. Press F at glowing markers.';
+      empty.textContent = journalEmptyLogs(locale);
       this.logList.append(empty);
     } else {
       for (const log of discovered) {

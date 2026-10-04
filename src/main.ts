@@ -1,6 +1,7 @@
 import { NarrationDirector } from './audio/NarrationDirector';
 import { Game } from './core/Game';
-import { cinematicSeen } from './i18n/locale';
+import { cinematicSeen, loadLocale, loadMusicEnabled, saveMusicEnabled } from './i18n/locale';
+import { getMobileChromeCopy } from './i18n/uiStrings';
 import { EpilogueOverlay } from './ui/EpilogueOverlay';
 import { IntroCinematic } from './ui/IntroCinematic';
 import { LocaleMenu } from './ui/LocaleMenu';
@@ -133,30 +134,29 @@ const sheetStatus = document.querySelector<HTMLParagraphElement>('#sheet-status'
 const deviceProfile = detectDeviceProfile();
 applyDeviceProfileToDocument(deviceProfile);
 
-function applyMenuControlsHint(locale: 'en' | 'zh'): void {
+function applyMenuControlsHint(locale: import('./i18n/locale').Locale): void {
   if (deviceProfile.prefersTouchControls) {
+    const mobile = getMobileChromeCopy(locale);
     if (menuControlsHint) {
-      menuControlsHint.textContent = locale === 'zh'
-        ? '触屏：左摇杆移动 · 右侧拖动视角 · 按钮：阅读/交谈、折叠/饮水 · 日志 · 暂停'
-        : 'Touch: left stick — move · drag right side — look · buttons — read/talk, fold/drink · Journal · Pause';
+      menuControlsHint.textContent = mobile.controlsHint;
     }
     if (mobileLookHint) {
-      mobileLookHint.textContent = locale === 'zh' ? '右侧拖动视角' : 'Drag the right side to look';
+      mobileLookHint.textContent = mobile.lookHint;
     }
     if (mobileBtnSprint) {
-      mobileBtnSprint.textContent = locale === 'zh' ? '奔跑' : 'Run';
+      mobileBtnSprint.textContent = mobile.run;
     }
     if (mobileBtnJournal) {
-      mobileBtnJournal.textContent = locale === 'zh' ? '日志' : 'Journal';
+      mobileBtnJournal.textContent = mobile.journal;
     }
     if (mobileBtnPause) {
-      mobileBtnPause.textContent = locale === 'zh' ? '暂停' : 'Pause';
+      mobileBtnPause.textContent = mobile.pause;
     }
     if (mobileBtnStats) {
-      mobileBtnStats.textContent = locale === 'zh' ? '天空' : 'Sky';
+      mobileBtnStats.textContent = mobile.sky;
     }
     if (mobileHudSkyBtn) {
-      mobileHudSkyBtn.textContent = locale === 'zh' ? '天空' : 'Sky';
+      mobileHudSkyBtn.textContent = mobile.sky;
     }
   }
   if (menuControlsHint && !deviceProfile.prefersTouchControls) {
@@ -165,13 +165,15 @@ function applyMenuControlsHint(locale: 'en' | 'zh'): void {
   if (menuControlsHint && deviceProfile.prefersTouchControls) {
     const silentNote = locale === 'zh'
       ? ' iPhone：请关闭静音开关以听到环境音。'
-      : ' On iPhone, turn off silent mode for ambience.';
+      : locale === 'ja'
+        ? ' iPhone：環境音のため消音を解除してください。'
+        : ' On iPhone, turn off silent mode for ambience.';
     if (!menuControlsHint.textContent?.includes('silent') && !menuControlsHint.textContent?.includes('静音')) {
       menuControlsHint.textContent += silentNote;
     }
   }
 }
-applyMenuControlsHint('en');
+applyMenuControlsHint(loadLocale());
 const logTitle = document.querySelector<HTMLHeadingElement>('#log-title');
 const logBody = document.querySelector<HTMLParagraphElement>('#log-body');
 const worldIntroBody = document.querySelector<HTMLDivElement>('#world-intro-body');
@@ -180,10 +182,13 @@ const controlsDisclaimerSummary = document.querySelector<HTMLElement>('#controls
 const menuDisclaimer = document.querySelector<HTMLParagraphElement>('#menu-disclaimer');
 const localeEnButton = document.querySelector<HTMLButtonElement>('#locale-en');
 const localeZhButton = document.querySelector<HTMLButtonElement>('#locale-zh');
+const localeJaButton = document.querySelector<HTMLButtonElement>('#locale-ja');
 const languageLabel = document.querySelector<HTMLParagraphElement>('#language-label');
 const replayCinematicButton = document.querySelector<HTMLButtonElement>('#replay-cinematic-btn');
 const menuNarrationCheckbox = document.querySelector<HTMLInputElement>('#menu-narration-enabled');
 const menuNarrationLabel = document.querySelector<HTMLSpanElement>('#menu-narration-label');
+const menuMusicCheckbox = document.querySelector<HTMLInputElement>('#menu-music-enabled');
+const menuMusicLabel = document.querySelector<HTMLSpanElement>('#menu-music-label');
 const introCinematicOverlay = document.querySelector<HTMLDivElement>('#intro-cinematic');
 const introCinematicEyebrow = document.querySelector<HTMLParagraphElement>('#intro-cinematic-eyebrow');
 const introCinematicTitle = document.querySelector<HTMLHeadingElement>('#intro-cinematic-title');
@@ -265,10 +270,13 @@ if (
   || !menuDisclaimer
   || !localeEnButton
   || !localeZhButton
+  || !localeJaButton
   || !languageLabel
   || !replayCinematicButton
   || !menuNarrationCheckbox
   || !menuNarrationLabel
+  || !menuMusicCheckbox
+  || !menuMusicLabel
   || !introCinematicOverlay
   || !introCinematicEyebrow
   || !introCinematicTitle
@@ -288,6 +296,12 @@ function syncNarrationEnabled(enabled: boolean): void {
   narration.setEnabled(enabled);
   menuNarrationCheckbox!.checked = enabled;
   introNarrationCheckbox!.checked = enabled;
+}
+
+function syncMusicEnabled(enabled: boolean): void {
+  saveMusicEnabled(enabled);
+  menuMusicCheckbox!.checked = enabled;
+  game.setMusicEnabled(enabled);
 }
 
 function syncVolumeSliders(volume: number): void {
@@ -446,6 +460,7 @@ const showMainMenu = (): void => {
   hud.classList.add('hidden');
   freshStartConfirm!.classList.add('hidden');
   refreshCheckpointMenu();
+  void game.prepareMenuAudio();
 };
 
 const epilogue = new EpilogueOverlay(
@@ -562,11 +577,14 @@ localeMenu = new LocaleMenu(
   controlsDisclaimerSummary,
   localeEnButton,
   localeZhButton,
+  localeJaButton,
   languageLabel,
   replayCinematicButton,
   menuDisclaimer,
   menuNarrationCheckbox,
   menuNarrationLabel,
+  menuMusicCheckbox,
+  menuMusicLabel,
   (locale) => {
     introCinematic.setLocale(locale);
     applyMenuControlsHint(locale);
@@ -583,9 +601,14 @@ localeMenu = new LocaleMenu(
   (enabled) => {
     syncNarrationEnabled(enabled);
   },
+  (enabled) => {
+    syncMusicEnabled(enabled);
+  },
 );
 
 syncNarrationEnabled(menuNarrationCheckbox.checked);
+syncMusicEnabled(loadMusicEnabled());
+void game.prepareMenuAudio();
 
 const beginGame = (): void => {
   overlay.classList.add('hidden');

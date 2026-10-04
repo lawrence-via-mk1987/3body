@@ -1,3 +1,5 @@
+import type { Locale } from '../i18n/locale';
+
 const STORAGE_KEY = '3body_civilization_number';
 
 /** First fresh run after install displays as civilization 188 (Three-Body style). */
@@ -27,8 +29,8 @@ export class CivilizationCounter {
     return this.number;
   }
 
-  formatLabel(locale: 'en' | 'zh'): string {
-    if (locale === 'zh') {
+  formatLabel(locale: Locale): string {
+    if (locale === 'zh' || locale === 'ja') {
       return `文明 #${this.number}`;
     }
     return `Civilization #${this.number}`;

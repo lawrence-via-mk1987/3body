@@ -5,14 +5,52 @@ type AudioLayer = {
   cleanup?: () => void;
 };
 
+export interface AudioDirectorOptions {
+  /** Slow chaos arpeggio on desktop; phones keep pads only. */
+  musicArpeggio: boolean;
+}
+
 export class AudioDirector {
   private context: AudioContext | null = null;
   private masterGain: GainNode | null = null;
+  private musicBus: GainNode | null = null;
   private windLayer: AudioLayer | null = null;
   private solarLayer: AudioLayer | null = null;
   private stableLayer: AudioLayer | null = null;
+  private menuMusic: AudioLayer | null = null;
+  private chaosMusic: AudioLayer | null = null;
+  private stableMusic: AudioLayer | null = null;
   private started = false;
   private masterVolume = 0.55;
+  private musicEnabled = true;
+  private menuActive = false;
+  private duckMultiplier = 1;
+  private musicArpeggio = true;
+  private lastEra: EraKind = 'chaotic';
+
+  configure(options: AudioDirectorOptions): void {
+    this.musicArpeggio = options.musicArpeggio;
+  }
+
+  setMusicEnabled(enabled: boolean): void {
+    this.musicEnabled = enabled;
+    this.applyMusicLevels(this.lastEra, 'thaw', 0);
+  }
+
+  setMenuMusicActive(active: boolean): void {
+    this.menuActive = active;
+    this.applyMusicLevels(this.lastEra, 'thaw', 0);
+  }
+
+  /** Lower music under voice-over and cutscenes. */
+  setMusicDuck(duck: boolean): void {
+    this.duckMultiplier = duck ? 0.22 : 1;
+    if (!this.musicBus || !this.context) {
+      return;
+    }
+    const target = this.musicEnabled ? this.duckMultiplier : 0;
+    this.musicBus.gain.setTargetAtTime(target, this.context.currentTime, 0.35);
+  }
 
   async start(initialVolume = 0.55): Promise<void> {
     this.masterVolume = initialVolume;
@@ -25,9 +63,16 @@ export class AudioDirector {
     this.masterGain.gain.value = initialVolume;
     this.masterGain.connect(this.context.destination);
 
+    this.musicBus = this.context.createGain();
+    this.musicBus.gain.value = 1;
+    this.musicBus.connect(this.masterGain!);
+
     this.windLayer = this.createWindLayer();
     this.solarLayer = this.createSolarLayer();
     this.stableLayer = this.createStableLayer();
+    this.menuMusic = this.createMenuMusic();
+    this.chaosMusic = this.createChaosMusic();
+    this.stableMusic = this.createStableMusic();
 
     if (this.context.state === 'suspended') {
       await this.context.resume();
@@ -36,7 +81,6 @@ export class AudioDirector {
     this.started = true;
   }
 
-  /** Call synchronously from a click/touch handler; resumes Web Audio on iOS. */
   async unlockFromGesture(initialVolume = 0.55): Promise<boolean> {
     await this.start(initialVolume);
     if (!this.context || !this.masterGain) {
@@ -59,6 +103,7 @@ export class AudioDirector {
     }
 
     this.masterGain.gain.setTargetAtTime(0, this.context.currentTime, 0.4);
+    this.setMenuMusicActive(false);
   }
 
   resume(): void {
@@ -99,6 +144,9 @@ export class AudioDirector {
     this.windLayer.gain.gain.setTargetAtTime(windLevel, now, 0.8);
     this.solarLayer.gain.gain.setTargetAtTime(solarLevel, now, 0.8);
     this.stableLayer.gain.gain.setTargetAtTime(stableLevel, now, 1.2);
+
+    this.lastEra = era;
+    this.applyMusicLevels(era, phase, temperature);
   }
 
   playStableEraChime(): void {
@@ -132,6 +180,7 @@ export class AudioDirector {
     const windTarget = active ? 0.08 : 0.14;
     this.stableLayer.gain.gain.setTargetAtTime(stableTarget, now, 0.5);
     this.windLayer.gain.gain.setTargetAtTime(windTarget, now, 0.5);
+    this.setMusicDuck(active);
   }
 
   playLogDiscover(): void {
@@ -159,9 +208,51 @@ export class AudioDirector {
     this.windLayer?.cleanup?.();
     this.solarLayer?.cleanup?.();
     this.stableLayer?.cleanup?.();
+    this.menuMusic?.cleanup?.();
+    this.chaosMusic?.cleanup?.();
+    this.stableMusic?.cleanup?.();
     void this.context?.close();
     this.context = null;
     this.started = false;
+  }
+
+  private applyMusicLevels(era: EraKind, phase: EraPhase, temperature: number): void {
+    if (!this.context || !this.menuMusic || !this.chaosMusic || !this.stableMusic || !this.musicBus) {
+      return;
+    }
+
+    const now = this.context.currentTime;
+    if (!this.musicEnabled) {
+      this.menuMusic.gain.gain.setTargetAtTime(0, now, 0.5);
+      this.chaosMusic.gain.gain.setTargetAtTime(0, now, 0.5);
+      this.stableMusic.gain.gain.setTargetAtTime(0, now, 0.5);
+      this.musicBus.gain.setTargetAtTime(0, now, 0.4);
+      return;
+    }
+
+    this.musicBus.gain.setTargetAtTime(this.duckMultiplier, now, 0.35);
+
+    if (this.menuActive) {
+      this.menuMusic.gain.gain.setTargetAtTime(0.11, now, 1.2);
+      this.chaosMusic.gain.gain.setTargetAtTime(0, now, 0.8);
+      this.stableMusic.gain.gain.setTargetAtTime(0, now, 0.8);
+      return;
+    }
+
+    this.menuMusic.gain.gain.setTargetAtTime(0, now, 0.8);
+
+    const isStable = era === 'stable';
+    const isDangerous = phase === 'tri_solar' || phase === 'flying_star' || phase === 'scorch';
+    const heatBoost = Math.min(Math.max(temperature, 0) * 0.02, 0.06);
+
+    if (isStable) {
+      this.chaosMusic.gain.gain.setTargetAtTime(0, now, 1.4);
+      this.stableMusic.gain.gain.setTargetAtTime(0.13, now, 1.6);
+    } else {
+      const chaosLevel = (this.musicArpeggio ? 0.09 : 0.05) + (isDangerous ? 0.05 : 0) + heatBoost;
+      this.chaosMusic.gain.gain.setTargetAtTime(chaosLevel, now, 1.1);
+      this.stableMusic.gain.gain.setTargetAtTime(0, now, 0.9);
+    }
   }
 
   private createWindLayer(): AudioLayer {
@@ -251,6 +342,119 @@ export class AudioDirector {
     return {
       gain,
       cleanup: () => oscillators.forEach((oscillator) => oscillator.stop()),
+    };
+  }
+
+  private createMenuMusic(): AudioLayer {
+    const context = this.context!;
+    const gain = context.createGain();
+    gain.gain.value = 0;
+    gain.connect(this.musicBus!);
+
+    const oscillators: OscillatorNode[] = [];
+    [130.81, 164.81, 196.0].forEach((frequency) => {
+      const oscillator = context.createOscillator();
+      oscillator.type = 'sine';
+      oscillator.frequency.value = frequency;
+      const partial = context.createGain();
+      partial.gain.value = 0.018;
+      oscillator.connect(partial);
+      partial.connect(gain);
+      oscillator.start();
+      oscillators.push(oscillator);
+    });
+
+    const lfo = context.createOscillator();
+    lfo.frequency.value = 0.04;
+    const lfoGain = context.createGain();
+    lfoGain.gain.value = 0.012;
+    lfo.connect(lfoGain);
+    lfoGain.connect(gain.gain);
+    lfo.start();
+
+    return {
+      gain,
+      cleanup: () => {
+        oscillators.forEach((o) => o.stop());
+        lfo.stop();
+      },
+    };
+  }
+
+  private createChaosMusic(): AudioLayer {
+    const context = this.context!;
+    const gain = context.createGain();
+    gain.gain.value = 0;
+    gain.connect(this.musicBus!);
+
+    const filter = context.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 280;
+    filter.connect(gain);
+
+    const oscillators: OscillatorNode[] = [];
+    [48, 50.8, 72].forEach((frequency, index) => {
+      const oscillator = context.createOscillator();
+      oscillator.type = index === 2 && this.musicArpeggio ? 'triangle' : 'sawtooth';
+      oscillator.frequency.value = frequency;
+      const partial = context.createGain();
+      partial.gain.value = index === 2 ? 0.025 : 0.035;
+      oscillator.connect(partial);
+      partial.connect(filter);
+      oscillator.start();
+      oscillators.push(oscillator);
+    });
+
+    if (this.musicArpeggio) {
+      const lfo = context.createOscillator();
+      lfo.frequency.value = 0.11;
+      const lfoGain = context.createGain();
+      lfoGain.gain.value = 8;
+      lfo.connect(lfoGain);
+      lfoGain.connect(oscillators[2]!.frequency);
+      lfo.start();
+      oscillators.push(lfo);
+    }
+
+    return {
+      gain,
+      cleanup: () => oscillators.forEach((o) => o.stop()),
+    };
+  }
+
+  private createStableMusic(): AudioLayer {
+    const context = this.context!;
+    const gain = context.createGain();
+    gain.gain.value = 0;
+    gain.connect(this.musicBus!);
+
+    const oscillators: OscillatorNode[] = [];
+    [174.61, 220, 261.63].forEach((frequency) => {
+      const oscillator = context.createOscillator();
+      oscillator.type = 'sine';
+      oscillator.frequency.value = frequency;
+      const partial = context.createGain();
+      partial.gain.value = 0.022;
+      oscillator.connect(partial);
+      partial.connect(gain);
+      oscillator.start();
+      oscillators.push(oscillator);
+    });
+
+    const swell = context.createOscillator();
+    swell.frequency.value = 0.06;
+    const swellGain = context.createGain();
+    swellGain.gain.value = 0.015;
+    swell.connect(swellGain);
+    swellGain.connect(gain.gain);
+    swell.start();
+
+    return {
+      gain,
+      cleanup: () => {
+        oscillators.forEach((o) => o.stop());
+        swell.stop();
+      },
     };
   }
 }

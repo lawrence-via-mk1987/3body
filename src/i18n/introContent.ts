@@ -1,4 +1,5 @@
 import type { Locale } from './locale';
+import { pickLocale } from './pick';
 
 export interface CinematicCard {
   eyebrow: string;
@@ -19,9 +20,11 @@ export interface IntroUiCopy {
   cinematicNext: string;
   cinematicFinish: string;
   narrationLabel: string;
+  musicLabel: string;
   replayCinematic: string;
   localeEn: string;
   localeZh: string;
+  localeJa: string;
   languageLabel: string;
 }
 
@@ -33,10 +36,26 @@ const UI: Record<Locale, IntroUiCopy> = {
     cinematicNext: 'Continue',
     cinematicFinish: 'Enter the wasteland',
     narrationLabel: 'Spoken narration (browser voice)',
+    musicLabel: 'Procedural music',
     replayCinematic: 'Replay opening intro',
     localeEn: 'English',
     localeZh: '简体中文',
+    localeJa: '日本語',
     languageLabel: 'Language',
+  },
+  ja: {
+    worldIntroSummary: '世界設定（『三体』に着想）',
+    controlsSummary: '操作と同人免責事項',
+    cinematicSkip: 'イントロをスキップ',
+    cinematicNext: '続ける',
+    cinematicFinish: '荒原へ入る',
+    narrationLabel: '音声ナレーション（ブラウザ読み上げ）',
+    musicLabel: 'プロシージャル音楽',
+    replayCinematic: 'オープニングを再生',
+    localeEn: 'English',
+    localeZh: '简体中文',
+    localeJa: '日本語',
+    languageLabel: '言語',
   },
   zh: {
     worldIntroSummary: '世界背景（灵感来自《三体》）',
@@ -45,9 +64,11 @@ const UI: Record<Locale, IntroUiCopy> = {
     cinematicNext: '继续',
     cinematicFinish: '进入荒原',
     narrationLabel: '语音旁白（浏览器朗读）',
+    musicLabel: '程序生成背景音乐',
     replayCinematic: '重播开场',
     localeEn: 'English',
     localeZh: '简体中文',
+    localeJa: '日本語',
     languageLabel: '语言',
   },
 };
@@ -73,9 +94,19 @@ const WORLD: Record<Locale, WorldIntroCopy> = {
     youLine:
       '在本演示中，你将经历这样一个循环：跟随信标，向石碑与引路人学习，并尝试在恒纪元的天空下找到<strong>最终日志</strong>。',
   },
+  ja: {
+    summaryTitle: '世界設定（『三体』に着想）',
+    paragraphs: [
+      '<strong>三体星</strong>では三つの太陽が不安定な軌道を描く。引力は単一の恒星のように穏やかな昼夜を与えず、天候も定まらない。本デモは劉慈欣の『三体』に着想を得た同人作品であり、小説やドラマの再現ではなく、その思想から組み立てた生存スケッチである。',
+      '多くの時間は<strong>乱紀元</strong>——数分で命を奪う暑さ、続く寒さ、空に一つの太陽が致命的な<strong>飛星</strong>へ膨らむ天空。三体の生命は水を蓄え、地下に隠れ、時に<strong>脱水</strong>——体を乾いた休眠へ折りたたみ、空が再び優しくなるまで待つ。',
+      '稀に<strong>恒紀元</strong>という窓が訪れる。温度が穏やかになり、緑が戻り、修復し、先の文明が廃墟に残した記録を読む時間が生まれる。恒紀元は必ず終わる。各サイクルは、次が前より長く続くことを願う。',
+    ],
+    youLine:
+      '本デモではその一サイクルを耐える。ビーコンを辿り、石碑と案内人から学び、穏やかな空の下で<strong>最終ログ</strong>へ至ることを試みる。',
+  },
 };
 
-const CINEMATIC: Record<Locale, CinematicCard[]> = {
+const CINEMATIC: Partial<Record<Locale, CinematicCard[]>> = {
   en: [
     {
       eyebrow: 'Cycle unknown · Chaotic sky',
@@ -121,16 +152,19 @@ const CINEMATIC: Record<Locale, CinematicCard[]> = {
 export const STABLE_ERA_NARRATION: Record<Locale, string> = {
   en: 'Stable Era. The sky is kind. Breathe while you can.',
   zh: '恒纪元。天空暂时仁慈。趁此呼吸。',
+  ja: '恒紀元。空は一時優しい。今のうちに息を。',
 };
 
 export function getIntroUi(locale: Locale): IntroUiCopy {
-  return UI[locale];
+  return pickLocale(locale, UI, UI.en);
 }
 
 export function getWorldIntro(locale: Locale): WorldIntroCopy {
-  return WORLD[locale];
+  return pickLocale(locale, WORLD, WORLD.en);
 }
 
+const CINEMATIC_FALLBACK: CinematicCard[] = CINEMATIC.en ?? [];
+
 export function getCinematicCards(locale: Locale): CinematicCard[] {
-  return CINEMATIC[locale];
+  return pickLocale(locale, CINEMATIC, CINEMATIC_FALLBACK);
 }

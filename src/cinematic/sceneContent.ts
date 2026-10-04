@@ -11,6 +11,39 @@ export interface CutsceneBeat {
 }
 
 export function openingCutsceneBeats(locale: Locale): CutsceneBeat[] {
+  if (locale === 'ja') {
+    return [
+      {
+        phase: 'binary_chaos',
+        duration: 9,
+        posture: 'skyward',
+        subtitle:
+          '三体星に穏やかな朝はない。三つの太陽が引き合い、昼は約束を守らない。'
+          + '君の文明は、空を見上げ、待つことを学んだ数多の文明の一つだ。',
+      },
+      {
+        phase: 'flying_star',
+        duration: 9,
+        posture: 'upright',
+        subtitle:
+          '乱紀元では空が人を殺す。人々は大穴に折りたたまれて待つ。待つことは生きることと同じではない。',
+      },
+      {
+        phase: 'stable_golden',
+        duration: 9,
+        posture: 'tending',
+        subtitle:
+          '時に空は燃えることを忘れる。それが恒紀元だ。終わる。そこから運び出すものこそ、意味のすべてだ。',
+      },
+      {
+        phase: 'stable_golden',
+        duration: 10,
+        posture: 'upright',
+        subtitle:
+          '君は次の試みだ。歩け。彼らが残した文字を読め。見上げよ——地平線が赤くなるときは目をそらすことを学べ。',
+      },
+    ];
+  }
   if (locale === 'zh') {
     return [
       {
@@ -81,6 +114,18 @@ export function deathCutsceneBeats(locale: Locale, reason: DeathReason): Cutscen
   const phase: EraPhase =
     reason === 'cold' ? 'deep_cold' : reason === 'thirst' ? 'scorch' : 'flying_star';
   const posture: NpcPosture = reason === 'cold' ? 'upright' : reason === 'thirst' ? 'tending' : 'upright';
+
+  if (locale === 'ja') {
+    const subtitle =
+      reason === 'heat'
+        ? '太陽がこの文明を奪った。数字は関係ない。空が先に来た。'
+        : reason === 'cold'
+          ? '次の夜明けより先に夜が来た。体はまだ朝を数えているうちに凍った。'
+          : reason === 'thirst'
+            ? '空より先に水が去った。文明は火より長くは空の瓶には耐えられない。'
+            : 'このサイクルは止まった。荒原は次の文明のために場所を残している。';
+    return [{ phase, duration: 11, posture, subtitle }];
+  }
 
   if (locale === 'zh') {
     const subtitle =

@@ -1,13 +1,14 @@
-export type Locale = 'en' | 'zh';
+export type Locale = 'en' | 'zh' | 'ja';
 
 const STORAGE_KEY = '3body_locale';
 const NARRATION_KEY = '3body_narration_enabled';
+const MUSIC_KEY = '3body_music_enabled';
 
 export function loadLocale(): Locale {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw === 'zh') {
-      return 'zh';
+    if (raw === 'zh' || raw === 'ja') {
+      return raw;
     }
   } catch {
     // ignore
@@ -33,6 +34,22 @@ export function loadNarrationEnabled(): boolean {
 
 export function saveNarrationEnabled(enabled: boolean): void {
   localStorage.setItem(NARRATION_KEY, enabled ? '1' : '0');
+}
+
+export function loadMusicEnabled(): boolean {
+  try {
+    const raw = localStorage.getItem(MUSIC_KEY);
+    if (raw === '0') {
+      return false;
+    }
+  } catch {
+    // ignore
+  }
+  return true;
+}
+
+export function saveMusicEnabled(enabled: boolean): void {
+  localStorage.setItem(MUSIC_KEY, enabled ? '1' : '0');
 }
 
 export function cinematicSeen(): boolean {

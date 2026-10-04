@@ -1,5 +1,6 @@
 import type { NarrationDirector } from '../audio/NarrationDirector';
 import type { Locale } from '../i18n/locale';
+import { storyContinueLabel } from '../i18n/uiStrings';
 import type { StoryBeatCopy } from '../narrative/storyContent';
 
 export class StoryOverlay {
@@ -39,7 +40,7 @@ export class StoryOverlay {
     this.eyebrowEl.textContent = beat.eyebrow;
     this.titleEl.textContent = beat.title;
     this.bodyEl.textContent = beat.body;
-    this.continueButton.textContent = locale === 'zh' ? '继续' : 'Continue';
+    this.continueButton.textContent = storyContinueLabel(locale);
     this.overlay.classList.remove('hidden');
     if (this.narration.isEnabled()) {
       this.narration.speak(`${beat.title}. ${beat.body}`, locale, this.getVolume());

@@ -72,6 +72,38 @@ const STAGES: Record<Locale, StageCopy[]> = {
       worldNote: '路石与灯笼标出活地图。',
     },
   ],
+  ja: [
+    {
+      id: 0,
+      name: '部族の荒原',
+      blurb: '散らばる廃墟——定住はまだない。',
+      worldNote: '骨標と灰の輪だけ。',
+    },
+    {
+      id: 1,
+      name: '脱水の時代',
+      blurb: '大穴が数えられる制度となる。',
+      worldNote: '穴の足場と折りたたまれた列が増える。',
+    },
+    {
+      id: 2,
+      name: '観測教団',
+      blurb: '賢者たちが共に空を見上げる。',
+      worldNote: '天文台の足場と狼煙が現れる。',
+    },
+    {
+      id: 3,
+      name: '恒紀元の盟約',
+      blurb: '災厄のあいだに希望が植えられる。',
+      worldNote: '林の小径とキャンプの火が目を覚ます。',
+    },
+    {
+      id: 4,
+      name: '統一サイクル',
+      blurb: '道が穴、ドーム、林を結ぶ。',
+      worldNote: '道標と灯が生きた地図を示す。',
+    },
+  ],
 };
 
 export function getStageCopy(locale: Locale, stage: number): StageCopy {
@@ -87,12 +119,20 @@ export function epilogueStageMessage(
 ): string {
   const current = getStageCopy(locale, stage);
   if (nextStage === null || nextStage <= stage) {
-    return locale === 'zh'
-      ? `文明 #${cycleNumber} 完成了「${current.name}」的纪录。世界仍记住 ${current.worldNote}`
-      : `Civilization #${cycleNumber} closed the ${current.name} record. The world remembers: ${current.worldNote}`;
+    if (locale === 'zh') {
+      return `文明 #${cycleNumber} 完成了「${current.name}」的纪录。世界仍记住 ${current.worldNote}`;
+    }
+    if (locale === 'ja') {
+      return `文明 #${cycleNumber} は「${current.name}」の記録を閉じた。世界は覚えている：${current.worldNote}`;
+    }
+    return `Civilization #${cycleNumber} closed the ${current.name} record. The world remembers: ${current.worldNote}`;
   }
   const next = getStageCopy(locale, nextStage);
-  return locale === 'zh'
-    ? `下一循环（#${cycleNumber + 1}）将进入「${next.name}」——${next.worldNote}`
-    : `Next cycle (#${cycleNumber + 1}) enters ${next.name} — ${next.worldNote}`;
+  if (locale === 'zh') {
+    return `下一循环（#${cycleNumber + 1}）将进入「${next.name}」——${next.worldNote}`;
+  }
+  if (locale === 'ja') {
+    return `次のサイクル（#${cycleNumber + 1}）は「${next.name}」へ——${next.worldNote}`;
+  }
+  return `Next cycle (#${cycleNumber + 1}) enters ${next.name} — ${next.worldNote}`;
 }

@@ -126,3 +126,66 @@ export const GROVE_KEEPER_DIALOGUE_ZH: DialogueTree = {
     choices: [],
   },
 };
+
+export const GROVE_KEEPER_DIALOGUE_JA: DialogueTree = {
+  greet: {
+    id: 'greet',
+    speaker: '林の守り人',
+    body:
+      '緑を見るほど長く展開した。息を——だが空が優しさを保つと信じるな。'
+      + '池には凝露がある。石碑には先のサイクルの学びがある。',
+    choices: [
+      { id: 'water', label: '水はどこ？', nextId: 'water_hint' },
+      { id: 'final', label: '最終ログはどこ？', nextId: 'final_hint', sideEffect: 'grove_hint_logged' },
+      { id: 'hope', label: '希望は合理か？', nextId: 'hope', sideEffect: 'grove_hint_logged' },
+      { id: 'bye', label: '耐える。', nextId: 'farewell', sideEffect: 'grove_mark_spoke' },
+    ],
+  },
+  water_hint: {
+    id: 'water_hint',
+    speaker: '林の守り人',
+    body:
+      '足元のきらめく輪に従い池へ——私の南東。青い光の中に立ち R を押せ。'
+      + '恒紀元が続くうちに飲め。すぐに再び亀裂が渇く。',
+    choices: [
+      { id: 'final2', label: '最終ログは？', nextId: 'final_hint', sideEffect: 'grove_hint_logged' },
+      { id: 'back', label: 'もう一つ…', nextId: 'greet' },
+      { id: 'bye2', label: 'ありがとう。', nextId: 'farewell', sideEffect: 'grove_mark_spoke' },
+    ],
+  },
+  final_hint: {
+    id: 'final_hint',
+    speaker: '林の守り人',
+    body:
+      '二つの碑だけが穏やかな太陽の下で目を覚ます：林の碑と最終ログ——近づけば F で読める。'
+      + '最後の石は池の下流数歩、未読なら光る。',
+    choices: [
+      { id: 'water2', label: '水について思い出させて。', nextId: 'water_hint' },
+      { id: 'back2', label: 'もう一つ…', nextId: 'greet' },
+      { id: 'bye3', label: '読みに行く。', nextId: 'farewell', sideEffect: 'grove_mark_spoke' },
+    ],
+  },
+  hope: {
+    id: 'hope',
+    speaker: '林の守り人',
+    body:
+      '希望は予測ではない。規律だ——水を蓄え、穴を標し、次の旅人に言葉を残せ。'
+      + '永久のものは植えなかった。誰かが再び緑を見るかもしれない、という考えを植えた。君はその中に立っている。',
+    choices: [
+      { id: 'final3', label: '最終ログはどこ？', nextId: 'final_hint', sideEffect: 'grove_hint_logged' },
+      { id: 'bye4', label: '分かった。', nextId: 'farewell', sideEffect: 'grove_mark_spoke' },
+    ],
+  },
+  dormant: {
+    id: 'dormant',
+    speaker: '林の守り人',
+    body: '乱紀元では林は眠る——私は赭色の塵の中の形にすぎない。バナーが恒紀元と言うまで戻れ。',
+    choices: [],
+  },
+  farewell: {
+    id: 'farewell',
+    speaker: '林の守り人',
+    body: '空が優しいうちに息を止めよ。',
+    choices: [],
+  },
+};

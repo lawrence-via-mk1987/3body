@@ -22,6 +22,19 @@ export function buildEpilogueBody(
     return `${tail}\n\n${tierParagraph(locale, worldStage, cycle, stageAfterClear)}`;
   }
 
+  if (locale === 'ja') {
+    const base =
+      `文明 #${cycle} の穏やかな太陽の下で最終ログを読んだ。`
+      + '三体の空は再び変わる——希望は予測ではなく、次の乱紀元へ運ぶ規律だ。';
+    let tail = `${base} 水を蓄え、穴を標し、光るマーカーのところに次に展開する者への言葉を残せ。`;
+    if (counsel.grove === 'hope') {
+      tail = `${base} 希望を植えた：次の旅人に、緑は災厄のあいだに戻りうると思い出させよ。`;
+    } else if (counsel.grove === 'caution') {
+      tail = `${base} 慎重さを植えた：水を蓄え、穴を標し、地平線が赤くなる前に折りたたむことを学べ。`;
+    }
+    return `${tail}\n\n${tierParagraph(locale, worldStage, cycle, stageAfterClear)}`;
+  }
+
   const base =
     `You read the Final Log beneath a gentle sun in Civilization #${cycle}. `
     + 'The three-body sky will turn again — hope is not a prediction, but discipline carried forward.';
@@ -45,6 +58,9 @@ function tierParagraph(
   const transition = epilogueStageMessage(locale, cycle, worldStage, unlockedTier);
   if (locale === 'zh') {
     return `本循环时代：「${current.name}」。${transition}`;
+  }
+  if (locale === 'ja') {
+    return `このサイクルの時代：「${current.name}」。${transition}`;
   }
   return `This cycle's age: ${current.name}. ${transition}`;
 }

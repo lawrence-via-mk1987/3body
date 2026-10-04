@@ -1,7 +1,9 @@
+import { getMobileChromeCopy, mobileSheetCloseLabel } from '../i18n/uiStrings';
+
 export interface MobileHudSheetHooks {
   onOpen?: () => void;
   onClose?: () => void;
-  getLocale?: () => 'en' | 'zh';
+  getLocale?: () => import('../i18n/locale').Locale;
 }
 
 export class MobileHudSheet {
@@ -88,8 +90,8 @@ export class MobileHudSheet {
 
   private syncToggleLabels(sheetOpen: boolean): void {
     const locale = this.hooks.getLocale?.() ?? 'en';
-    const openLabel = locale === 'zh' ? '天空' : 'Sky';
-    const closeLabel = locale === 'zh' ? '关闭' : 'Close';
+    const openLabel = getMobileChromeCopy(locale).sky;
+    const closeLabel = mobileSheetCloseLabel(locale);
     const label = sheetOpen ? closeLabel : openLabel;
     for (const button of this.toggleButtons) {
       button.textContent = label;

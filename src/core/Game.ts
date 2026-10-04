@@ -30,7 +30,12 @@ import {
 import { NarrationDirector } from '../audio/NarrationDirector';
 import { voiceRoleForNpc } from '../audio/voiceProfiles';
 import { STABLE_ERA_NARRATION } from '../i18n/introContent';
-import { loadNarrationEnabled, type Locale } from '../i18n/locale';
+import {
+  formatDeathLogsLine,
+  formatWorldAgeCounsel,
+  getDeathMessageCopy,
+} from '../i18n/deathMessages';
+import { loadMusicEnabled, loadNarrationEnabled, type Locale } from '../i18n/locale';
 import { buildDeathObjective } from '../narrative/deathObjective';
 import { StoryBeatState } from '../narrative/StoryBeatState';
 import { StoryDirector } from '../narrative/StoryDirector';
@@ -167,6 +172,7 @@ export class Game {
   private npcPulseTime = 0;
   private hudCompact = false;
   private stableNarrationPlayed = false;
+  private cinematicBedActive = false;
   private readonly dialoguePanel: DialoguePanel;
   private readonly hudCompass: HudCompass;
   private readonly audio = new AudioDirector();
@@ -297,6 +303,8 @@ export class Game {
       powerPreference: 'high-performance',
     });
     this.renderQuality = resolveRenderQuality(deviceProfile);
+    this.audio.configure({ musicArpeggio: this.renderQuality.musicArpeggio });
+    this.audio.setMusicEnabled(loadMusicEnabled());
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.renderQuality.pixelRatioCap));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.shadowMap.enabled = true;
@@ -440,9 +448,11 @@ export class Game {
 
     this.logReader.onOpen(() => {
       this.player.unlock();
+      this.syncMusicDuck();
     });
 
     this.logReader.onClose(() => {
+      this.syncMusicDuck();
       this.syncMovementState();
       const afterStory = () => {
         if (this.pendingEpilogue) {
@@ -462,9 +472,11 @@ export class Game {
 
     this.journal.onOpen(() => {
       this.player.unlock();
+      this.syncMusicDuck();
     });
 
     this.journal.onClose(() => {
+      this.syncMusicDuck();
       this.syncMovementState();
       if (this.running && !this.paused && !this.logReader.isOpen()) {
         this.player.tryLock();
@@ -493,9 +505,11 @@ export class Game {
 
     this.dialoguePanel.onOpen(() => {
       this.player.unlock();
+      this.syncMusicDuck();
     });
 
     this.dialoguePanel.onClose(() => {
+      this.syncMusicDuck();
       this.syncMovementState();
       if (this.running && !this.paused && !this.logReader.isOpen() && !this.journal.isOpen()) {
         this.player.tryLock();
@@ -530,6 +544,7 @@ export class Game {
       MetaProgress.saveMasterVolume(volume);
       this.audio.setMasterVolume(volume);
       this.syncMenuVolume(volume);
+      void this.prepareMenuAudio();
     });
 
     window.addEventListener('keydown', (event) => {
@@ -641,7 +656,31 @@ export class Game {
   }
 
   setCinematicBed(active: boolean): void {
+    this.cinematicBedActive = active;
     this.audio.setCinematicBed(active);
+    this.syncMusicDuck();
+  }
+
+  setMusicEnabled(enabled: boolean): void {
+    this.audio.setMusicEnabled(enabled);
+  }
+
+  async prepareMenuAudio(): Promise<void> {
+    const volume = MetaProgress.loadMasterVolume();
+    await this.audio.start(volume);
+    this.audio.setMusicEnabled(loadMusicEnabled());
+    this.audio.setMenuMusicActive(true);
+    this.audio.setMasterVolume(volume);
+    this.audio.update('chaotic', 'thaw', 0);
+  }
+
+  private syncMusicDuck(): void {
+    const duck = this.cinematicBedActive
+      || this.logReader.isOpen()
+      || this.journal.isOpen()
+      || this.dialoguePanel.isOpen()
+      || this.storyOverlay.isOpen();
+    this.audio.setMusicDuck(duck);
   }
 
   playOpeningCutscene(onComplete: () => void): void {
@@ -733,6 +772,8 @@ export class Game {
   private async beginSession(fromCheckpoint = false): Promise<void> {
     const volume = MetaProgress.loadMasterVolume();
     await this.audio.start(volume);
+    this.audio.setMusicEnabled(loadMusicEnabled());
+    this.audio.setMenuMusicActive(false);
     this.audio.setMasterVolume(volume);
     this.syncMenuVolume(volume);
     this.audio.resume();
@@ -750,9 +791,7 @@ export class Game {
     this.runJournal.recordCounsel(this.civilizationCounter.formatLabel(this.getLocale()));
     const stageCopy = getStageCopy(this.getLocale(), this.civilizationLegacy.getStage());
     this.runJournal.recordCounsel(
-      this.getLocale() === 'zh'
-        ? `世界时代：${stageCopy.name} — ${stageCopy.worldNote}`
-        : `World age: ${stageCopy.name} — ${stageCopy.worldNote}`,
+      formatWorldAgeCounsel(this.getLocale(), stageCopy.name, stageCopy.worldNote),
     );
     this.storyDirector.resetRun();
     this.storyDirector.setPredictorCalibrated(this.forecastMeta.isCalibrated());
@@ -760,6 +799,7 @@ export class Game {
     this.storyDirector.onRunStart();
     this.lastSurvivalStatus = 'active';
     this.running = true;
+    this.syncMusicDuck();
     this.paused = false;
     this.pauseMenu.hide();
     this.journal.close();
@@ -936,6 +976,7 @@ export class Game {
   quitToMenu(): void {
     this.stop();
     this.onQuitToMenu();
+    void this.prepareMenuAudio();
   }
 
   onPointerLockLost(): void {
@@ -963,9 +1004,7 @@ export class Game {
     );
     const stageCopy = getStageCopy(this.getLocale(), this.civilizationLegacy.getStage());
     this.runJournal.recordCounsel(
-      this.getLocale() === 'zh'
-        ? `世界时代：${stageCopy.name} — ${stageCopy.worldNote}`
-        : `World age: ${stageCopy.name} — ${stageCopy.worldNote}`,
+      formatWorldAgeCounsel(this.getLocale(), stageCopy.name, stageCopy.worldNote),
     );
     this.scene.remove(this.civilizationProps.group);
     this.civilizationProps.dispose();
@@ -1486,9 +1525,11 @@ export class Game {
     }
     this.player.unlock();
     this.storyOverlay.show(beat, this.getLocale(), () => {
+      this.syncMusicDuck();
       this.syncMovementState();
       onClose?.();
     });
+    this.syncMusicDuck();
     this.syncMovementState();
   }
 
@@ -1507,12 +1548,14 @@ export class Game {
     this.player.unlock();
     this.storyOverlay.show(beat, this.getLocale(), () => {
       this.storyDirector.confirmBeatShown(id);
+      this.syncMusicDuck();
       this.syncMovementState();
       onClose?.();
       if (this.running && !this.paused && !this.logReader.isOpen()) {
         this.tryPresentPendingStoryBeat();
       }
     });
+    this.syncMusicDuck();
     this.syncMovementState();
     return true;
   }
@@ -1533,13 +1576,11 @@ export class Game {
     this.player.unlock();
     const locale = this.getLocale();
     this.overlays.deathCycle.textContent = this.civilizationCounter.formatLabel(locale);
-    this.overlays.deathMessage.textContent = this.survival.getDeathMessage();
+    this.overlays.deathMessage.textContent = getDeathMessageCopy(locale, this.survival.deathReason);
     const total = this.logDiscovery.getAllLogs().length;
     const found = this.logDiscovery.getDiscoveredCount();
-    this.overlays.deathLogs.textContent = locale === 'zh'
-      ? `文明记忆：你已知晓 ${found} / ${total} 块碑文。`
-      : `Civilization memory preserved: ${found} / ${total} logs remain known to you across cycles.`;
-    this.overlays.deathObjective.textContent = buildDeathObjective({
+    this.overlays.deathLogs.textContent = formatDeathLogsLine(locale, found, total);
+    this.overlays.deathObjective.textContent = buildDeathObjective(locale, {
       hasFinalLog: this.meta.hasSeenFinalLog(this.logDiscovery),
       forecastCalibrated: this.forecastMeta.isCalibrated(),
       logsFound: found,
