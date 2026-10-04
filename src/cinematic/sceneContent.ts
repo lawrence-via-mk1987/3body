@@ -283,8 +283,9 @@ export function victoryCutsceneBeats(locale: Locale, epilogueSpeech: string): Cu
 }
 
 /**
- * Short radio-style exchange (original copy, all locales). Themes: deep-space reply, silence, do not
- * respond again — not the TV drama script, names, or repeated “不要回答”.
+ * Short radio-style exchange (original copy, all locales). Themes: deep-space reply and silence.
+ * One iconic “不要回答” / “Do not answer” nod in the side-channel beat — not a recreated drama scene,
+ * named characters, or the show’s repeated chant.
  */
 export function radioSilenceCutsceneBeats(locale: Locale): CutsceneBeat[] {
   if (locale === 'zh') {
@@ -322,7 +323,7 @@ export function radioSilenceCutsceneBeats(locale: Locale): CutsceneBeat[] {
         duration: 8,
         posture: 'skyward',
         camera: 'sky',
-        subtitle: '【侧信道·残响】“……请勿……再次……” 然后只剩白噪声，像雪落在铁板上。',
+        subtitle: '【侧信道·残响】“……不要回答。” 仅此四字，清晰可辨；随后指令碎成白噪声，像雪落在铁板上。',
       },
     ];
   }
@@ -361,7 +362,7 @@ export function radioSilenceCutsceneBeats(locale: Locale): CutsceneBeat[] {
         duration: 8,
         posture: 'skyward',
         camera: 'sky',
-        subtitle: '【側信道】「……二度と……応答……」 その後は白い雑音だけ。鉄板に雪が落ちるよう。',
+        subtitle: '【側信道】「……回答するな。」 四字に近い一言だけはっきり；その後は指令が白い雑音に砕け、鉄板に雪が落ちるよう。',
       },
     ];
   }
@@ -399,7 +400,7 @@ export function radioSilenceCutsceneBeats(locale: Locale): CutsceneBeat[] {
       duration: 8,
       posture: 'skyward',
       camera: 'sky',
-      subtitle: '[Side channel — echo] “…do not… again…” Then white noise, like snow on iron.',
+      subtitle: '[Side channel — echo] “…Do not answer.” Four words, clear once; then the rest fractures into white noise, like snow on iron.',
     },
   ];
 }
