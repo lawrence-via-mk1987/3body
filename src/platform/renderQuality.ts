@@ -30,6 +30,8 @@ export interface RenderQuality {
   triSolarDebris: number;
   pitHerds: number;
   pitHerdMembers: number;
+  /** Light vignette + grain on desktop post stack. */
+  cinematicPost: boolean;
 }
 
 export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
@@ -55,6 +57,7 @@ export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
       triSolarDebris: 28,
       pitHerds: 1,
       pitHerdMembers: 4,
+      cinematicPost: false,
     };
   }
   if (profile.kind === 'tablet') {
@@ -79,6 +82,7 @@ export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
       triSolarDebris: 44,
       pitHerds: 2,
       pitHerdMembers: 5,
+      cinematicPost: false,
     };
   }
   return {
@@ -102,5 +106,6 @@ export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
     triSolarDebris: 64,
     pitHerds: 3,
     pitHerdMembers: 6,
+    cinematicPost: true,
   };
 }

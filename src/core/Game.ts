@@ -24,10 +24,6 @@ import type { DialogueChoice, DialogueNode, DialogueTree } from '../narrative/di
 import { ForecastMeta } from '../narrative/ForecastMeta';
 import { GroveKeeperState } from '../narrative/GroveKeeperState';
 import { PIT_REGISTRAR_DIALOGUE } from '../narrative/pitRegistrarDialogue';
-import {
-  buildPredictorCalibrationNode,
-  PREDICTOR_DIALOGUE,
-} from '../narrative/predictorDialogue';
 import { NarrationDirector } from '../audio/NarrationDirector';
 import { voiceRoleForNpc } from '../audio/voiceProfiles';
 import { STABLE_ERA_NARRATION } from '../i18n/introContent';
@@ -70,7 +66,14 @@ import { PitRegistrarState } from '../narrative/PitRegistrarState';
 import { resolveInteractionPrompt, resolveNearbyActionStatus } from '../ui/InteractionPrompt';
 import type { InputMode, InteractionContext } from '../ui/InteractionPrompt';
 import { SettlementNpcs } from '../world/SettlementNpcs';
-import { GROVE_KEEPER, LAST_PREDICTOR, PIT_REGISTRAR } from '../world/landmarks';
+import {
+  GROVE_KEEPER,
+  GROVE_LANDMARK,
+  LAST_PREDICTOR,
+  OBSERVATORY_LANDMARK,
+  PIT_LANDMARK,
+  PIT_REGISTRAR,
+} from '../world/landmarks';
 import { CaveShelter } from '../world/CaveShelter';
 import { nearestLandmarkHint } from '../world/LandmarkHints';
 import { LandmarkWayfinding } from '../world/LandmarkWayfinding';
@@ -110,6 +113,11 @@ import {
   radioSilenceCutsceneBeats,
   victoryCutsceneBeats,
 } from '../cinematic/sceneContent';
+import { getCinematicReplayUi, type MenuCutsceneReplayId } from '../i18n/cinematicReplay';
+import { formatCounselHudLine } from '../narrative/counselLabels';
+import type { DeathReason } from '../survival/SurvivalSystem';
+import { PredictorRingRitual, type PredictorRitualResult } from '../ui/PredictorRingRitual';
+import { attachPitHeroGltf } from '../world/PitHeroGltf';
 
 interface HudElements {
   root: HTMLElement;
@@ -213,6 +221,10 @@ export class Game {
   private statusOverride: string | null = null;
   private statusOverrideTimer = 0;
   private pendingEpilogue = false;
+  private pendulumHintShown = false;
+  private pitHeroLoadStarted = false;
+  private lastDeathReason: DeathReason = 'unknown';
+  private readonly predictorRitual: PredictorRingRitual;
   private readonly storyBeatState = new StoryBeatState();
   private readonly storyDirector: StoryDirector;
   private lastSurvivalStatus: 'active' | 'dehydrated' | 'dead' = 'active';
@@ -256,7 +268,9 @@ export class Game {
     mobileHud: MobileHudBundle | null,
     soundBannerRoot: HTMLElement | null,
     soundBannerButton: HTMLButtonElement | null,
+    predictorRitual: PredictorRingRitual,
   ) {
+    this.predictorRitual = predictorRitual;
     this.deviceProfile = deviceProfile;
     this.mobileControls = null;
     this.mobileHud = mobileHud;
@@ -447,6 +461,10 @@ export class Game {
     this.scene.add(this.sky.mesh);
     this.scene.add(this.terrain.mesh);
     this.scene.add(this.ruins.group);
+    if (!this.pitHeroLoadStarted) {
+      this.pitHeroLoadStarted = true;
+      void attachPitHeroGltf(this.ruins.group, this.terrain);
+    }
     this.scene.add(this.logMarkers.group);
     this.scene.add(this.stableParticles.points);
     this.scene.add(this.groveGrass.mesh);
@@ -542,6 +560,7 @@ export class Game {
             this.storyDirector.getUnlockedForJournal(),
             this.getLocale(),
             this.buildQuestProgress(),
+            this.counselChoices.getSnapshot(),
           );
         }
       });
@@ -723,20 +742,66 @@ export class Game {
       || this.logReader.isOpen()
       || this.journal.isOpen()
       || this.dialoguePanel.isOpen()
-      || this.storyOverlay.isOpen();
+      || this.storyOverlay.isOpen()
+      || this.predictorRitual.isOpen();
     this.audio.setMusicDuck(duck);
   }
 
   playOpeningCutscene(onComplete: () => void): void {
+    this.playCutsceneChain([openingCutsceneBeats(this.getLocale())], onComplete);
+  }
+
+  playMenuCutsceneReplay(id: MenuCutsceneReplayId, onComplete: () => void): void {
+    const locale = this.getLocale();
+    const chain: ReturnType<typeof openingCutsceneBeats>[] = [];
+    switch (id) {
+      case 'opening':
+        chain.push(openingCutsceneBeats(locale));
+        break;
+      case 'radio':
+        chain.push(radioSilenceCutsceneBeats(locale));
+        break;
+      case 'distant_sky':
+        chain.push(distantSkyCutsceneBeats(locale));
+        break;
+      case 'exodus':
+        chain.push(exodusContactCutsceneBeats(locale));
+        break;
+      case 'death':
+        chain.push(deathCutsceneBeats(locale, this.lastDeathReason));
+        break;
+      default:
+        break;
+    }
+    if (chain.length === 0) {
+      onComplete();
+      return;
+    }
+    this.playCutsceneChain(chain, onComplete);
+  }
+
+  private playCutsceneChain(
+    beatsList: ReturnType<typeof openingCutsceneBeats>[],
+    onComplete: () => void,
+  ): void {
     this.player.unlock();
     this.setCinematicBed(true);
     this.narration.warmUp();
     const locale = this.getLocale();
-    this.cutscene.play(openingCutsceneBeats(locale), locale, () => {
-      this.setCinematicBed(false);
-      this.player.resetToSpawn();
-      onComplete();
-    });
+    let step = 0;
+    const playStep = (): void => {
+      if (step >= beatsList.length) {
+        this.setCinematicBed(false);
+        this.player.resetToSpawn();
+        onComplete();
+        return;
+      }
+      this.cutscene.play(beatsList[step]!, locale, () => {
+        step += 1;
+        playStep();
+      });
+    };
+    playStep();
   }
 
   async startNewGame(): Promise<void> {
@@ -828,6 +893,7 @@ export class Game {
       checkpoint?.civilizationCycle,
     );
     this.lethalWarnedPhase = null;
+    this.pendulumHintShown = false;
     this.omenTimer = 0;
     this.hud.omen.classList.add('hidden');
 
@@ -989,6 +1055,7 @@ export class Game {
       this.storyDirector.getUnlockedForJournal(),
       this.getLocale(),
       this.buildQuestProgress(),
+      this.counselChoices.getSnapshot(),
     );
     this.syncMovementState();
   }
@@ -1103,11 +1170,11 @@ export class Game {
     const exodusChain: ReturnType<typeof victoryCutsceneBeats>[] = [
       victoryCutsceneBeats(locale, body),
     ];
+    if (!this.civilizationLegacy.hasSeenRadioSilenceCutscene()) {
+      exodusChain.push(radioSilenceCutsceneBeats(locale));
+      this.civilizationLegacy.markRadioSilenceCutsceneSeen();
+    }
     if (showExodus) {
-      if (!this.civilizationLegacy.hasSeenRadioSilenceCutscene()) {
-        exodusChain.push(radioSilenceCutsceneBeats(locale));
-        this.civilizationLegacy.markRadioSilenceCutsceneSeen();
-      }
       exodusChain.push(exodusContactCutsceneBeats(locale));
     }
     let epilogueStep = 0;
@@ -1259,7 +1326,21 @@ export class Game {
     this.ruins.setTriSolarHideWind(phaseNow === 'tri_solar' ? 1 : 0, delta);
     this.observatoryPendulum.setForecastCalibrated(this.forecastMeta.isCalibrated());
     this.observatoryPendulum.update(delta, this.orbital.getEraKind());
+    if (
+      !stableEra
+      && !this.pendulumHintShown
+      && this.observatoryPendulum.getChaosViolence() > 0.42
+      && this.settlementNpcs.isNearPredictor(this.anchor)
+    ) {
+      this.pendulumHintShown = true;
+      const pendulumUi = getCinematicReplayUi(this.getLocale());
+      this.runJournal.recordCounsel(pendulumUi.pendulumJournalHint);
+      this.gameToast.show(pendulumUi.pendulumToastHint);
+    }
     const hotPhase = phaseNow === 'scorch' || phaseNow === 'tri_solar' || phaseNow === 'flying_star';
+    const cinematicTarget =
+      phaseNow === 'flying_star' ? 0.58 : stableEra ? 0.42 : 0.28;
+    this.pipeline.setCinematicPost(cinematicTarget, delta);
     const coldPhase = phaseNow === 'deep_cold' || phaseNow === 'eclipse_relief';
     this.pipeline.setHeat(hotPhase ? 1 : 0, delta);
     this.coldBreath?.update(this.player.camera, coldPhase, delta);
@@ -1311,6 +1392,16 @@ export class Game {
       this.orbital.getEraKind(),
       this.orbital.getPhase(),
       this.orbital.getTemperature().value,
+    );
+    const pos = this.anchor;
+    this.audio.updateLandmarkProximity(
+      {
+        pitMeters: Math.hypot(pos.x - PIT_LANDMARK.x, pos.z - PIT_LANDMARK.z),
+        groveMeters: Math.hypot(pos.x - GROVE_LANDMARK.x, pos.z - GROVE_LANDMARK.z),
+        observatoryMeters: Math.hypot(pos.x - OBSERVATORY_LANDMARK.x, pos.z - OBSERVATORY_LANDMARK.z),
+        era: this.orbital.getEraKind(),
+      },
+      delta,
     );
 
     this.forecastStrip.render(this.orbital.getForecast());
@@ -1549,9 +1640,8 @@ export class Game {
     }
 
     if (choice.nextId === 'calibrate_dynamic') {
-      const node = buildPredictorCalibrationNode(this.orbital.getPhase(), this.getLocale());
-      this.activeDialogue = { ...PREDICTOR_DIALOGUE, calibrate: node };
-      this.dialoguePanel.open(node, voiceRoleForNpc('predictor'));
+      this.dialoguePanel.close();
+      this.startPredictorRingRitual();
       return;
     }
 
@@ -1560,6 +1650,40 @@ export class Game {
     if (next && this.activeDialogueNpc) {
       this.dialoguePanel.open(next, voiceRoleForNpc(this.activeDialogueNpc));
     }
+  }
+
+  private startPredictorRingRitual(): void {
+    const locale = this.getLocale();
+    const ui = getCinematicReplayUi(locale);
+    this.activeDialogueNpc = 'predictor';
+    this.refreshActiveDialogueTree();
+    this.predictorRitual.open(this.orbital.getPhase(), ui.predictorRitualHint, (result) => {
+      this.finishPredictorRingRitual(result);
+    });
+    this.syncMovementState();
+  }
+
+  private finishPredictorRingRitual(result: PredictorRitualResult): void {
+    this.refreshActiveDialogueTree();
+    if (result === 'cancel') {
+      const tree = buildPredictorDialogue(this.buildNpcContext());
+      this.openDialogue('predictor', tree, tree.greet);
+      return;
+    }
+    if (result === 'success') {
+      this.forecastMeta.calibrate();
+      this.orbital.refreshForecastNow();
+      this.observatoryPendulum.setForecastCalibrated(true);
+      this.runJournal.recordCounsel('Last Predictor aligned the forecast — confidence improved.');
+      this.gameToast.show('Predictor calibrated — forecast confidence improved.');
+      this.storyDirector.onPredictorCalibrated();
+    }
+    const nextId = result === 'success' ? 'calibrate_success' : 'calibrate_fail';
+    const next = this.activeDialogue[nextId];
+    if (next) {
+      this.dialoguePanel.open(next, voiceRoleForNpc('predictor'));
+    }
+    this.syncMovementState();
   }
 
   private tryReadNearbyLog(stableEra: boolean): void {
@@ -1630,6 +1754,7 @@ export class Game {
       && !this.dialoguePanel.isOpen()
       && !this.storyOverlay.isOpen()
       && !this.cutscene.isPlaying()
+      && !this.predictorRitual.isOpen()
       && this.survival.status !== 'dehydrated'
       && this.survival.status !== 'dead';
     this.player.setMovementEnabled(canMove);
@@ -1691,6 +1816,7 @@ export class Game {
     CheckpointSave.clear();
     this.audio.stop();
     this.player.unlock();
+    this.lastDeathReason = this.survival.deathReason;
     const locale = this.getLocale();
     this.overlays.deathCycle.textContent = this.civilizationCounter.formatLabel(locale);
     this.overlays.deathMessage.textContent = getDeathMessageCopy(locale, this.survival.deathReason);
@@ -1743,7 +1869,10 @@ export class Game {
     this.hud.logs.textContent = `${this.logDiscovery.getDiscoveredCount()} / ${this.logDiscovery.getAllLogs().length}`;
     const questProgress = this.buildQuestProgress();
     const objectiveLine = getQuestObjectiveLine(this.getLocale(), questProgress);
-    this.hud.chapter.textContent = objectiveLine;
+    const counselLine = formatCounselHudLine(this.getLocale(), this.counselChoices.getSnapshot());
+    this.hud.chapter.textContent = counselLine
+      ? `${objectiveLine} · ${counselLine}`
+      : objectiveLine;
 
     const temperatureSample = this.orbital.getTemperature();
     const currentPhase = this.orbital.getPhase();

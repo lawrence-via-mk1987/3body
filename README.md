@@ -57,4 +57,4 @@ Pages uses **GitHub Actions** (`build_type: workflow`). Each push to `main` runs
 - **F** — read log · **T** — talk (Registrar / Last Predictor / Grove Keeper in Stable Era) · **J** — journal · **Tab** — compact HUD · **R** — drink at grove (Stable Era) · **E** — dehydrate at pit ring · **P / Esc** — pause
 - **Beacons & HUD arrow:** amber → pit, cyan → observatory (until forecast calibrated), green → grove in Stable Era
 - **Interaction chip** appears center-bottom when you can talk, read, drink, or dehydrate
-- **Menu:** English / 简体中文 world intro · optional **browser narration** · skippable **3-card opening cinematic** on first new cycle (replay from menu)
+- **Menu:** English / 简体中文 / 日本語 · **replay opening or meta cutscenes** (radio, distant sky, exodus, death) · procedural music toggle

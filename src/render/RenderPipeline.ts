@@ -11,6 +11,38 @@ import type { RenderQuality } from '../platform/renderQuality';
  * Refracts the lower part of the frame while the ground is hot. Sits after bloom and before
  * the output pass, so the sun disks still bloom cleanly and only the air above the ground wavers.
  */
+const CinematicPostShader = {
+  uniforms: {
+    tDiffuse: { value: null as THREE.Texture | null },
+    uTime: { value: 0 },
+    uAmount: { value: 0.35 },
+  },
+  vertexShader: /* glsl */ `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: /* glsl */ `
+    uniform sampler2D tDiffuse;
+    uniform float uTime;
+    uniform float uAmount;
+    varying vec2 vUv;
+    float hash(vec2 p) {
+      return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+    }
+    void main() {
+      vec2 uv = vUv;
+      vec2 c = uv - 0.5;
+      float vig = 1.0 - dot(c, c) * 1.35 * uAmount;
+      float grain = (hash(uv * (uTime * 60.0 + 1.0)) - 0.5) * 0.035 * uAmount;
+      vec3 col = texture2D(tDiffuse, uv).rgb * vig + grain;
+      gl_FragColor = vec4(col, 1.0);
+    }
+  `,
+};
+
 const HeatHazeShader = {
   uniforms: {
     tDiffuse: { value: null as THREE.Texture | null },
@@ -47,7 +79,9 @@ export class RenderPipeline {
   private bloomPass: UnrealBloomPass | null = null;
   private heatPass: ShaderPass | null = null;
   private ssaoPass: SSAOPass | null = null;
+  private cinematicPass: ShaderPass | null = null;
   private heatAmount = 0;
+  private cinematicAmount = 0.32;
 
   constructor(
     private readonly renderer: THREE.WebGLRenderer,
@@ -55,7 +89,7 @@ export class RenderPipeline {
     camera: THREE.Camera,
     quality: RenderQuality,
   ) {
-    const useComposer = quality.bloom || quality.ssao || quality.heatHaze;
+    const useComposer = quality.bloom || quality.ssao || quality.heatHaze || quality.cinematicPost;
     if (!useComposer) {
       return;
     }
@@ -84,7 +118,22 @@ export class RenderPipeline {
       this.heatPass.enabled = false;
       this.composer.addPass(this.heatPass);
     }
+    if (quality.cinematicPost) {
+      this.cinematicPass = new ShaderPass(CinematicPostShader);
+      this.cinematicPass.uniforms.uAmount.value = this.cinematicAmount;
+      this.composer.addPass(this.cinematicPass);
+    }
     this.composer.addPass(new OutputPass());
+  }
+
+  /** Flying star / Stable Era desktop polish (0–1). */
+  setCinematicPost(target: number, delta: number): void {
+    if (!this.cinematicPass) {
+      return;
+    }
+    this.cinematicAmount = THREE.MathUtils.lerp(this.cinematicAmount, target, Math.min(delta * 1.5, 1));
+    this.cinematicPass.uniforms.uAmount.value = this.cinematicAmount;
+    this.cinematicPass.uniforms.uTime.value += delta;
   }
 
   /** 0 = still air, 1 = scorch / tri-solar / flying star. No-ops where the pass was not built. */

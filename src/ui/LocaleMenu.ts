@@ -1,4 +1,5 @@
 import { getDisclaimerHtml } from '../i18n/disclaimer';
+import { getCinematicReplayUi, type MenuCutsceneReplayId } from '../i18n/cinematicReplay';
 import { getIntroUi, getWorldIntro } from '../i18n/introContent';
 import {
   loadLocale,
@@ -9,6 +10,14 @@ import {
   saveNarrationEnabled,
   type Locale,
 } from '../i18n/locale';
+
+const REPLAY_IDS: MenuCutsceneReplayId[] = [
+  'opening',
+  'radio',
+  'distant_sky',
+  'exodus',
+  'death',
+];
 
 export class LocaleMenu {
   private locale: Locale = 'en';
@@ -22,6 +31,9 @@ export class LocaleMenu {
     private readonly localeJaButton: HTMLButtonElement,
     private readonly languageLabel: HTMLElement,
     private readonly replayCinematicButton: HTMLButtonElement,
+    private readonly replayCutsceneLabel: HTMLElement,
+    private readonly replayCutsceneSelect: HTMLSelectElement,
+    private readonly replayCutsceneButton: HTMLButtonElement,
     private readonly disclaimerEl: HTMLElement,
     private readonly menuNarrationCheckbox: HTMLInputElement,
     private readonly menuNarrationLabel: HTMLElement,
@@ -29,6 +41,7 @@ export class LocaleMenu {
     private readonly menuMusicLabel: HTMLElement,
     private readonly onLocaleChange: (locale: Locale) => void,
     private readonly onReplayCinematic: () => void,
+    private readonly onReplayCutscene: (id: MenuCutsceneReplayId) => void,
     private readonly onNarrationChange: (enabled: boolean) => void,
     private readonly onMusicChange: (enabled: boolean) => void,
   ) {
@@ -49,6 +62,13 @@ export class LocaleMenu {
 
     replayCinematicButton.addEventListener('click', () => {
       this.onReplayCinematic();
+    });
+
+    replayCutsceneButton.addEventListener('click', () => {
+      const id = replayCutsceneSelect.value as MenuCutsceneReplayId;
+      if (REPLAY_IDS.includes(id)) {
+        this.onReplayCutscene(id);
+      }
     });
 
     this.menuNarrationCheckbox.addEventListener('change', () => {
@@ -75,12 +95,15 @@ export class LocaleMenu {
 
   private apply(locale: Locale): void {
     const ui = getIntroUi(locale);
+    const replayUi = getCinematicReplayUi(locale);
     const world = getWorldIntro(locale);
 
     this.languageLabel.textContent = ui.languageLabel;
     this.worldIntroSummary.textContent = ui.worldIntroSummary;
     this.controlsSummary.textContent = ui.controlsSummary;
     this.replayCinematicButton.textContent = ui.replayCinematic;
+    this.replayCutsceneLabel.textContent = replayUi.replayCutsceneLabel;
+    this.replayCutsceneButton.textContent = replayUi.replayCutscenePlay;
     this.menuNarrationLabel.textContent = ui.narrationLabel;
     this.menuMusicLabel.textContent = ui.musicLabel;
     this.localeEnButton.textContent = ui.localeEn;
@@ -93,6 +116,13 @@ export class LocaleMenu {
     this.localeEnButton.setAttribute('aria-pressed', locale === 'en' ? 'true' : 'false');
     this.localeZhButton.setAttribute('aria-pressed', locale === 'zh' ? 'true' : 'false');
     this.localeJaButton.setAttribute('aria-pressed', locale === 'ja' ? 'true' : 'false');
+
+    for (const id of REPLAY_IDS) {
+      const option = this.replayCutsceneSelect.querySelector(`option[value="${id}"]`);
+      if (option) {
+        option.textContent = replayUi.options[id];
+      }
+    }
 
     this.worldIntroBody.replaceChildren();
     for (const html of world.paragraphs) {

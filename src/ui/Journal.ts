@@ -16,6 +16,11 @@ import {
   type QuestProgressInput,
 } from '../narrative/questContent';
 import { getStoryBeat } from '../narrative/storyContent';
+import type { CounselSnapshot } from '../narrative/CounselChoices';
+import {
+  formatCounselHudLine,
+  formatCounselJournalHeading,
+} from '../narrative/counselLabels';
 
 export class Journal {
   private openState = false;
@@ -33,6 +38,8 @@ export class Journal {
     private readonly lettersHeading: HTMLElement,
     private readonly questList: HTMLUListElement,
     private readonly questHeading: HTMLElement,
+    private readonly counselList: HTMLUListElement,
+    private readonly counselHeading: HTMLElement,
     closeButton: HTMLButtonElement,
   ) {
     closeButton.addEventListener('click', (event) => {
@@ -84,12 +91,13 @@ export class Journal {
     letterIds: readonly StoryBeatId[],
     locale: Locale,
     questProgress: QuestProgressInput,
+    counsel: CounselSnapshot,
   ): void {
     if (this.openState) {
       this.close();
       return;
     }
-    this.render(runJournal, discovery, letterIds, locale, questProgress);
+    this.render(runJournal, discovery, letterIds, locale, questProgress, counsel);
     this.overlay.classList.remove('hidden');
     this.openState = true;
     this.onOpenCallback?.();
@@ -110,7 +118,28 @@ export class Journal {
     letterIds: readonly StoryBeatId[],
     locale: Locale,
     questProgress: QuestProgressInput,
+    counsel: CounselSnapshot,
   ): void {
+    this.counselHeading.textContent = formatCounselJournalHeading(locale);
+    this.counselList.replaceChildren();
+    const counselLine = formatCounselHudLine(locale, counsel);
+    if (!counselLine) {
+      const empty = document.createElement('li');
+      empty.className = 'journal-empty';
+      empty.textContent =
+        locale === 'zh'
+          ? '尚未向登记官、预测者或守林人做出咨询选择。'
+          : locale === 'ja'
+            ? 'まだ助言を選んでいない。'
+            : 'No counsel choices yet — talk at the pit, observatory, or grove.';
+      this.counselList.append(empty);
+    } else {
+      const item = document.createElement('li');
+      item.className = 'journal-counsel-summary';
+      item.textContent = counselLine;
+      this.counselList.append(item);
+    }
+
     this.questHeading.textContent = journalQuestHeading(locale);
     this.questList.replaceChildren();
     for (const step of getQuestSteps(locale)) {

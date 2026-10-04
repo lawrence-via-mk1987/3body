@@ -1,5 +1,6 @@
 import type { EraKind, EraPhase } from '../orbital/types';
 import { masterGainFromSlider } from './audioGain';
+import { LandmarkSpatialAudio, type LandmarkProximity } from './landmarkSpatial';
 
 type AudioLayer = {
   gain: GainNode;
@@ -34,6 +35,7 @@ export class AudioDirector {
   private musicArpeggio = true;
   private lastEra: EraKind = 'chaotic';
   private chaosMusicNodes: ChaosMusicNodes | null = null;
+  private readonly landmarkSpatial = new LandmarkSpatialAudio();
 
   configure(options: AudioDirectorOptions): void {
     this.musicArpeggio = options.musicArpeggio;
@@ -80,6 +82,7 @@ export class AudioDirector {
     this.menuMusic = this.createMenuMusic();
     this.chaosMusic = this.createChaosMusic();
     this.stableMusic = this.createStableMusic();
+    this.landmarkSpatial.attach(this.context, this.masterGain);
 
     if (this.context.state === 'suspended') {
       await this.context.resume();
@@ -167,6 +170,13 @@ export class AudioDirector {
     this.lastEra = era;
     this.applyMusicLevels(era, phase, temperature);
     this.updateChaosMusicTone(phase, temperature);
+  }
+
+  updateLandmarkProximity(proximity: LandmarkProximity, delta: number): void {
+    if (!this.started) {
+      return;
+    }
+    this.landmarkSpatial.update(proximity, delta);
   }
 
   /** Short synth accent when the sky phase changes (procedural, no samples). */
@@ -290,6 +300,7 @@ export class AudioDirector {
     this.menuMusic?.cleanup?.();
     this.chaosMusic?.cleanup?.();
     this.stableMusic?.cleanup?.();
+    this.landmarkSpatial.dispose();
     void this.context?.close();
     this.context = null;
     this.started = false;

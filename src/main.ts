@@ -1,6 +1,8 @@
 import { NarrationDirector } from './audio/NarrationDirector';
 import { Game } from './core/Game';
+import { getCinematicReplayUi, type MenuCutsceneReplayId } from './i18n/cinematicReplay';
 import { cinematicSeen, loadLocale, loadMusicEnabled, saveMusicEnabled } from './i18n/locale';
+import { PredictorRingRitual } from './ui/PredictorRingRitual';
 import { getMenuTagline, getMobileChromeCopy } from './i18n/uiStrings';
 import { EpilogueOverlay } from './ui/EpilogueOverlay';
 import { IntroCinematic } from './ui/IntroCinematic';
@@ -194,6 +196,21 @@ const localeZhButton = document.querySelector<HTMLButtonElement>('#locale-zh');
 const localeJaButton = document.querySelector<HTMLButtonElement>('#locale-ja');
 const languageLabel = document.querySelector<HTMLParagraphElement>('#language-label');
 const replayCinematicButton = document.querySelector<HTMLButtonElement>('#replay-cinematic-btn');
+const replayCutsceneLabel = document.querySelector<HTMLLabelElement>('#replay-cutscene-label');
+const replayCutsceneSelect = document.querySelector<HTMLSelectElement>('#replay-cutscene-select');
+const replayCutsceneButton = document.querySelector<HTMLButtonElement>('#replay-cutscene-btn');
+const journalCounselList = document.querySelector<HTMLUListElement>('#journal-counsel-list');
+const journalCounselHeading = document.querySelector<HTMLHeadingElement>('#journal-counsel-heading');
+const predictorRitualOverlay = document.querySelector<HTMLDivElement>('#predictor-ritual-overlay');
+const predictorRitualHint = document.querySelector<HTMLParagraphElement>('#predictor-ritual-hint');
+const predictorRing1 = document.querySelector<HTMLDivElement>('#predictor-ring-1');
+const predictorRing2 = document.querySelector<HTMLDivElement>('#predictor-ring-2');
+const predictorRing3 = document.querySelector<HTMLDivElement>('#predictor-ring-3');
+const predictorRingRotate1 = document.querySelector<HTMLButtonElement>('#predictor-ring-rotate-1');
+const predictorRingRotate2 = document.querySelector<HTMLButtonElement>('#predictor-ring-rotate-2');
+const predictorRingRotate3 = document.querySelector<HTMLButtonElement>('#predictor-ring-rotate-3');
+const predictorRitualLock = document.querySelector<HTMLButtonElement>('#predictor-ritual-lock');
+const predictorRitualCancel = document.querySelector<HTMLButtonElement>('#predictor-ritual-cancel');
 const menuNarrationCheckbox = document.querySelector<HTMLInputElement>('#menu-narration-enabled');
 const menuNarrationLabel = document.querySelector<HTMLSpanElement>('#menu-narration-label');
 const menuMusicCheckbox = document.querySelector<HTMLInputElement>('#menu-music-enabled');
@@ -282,6 +299,21 @@ if (
   || !localeJaButton
   || !languageLabel
   || !replayCinematicButton
+  || !replayCutsceneLabel
+  || !replayCutsceneSelect
+  || !replayCutsceneButton
+  || !journalCounselList
+  || !journalCounselHeading
+  || !predictorRitualOverlay
+  || !predictorRitualHint
+  || !predictorRing1
+  || !predictorRing2
+  || !predictorRing3
+  || !predictorRingRotate1
+  || !predictorRingRotate2
+  || !predictorRingRotate3
+  || !predictorRitualLock
+  || !predictorRitualCancel
   || !menuNarrationCheckbox
   || !menuNarrationLabel
   || !menuMusicCheckbox
@@ -364,8 +396,24 @@ const journal = new Journal(
   journalLettersHeading!,
   journalQuestList!,
   journalQuestHeading!,
+  journalCounselList,
+  journalCounselHeading,
   journalCloseButton,
 );
+
+const predictorRitual = new PredictorRingRitual(
+  predictorRitualOverlay,
+  [predictorRing1, predictorRing2, predictorRing3],
+  predictorRitualHint,
+  predictorRitualLock,
+  predictorRitualCancel,
+  [predictorRingRotate1, predictorRingRotate2, predictorRingRotate3],
+);
+
+function applyPredictorRitualLocale(locale: ReturnType<typeof loadLocale>): void {
+  predictorRitual.applyLabels(getCinematicReplayUi(locale));
+}
+applyPredictorRitualLocale(loadLocale());
 const dialoguePanel = new DialoguePanel(
   dialogueOverlay,
   dialogueSpeaker,
@@ -557,6 +605,7 @@ game = new Game(
   mobileHudBundle,
   soundUnlockBannerEl,
   soundUnlockBtn,
+  predictorRitual,
 );
 
 introCinematic = new IntroCinematic(
@@ -595,6 +644,9 @@ localeMenu = new LocaleMenu(
   localeJaButton,
   languageLabel,
   replayCinematicButton,
+  replayCutsceneLabel,
+  replayCutsceneSelect,
+  replayCutsceneButton,
   menuDisclaimer,
   menuNarrationCheckbox,
   menuNarrationLabel,
@@ -603,6 +655,7 @@ localeMenu = new LocaleMenu(
   (locale) => {
     introCinematic.setLocale(locale);
     applyMenuControlsHint(locale);
+    applyPredictorRitualLocale(locale);
   },
   () => {
     unlockSpeechAndAudioFromGesture();
@@ -610,6 +663,15 @@ localeMenu = new LocaleMenu(
     overlay.classList.add('hidden');
     hud.classList.add('hidden');
     game.playOpeningCutscene(() => {
+      showMainMenu();
+    });
+  },
+  (id: MenuCutsceneReplayId) => {
+    unlockSpeechAndAudioFromGesture();
+    void game.ensureAudio();
+    overlay.classList.add('hidden');
+    hud.classList.add('hidden');
+    game.playMenuCutsceneReplay(id, () => {
       showMainMenu();
     });
   },

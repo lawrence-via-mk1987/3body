@@ -63,6 +63,14 @@ export class ObservatoryPendulum {
     }
     const amplitude = stable ? 0.045 : 0.62;
     this.arm.rotation.z = Math.sin(this.time * speed) * amplitude;
+    this.lastChaosViolence = stable ? 0 : Math.min(1, amplitude * speed * 0.22);
+  }
+
+  private lastChaosViolence = 0;
+
+  /** 0 in Stable Era; higher when the pendulum thrashes in chaos. */
+  getChaosViolence(): number {
+    return this.lastChaosViolence;
   }
 
   dispose(): void {

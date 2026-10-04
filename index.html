@@ -62,6 +62,17 @@
             <span id="menu-music-label">Procedural music</span>
           </label>
           <button id="replay-cinematic-btn" type="button" class="secondary-btn menu-replay-intro">Replay opening intro</button>
+          <label class="volume-label" for="replay-cutscene-select" id="replay-cutscene-label">Replay story beat</label>
+          <div class="menu-replay-row">
+            <select id="replay-cutscene-select" class="menu-replay-select">
+              <option value="opening">Opening Witness intro</option>
+              <option value="radio">Radio silence</option>
+              <option value="distant_sky">Distant sky tablet</option>
+              <option value="exodus">Exodus contact</option>
+              <option value="death">Death cutscene</option>
+            </select>
+            <button id="replay-cutscene-btn" type="button" class="secondary-btn">Play selected</button>
+          </div>
         </div>
 
         <details id="world-intro-details" class="menu-details menu-lore" open>
@@ -86,6 +97,28 @@
         <p id="story-beat-body" class="intro-cinematic-body"></p>
         <button id="story-beat-continue" type="button" class="primary-btn">Continue</button>
         <p class="intro-cinematic-hint">Enter · Space · Esc</p>
+      </div>
+    </div>
+
+    <div id="predictor-ritual-overlay" class="hidden">
+      <div class="panel predictor-ritual-panel">
+        <p class="eyebrow">Observatory</p>
+        <h2>Align the armillary rings</h2>
+        <p id="predictor-ritual-hint" class="predictor-ritual-hint"></p>
+        <div class="predictor-rings" aria-hidden="true">
+          <div id="predictor-ring-1" class="predictor-ring predictor-ring-1"></div>
+          <div id="predictor-ring-2" class="predictor-ring predictor-ring-2"></div>
+          <div id="predictor-ring-3" class="predictor-ring predictor-ring-3"></div>
+        </div>
+        <div class="predictor-ritual-actions">
+          <button id="predictor-ring-rotate-1" type="button" class="secondary-btn">Rotate ring 1</button>
+          <button id="predictor-ring-rotate-2" type="button" class="secondary-btn">Rotate ring 2</button>
+          <button id="predictor-ring-rotate-3" type="button" class="secondary-btn">Rotate ring 3</button>
+        </div>
+        <div class="predictor-ritual-actions">
+          <button id="predictor-ritual-lock" type="button" class="primary-btn">Lock alignment</button>
+          <button id="predictor-ritual-cancel" type="button" class="secondary-btn">Step back</button>
+        </div>
       </div>
     </div>
 
@@ -153,6 +186,10 @@
       <div class="panel journal-panel">
         <p class="eyebrow">Survivor journal</p>
         <h2>Cycle record</h2>
+        <section class="journal-section">
+          <h3 id="journal-counsel-heading">Civilization counsel</h3>
+          <ul id="journal-counsel-list" class="journal-list journal-counsel-list"></ul>
+        </section>
         <section class="journal-section">
           <h3 id="journal-quest-heading">This cycle</h3>
           <ul id="journal-quest-list" class="journal-list journal-quest-list"></ul>
