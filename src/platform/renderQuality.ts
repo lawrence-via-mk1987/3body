@@ -18,6 +18,8 @@ export interface RenderQuality {
   grassBlades: number;
   /** Screen-space heat distortion. Needs the desktop post stack. */
   heatHaze: boolean;
+  /** Screen-space ambient occlusion (desktop post stack). */
+  ssao: boolean;
   /** Cold-phase breath in front of the camera. Off on phones. */
   breath: boolean;
   /** Slow chaos arpeggio in procedural music beds; off on phones. */
@@ -38,6 +40,7 @@ export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
       secondarySunLights: true,
       grassBlades: 180,
       heatHaze: false,
+      ssao: false,
       breath: false,
       musicArpeggio: false,
     };
@@ -55,6 +58,7 @@ export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
       secondarySunLights: true,
       grassBlades: 360,
       heatHaze: false,
+      ssao: false,
       breath: true,
       musicArpeggio: true,
     };
@@ -71,6 +75,7 @@ export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
     secondarySunLights: true,
     grassBlades: 700,
     heatHaze: true,
+    ssao: true,
     breath: true,
     musicArpeggio: true,
   };

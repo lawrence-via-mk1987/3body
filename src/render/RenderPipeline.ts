@@ -4,6 +4,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass.js';
 import type { RenderQuality } from '../platform/renderQuality';
 
 /**
@@ -45,6 +46,7 @@ export class RenderPipeline {
   private composer: EffectComposer | null = null;
   private bloomPass: UnrealBloomPass | null = null;
   private heatPass: ShaderPass | null = null;
+  private ssaoPass: SSAOPass | null = null;
   private heatAmount = 0;
 
   constructor(
@@ -53,19 +55,29 @@ export class RenderPipeline {
     camera: THREE.Camera,
     quality: RenderQuality,
   ) {
-    if (!quality.bloom) {
+    const useComposer = quality.bloom || quality.ssao || quality.heatHaze;
+    if (!useComposer) {
       return;
     }
     const size = renderer.getSize(new THREE.Vector2());
     const target = new THREE.WebGLRenderTarget(size.x, size.y, {
       type: THREE.HalfFloatType,
-      samples: 4,
+      samples: quality.ssao ? 0 : 4,
     });
     this.composer = new EffectComposer(renderer, target);
     this.composer.setPixelRatio(renderer.getPixelRatio());
     this.composer.addPass(new RenderPass(scene, camera));
-    this.bloomPass = new UnrealBloomPass(size.clone(), 0.55, 0.45, 1.05);
-    this.composer.addPass(this.bloomPass);
+    if (quality.ssao) {
+      this.ssaoPass = new SSAOPass(scene, camera, size.x, size.y, 24);
+      this.ssaoPass.kernelRadius = 12;
+      this.ssaoPass.minDistance = 0.004;
+      this.ssaoPass.maxDistance = 0.12;
+      this.composer.addPass(this.ssaoPass);
+    }
+    if (quality.bloom) {
+      this.bloomPass = new UnrealBloomPass(size.clone(), 0.55, 0.45, 1.05);
+      this.composer.addPass(this.bloomPass);
+    }
     if (quality.heatHaze) {
       this.heatPass = new ShaderPass(HeatHazeShader);
       this.heatPass.enabled = false;
@@ -104,10 +116,12 @@ export class RenderPipeline {
     this.renderer.setSize(width, height);
     this.composer?.setSize(width, height);
     this.bloomPass?.setSize(width, height);
+    this.ssaoPass?.setSize(width, height);
   }
 
   dispose(): void {
     this.composer?.dispose();
     this.bloomPass?.dispose();
+    this.ssaoPass?.dispose();
   }
 }

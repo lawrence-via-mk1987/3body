@@ -2,12 +2,12 @@ import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 import type { ShelterZones } from '../survival/ShelterZones';
 import type { Terrain } from '../world/Terrain';
+import type { WorldColliders } from '../world/worldColliders';
 
 const MOVE_SPEED = 14;
 const SPRINT_MULTIPLIER = 1.65;
 const GRAVITY = 28;
 const PLAYER_HEIGHT = 1.7;
-const PLAYER_RADIUS = 0.35;
 /**
  * Face +Z on spawn. The spawn sits where two trenches cross; +Z looks down the open trench
  * floor towards the rising Thaw sun instead of straight into a 10 m wall.
@@ -29,11 +29,13 @@ export class FirstPersonController {
   private touchMode = false;
   private touchEngaged = false;
   private readonly virtualKeys = new Set<string>();
+  private readonly prevPosition = new THREE.Vector3();
 
   constructor(
     domElement: HTMLElement,
     private readonly terrain: Terrain,
     private readonly shelterZones: ShelterZones | null,
+    private readonly worldColliders: WorldColliders | null,
     aspect: number,
   ) {
     this.camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 800);
@@ -225,6 +227,8 @@ export class FirstPersonController {
     }
 
     const position = this.camera.position;
+    this.prevPosition.copy(position);
+
     position.x += this.velocity.x * delta;
     position.z += this.velocity.z * delta;
     position.y += this.velocity.y * delta;
@@ -233,6 +237,8 @@ export class FirstPersonController {
     position.x = THREE.MathUtils.clamp(position.x, -bounds, bounds);
     position.z = THREE.MathUtils.clamp(position.z, -bounds, bounds);
 
+    this.worldColliders?.resolveHorizontal(position, this.prevPosition);
+
     const groundHeight = this.getFloorHeight(position.x, position.z, position.y) + PLAYER_HEIGHT;
     if (position.y <= groundHeight) {
       position.y = groundHeight;
@@ -240,30 +246,6 @@ export class FirstPersonController {
       this.isGrounded = true;
     } else {
       this.isGrounded = false;
-    }
-
-    this.resolveRockCollision(position);
-  }
-
-  private resolveRockCollision(position: THREE.Vector3): void {
-    const rocks = [
-      new THREE.Vector2(-18, -8),
-      new THREE.Vector2(24, 12),
-      new THREE.Vector2(-6, 28),
-      new THREE.Vector2(36, -22),
-    ];
-
-    for (const rock of rocks) {
-      const dx = position.x - rock.x;
-      const dz = position.z - rock.y;
-      const distance = Math.hypot(dx, dz);
-      const minDistance = 2.4 + PLAYER_RADIUS;
-
-      if (distance < minDistance && distance > 0.0001) {
-        const push = (minDistance - distance) / distance;
-        position.x += dx * push;
-        position.z += dz * push;
-      }
     }
   }
 

@@ -8,6 +8,7 @@ import { CheckpointSave } from '../save/CheckpointSave';
 import { OrbitalDirector } from '../orbital/OrbitalDirector';
 import { FirstPersonController } from '../player/FirstPersonController';
 import { ShelterZones } from '../survival/ShelterZones';
+import { WorldColliders } from '../world/worldColliders';
 import { SurvivalSystem } from '../survival/SurvivalSystem';
 import { EpilogueOverlay } from '../ui/EpilogueOverlay';
 import { ForecastStrip } from '../ui/ForecastStrip';
@@ -143,6 +144,7 @@ export class Game {
   private readonly player: FirstPersonController;
   private readonly orbital: OrbitalDirector;
   private readonly shelterZones: ShelterZones;
+  private readonly worldColliders: WorldColliders;
   private readonly survival = new SurvivalSystem();
   private readonly logDiscovery = new LogDiscovery();
   private readonly runJournal = new RunJournal();
@@ -310,6 +312,7 @@ export class Game {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.12;
 
@@ -327,10 +330,12 @@ export class Game {
     });
     this.sky = new Sky();
     this.shelterZones = new ShelterZones(this.terrain);
+    this.worldColliders = new WorldColliders(this.terrain, this.shelterZones);
     this.player = new FirstPersonController(
       canvas,
       this.terrain,
       this.shelterZones,
+      this.worldColliders,
       window.innerWidth / window.innerHeight,
     );
     if (deviceProfile.prefersTouchControls) {

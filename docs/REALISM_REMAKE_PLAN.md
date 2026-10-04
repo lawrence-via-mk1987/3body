@@ -99,10 +99,10 @@ Each phase should be playable on the existing URL. Do not replace everything in 
 **Status: shipped.** Procedural dust/clay textures with normal + roughness maps (planar, not
 triplanar yet — steep trench walls still stretch a little), vertex AO/ridge tints, scattering sky
 with haze and stars, limb-darkened suns with depth-tested halos, PMREM environment light,
-per-phase exposure/bloom, desktop-only bloom, and phone/tablet/desktop quality tiers
-(`src/platform/renderQuality.ts`). Collision now follows the rendered mesh, and the player spawns
-facing the open trench. Follow-ups for later phases: triplanar mapping on steep slopes, soft
-contact shadows under props.
+per-phase exposure/bloom, desktop-only bloom + SSAO, sRGB output, and phone/tablet/desktop quality
+tiers (`src/platform/renderQuality.ts`). Collision follows the rendered mesh; `WorldColliders`
+blocks landmark walls, props, pit rims, cave bounds, and steep trench cliffs so the player cannot
+walk through geometry. Follow-ups for later phases: triplanar mapping on steep slopes.
 
 ### Phase 2 — Landmarks
 
