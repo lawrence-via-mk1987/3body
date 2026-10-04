@@ -344,6 +344,137 @@ export function distantSkyCutsceneBeats(locale: Locale): CutsceneBeat[] {
   ];
 }
 
+/**
+ * End-of-cycle homage to “contact / do not answer / exodus / probes” themes from the novels —
+ * told from Trisolaris with the Witness, not recreated drama scenes or named characters.
+ */
+export function exodusContactCutsceneBeats(locale: Locale): CutsceneBeat[] {
+  if (locale === 'zh') {
+    return [
+      {
+        phase: 'eclipse_relief',
+        duration: 12,
+        posture: 'skyward',
+        camera: 'sky',
+        subtitle:
+          '见证者：深空回传了第一行字——来自那颗苍白稳星上的声息。不是宣战，是恳求：不要再呼唤。沉默是唯一的慈悲。',
+      },
+      {
+        phase: 'deep_cold',
+        duration: 11,
+        posture: 'upright',
+        camera: 'witness',
+        subtitle:
+          '见证者：另一道声息更冷——“他们早已回答。”在我们仍与三日争辩时，决定已下：向彼方投种，也向此间回望。',
+      },
+      {
+        phase: 'flying_star',
+        duration: 13,
+        posture: 'skyward',
+        camera: 'sky',
+        phaseKeyframes: [
+          { at: 0, phase: 'flying_star' },
+          { at: 0.55, phase: 'tri_solar' },
+          { at: 1, phase: 'flying_star' },
+        ],
+        subtitle:
+          '见证者：并非一艘船——是无数尘粒，被抛向那颗不属于我们的太阳。它们不问许可。它们只问时间。',
+      },
+      {
+        phase: 'binary_chaos',
+        duration: 12,
+        posture: 'tending',
+        camera: 'orbit',
+        orbitMode: 'chaos',
+        subtitle:
+          '见证者：更小的眼已在“之间”睁开——比光更轻，比秘密更重。它们会量度你们的天空，直到三体与彼界再无距离。',
+      },
+    ];
+  }
+  if (locale === 'ja') {
+    return [
+      {
+        phase: 'eclipse_relief',
+        duration: 12,
+        posture: 'skyward',
+        camera: 'sky',
+        subtitle:
+          '証人：深空から最初の一行が返った——あの淡い固定星の声。宣戦ではなく懇請：もう呼びかけるな。沈黙だけが慈悲だ。',
+      },
+      {
+        phase: 'deep_cold',
+        duration: 11,
+        posture: 'upright',
+        camera: 'witness',
+        subtitle:
+          '証人：もう一つの声はより冷たい——「彼らはすでに答えた。」我らが三つの太陽と争う間に、彼方へ種を投げ、こちらを見返す決断は下されていた。',
+      },
+      {
+        phase: 'flying_star',
+        duration: 13,
+        posture: 'skyward',
+        camera: 'sky',
+        phaseKeyframes: [
+          { at: 0, phase: 'flying_star' },
+          { at: 0.55, phase: 'tri_solar' },
+          { at: 1, phase: 'flying_star' },
+        ],
+        subtitle:
+          '証人：船一隻ではない——無数の塵が、我らの太陽ではない星へ投げられた。許可を求めない。時間だけを求める。',
+      },
+      {
+        phase: 'binary_chaos',
+        duration: 12,
+        posture: 'tending',
+        camera: 'orbit',
+        orbitMode: 'chaos',
+        subtitle:
+          '証人：より小さな目が「あいだ」で開いた——光より軽く、秘密より重い。三体と彼界の距離がなくなるまで、あなた方の空を測り続ける。',
+      },
+    ];
+  }
+  return [
+    {
+      phase: 'eclipse_relief',
+      duration: 12,
+      posture: 'skyward',
+      camera: 'sky',
+      subtitle:
+        'Witness: the deep returned its first line — a voice from the pale fixed star. Not a declaration of war, a plea: do not call again. Silence is the only mercy.',
+    },
+    {
+      phase: 'deep_cold',
+      duration: 11,
+      posture: 'upright',
+      camera: 'witness',
+      subtitle:
+        'Witness: a colder voice followed — “They already answered.” While we still argued with three suns, the decision was made: throw seed toward that world, and look back at our own.',
+    },
+    {
+      phase: 'flying_star',
+      duration: 13,
+      posture: 'skyward',
+      camera: 'sky',
+      phaseKeyframes: [
+        { at: 0, phase: 'flying_star' },
+        { at: 0.55, phase: 'tri_solar' },
+        { at: 1, phase: 'flying_star' },
+      ],
+      subtitle:
+        'Witness: not one ship — countless motes cast toward the star that is not ours. They ask no permission. They ask only for time.',
+    },
+    {
+      phase: 'binary_chaos',
+      duration: 12,
+      posture: 'tending',
+      camera: 'orbit',
+      orbitMode: 'chaos',
+      subtitle:
+        'Witness: smaller eyes have opened in the between — lighter than light, heavier than secrets. They will measure your sky until Trisolaris and that other world have no distance left.',
+    },
+  ];
+}
+
 export function distantSkyOmen(locale: Locale): string {
   if (locale === 'zh') {
     return '预兆：远方有一颗不随三日起舞的星——存水，并记住它。';

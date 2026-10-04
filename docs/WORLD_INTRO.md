@@ -18,6 +18,7 @@
 - **Three suns** as an unpredictable clock—not a full physics simulation, but the *feeling* of orbital dread.
 - **Cycles of civilization** that rise, fall, and leave ruins and tablets for the next attempt.
 - **Hope in cycles**: suffering makes the green, quiet Stable Era feel earned.
+- **Distant contact (meta endgame)**: after several cycle clears, an optional epilogue cutscene echoes *themes* of first contact, silence, exodus, and probes — **original Witness narration from Trisolaris**, not Ye Wenjie, drama scenes, or licensed dialogue.
 
 ## What you do in *Trisolarian Survival*
 

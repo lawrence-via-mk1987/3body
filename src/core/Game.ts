@@ -105,6 +105,7 @@ import {
   deathCutsceneBeats,
   distantSkyCutsceneBeats,
   distantSkyOmen,
+  exodusContactCutsceneBeats,
   openingCutsceneBeats,
   victoryCutsceneBeats,
 } from '../cinematic/sceneContent';
@@ -1092,10 +1093,21 @@ export class Game {
       stageAfterClear,
     );
     this.setCinematicBed(true);
-    this.cutscene.play(victoryCutsceneBeats(locale, body), locale, () => {
+    const showExodus = worldStage >= 5 || stageAfterClear >= 5;
+    const finishEpilogue = (): void => {
       this.setCinematicBed(false);
       this.player.resetToSpawn();
       this.epilogue.show(body);
+    };
+    this.cutscene.play(victoryCutsceneBeats(locale, body), locale, () => {
+      if (!showExodus) {
+        finishEpilogue();
+        return;
+      }
+      this.setCinematicBed(true);
+      this.cutscene.play(exodusContactCutsceneBeats(locale), locale, () => {
+        finishEpilogue();
+      });
     });
   }
 
