@@ -110,6 +110,7 @@ export class CutsceneController {
       locale,
       pulse: 0,
       speechDone: false,
+      speechFallbackTimer: 0,
     };
     this.ensureWitness();
     this.ensureOrbitVisual();
@@ -187,6 +188,13 @@ export class CutsceneController {
         this.orbitVisual.setMode(mode);
       }
     }
+
+    window.clearTimeout(this.session!.speechFallbackTimer);
+    this.session!.speechFallbackTimer = window.setTimeout(() => {
+      if (this.session && this.session.index === index) {
+        this.session.speechDone = true;
+      }
+    }, beat.duration * 1000 + 5000);
 
     if (this.narration.isEnabled()) {
       this.narration.speak(
@@ -276,6 +284,9 @@ export class CutsceneController {
   private stopSession(cancelSpeech: boolean): void {
     if (cancelSpeech) {
       this.narration.cancel();
+    }
+    if (this.session) {
+      window.clearTimeout(this.session.speechFallbackTimer);
     }
     cancelAnimationFrame(this.animationId);
     this.session = null;
