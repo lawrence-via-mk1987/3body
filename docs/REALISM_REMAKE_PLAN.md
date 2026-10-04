@@ -117,6 +117,16 @@ Keep gameplay triggers (talk radius, drink, fold, log markers) on the old coordi
 
 **Done when:** a player can finish one cycle and recognize pit, dome, and grove without the compass.
 
+**Status: shipped (procedural, not glTF).** Rather than downloaded meshes, the landmarks are
+built from a small procedural kit (`src/world/meshKit.ts`) with shared triplanar PBR materials
+(`src/world/landmarkMaterials.ts`, `src/world/triplanar.ts`): weathered basalt, bleached
+timber, woven cloth and cured hide, all baked at load. The terrain now carves the pit into a
+stone-rimmed bowl with a flag-step ramp, pads the observatory, and sinks a pool basin into the
+grove. Each landmark merges into a few draw calls. Civilization-stage kits (cairns, cart,
+banners, scaffold, flagstones, lantern roads) use the same kit. Gameplay radii and `landmarks.ts`
+coordinates are unchanged. If authored glTF art arrives later, it slots in behind the same
+`Ruins` / `CivilizationProps` builders.
+
 ### Phase 3 — People
 
 - One humanoid glTF (or three outfit variants) with a simple idle.
