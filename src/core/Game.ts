@@ -107,6 +107,7 @@ import {
   distantSkyOmen,
   exodusContactCutsceneBeats,
   openingCutsceneBeats,
+  radioSilenceCutsceneBeats,
   victoryCutsceneBeats,
 } from '../cinematic/sceneContent';
 
@@ -1099,16 +1100,29 @@ export class Game {
       this.player.resetToSpawn();
       this.epilogue.show(body);
     };
-    this.cutscene.play(victoryCutsceneBeats(locale, body), locale, () => {
-      if (!showExodus) {
+    const exodusChain: ReturnType<typeof victoryCutsceneBeats>[] = [
+      victoryCutsceneBeats(locale, body),
+    ];
+    if (showExodus) {
+      if (!this.civilizationLegacy.hasSeenRadioSilenceCutscene()) {
+        exodusChain.push(radioSilenceCutsceneBeats(locale));
+        this.civilizationLegacy.markRadioSilenceCutsceneSeen();
+      }
+      exodusChain.push(exodusContactCutsceneBeats(locale));
+    }
+    let epilogueStep = 0;
+    const playEpilogueStep = (): void => {
+      if (epilogueStep >= exodusChain.length) {
         finishEpilogue();
         return;
       }
       this.setCinematicBed(true);
-      this.cutscene.play(exodusContactCutsceneBeats(locale), locale, () => {
-        finishEpilogue();
+      this.cutscene.play(exodusChain[epilogueStep]!, locale, () => {
+        epilogueStep += 1;
+        playEpilogueStep();
       });
-    });
+    };
+    playEpilogueStep();
   }
 
   beginAgainFromEpilogue(): void {
@@ -1579,19 +1593,30 @@ export class Game {
       this.syncMovementState();
     };
 
-    if (
-      nearbyLog.log.id === 'distant_sky'
-      && isNew
-      && !this.civilizationLegacy.hasSeenDistantSkyCutscene()
-    ) {
+    if (nearbyLog.log.id === 'distant_sky' && isNew && !this.civilizationLegacy.hasSeenDistantSkyCutscene()) {
       this.civilizationLegacy.markDistantSkyCutsceneSeen();
       this.player.unlock();
-      this.setCinematicBed(true);
-      this.cutscene.play(distantSkyCutsceneBeats(locale), locale, () => {
-        this.setCinematicBed(false);
-        this.showSkyOmen(distantSkyOmen(locale), 12);
-        openLog();
-      });
+      const cutscenes: ReturnType<typeof distantSkyCutsceneBeats>[] = [];
+      if (!this.civilizationLegacy.hasSeenRadioSilenceCutscene()) {
+        cutscenes.push(radioSilenceCutsceneBeats(locale));
+        this.civilizationLegacy.markRadioSilenceCutsceneSeen();
+      }
+      cutscenes.push(distantSkyCutsceneBeats(locale));
+      let step = 0;
+      const playStep = (): void => {
+        if (step >= cutscenes.length) {
+          this.setCinematicBed(false);
+          this.showSkyOmen(distantSkyOmen(locale), 12);
+          openLog();
+          return;
+        }
+        this.setCinematicBed(true);
+        this.cutscene.play(cutscenes[step]!, locale, () => {
+          step += 1;
+          playStep();
+        });
+      };
+      playStep();
       this.syncMovementState();
       return;
     }

@@ -282,6 +282,128 @@ export function victoryCutsceneBeats(locale: Locale, epilogueSpeech: string): Cu
   ];
 }
 
+/**
+ * Short radio-style exchange (original copy, all locales). Themes: deep-space reply, silence, do not
+ * respond again — not the TV drama script, names, or repeated “不要回答”.
+ */
+export function radioSilenceCutsceneBeats(locale: Locale): CutsceneBeat[] {
+  if (locale === 'zh') {
+    return [
+      {
+        phase: 'deep_cold',
+        duration: 9,
+        posture: 'upright',
+        camera: 'witness',
+        subtitle: '【监听·静噪】定向天线捕到不属于三日的脉动。译码器在恒纪元里一字一字吐出。',
+      },
+      {
+        phase: 'eclipse_relief',
+        duration: 10,
+        posture: 'skyward',
+        camera: 'sky',
+        subtitle: '【译入·远星】“此界亦苦三体。若你方仍向深空呼喊——”',
+      },
+      {
+        phase: 'deep_cold',
+        duration: 11,
+        posture: 'tending',
+        camera: 'witness',
+        subtitle: '【译入·远星】“请勿再次回应。回应即坐标。坐标会召来我们两界都无法收回的东西。”',
+      },
+      {
+        phase: 'eclipse_relief',
+        duration: 9,
+        posture: 'upright',
+        camera: 'witness',
+        subtitle: '见证者：有人想救两个世界，有人想点燃两个世界。我只记下指令：此刻应静默。',
+      },
+      {
+        phase: 'stable_golden',
+        duration: 8,
+        posture: 'skyward',
+        camera: 'sky',
+        subtitle: '【侧信道·残响】“……请勿……再次……” 然后只剩白噪声，像雪落在铁板上。',
+      },
+    ];
+  }
+  if (locale === 'ja') {
+    return [
+      {
+        phase: 'deep_cold',
+        duration: 9,
+        posture: 'upright',
+        camera: 'witness',
+        subtitle: '【監聴·雑音】三つの太陽のものではない脈動。恒紀元の静けさの中、復号器が一語ずつ吐く。',
+      },
+      {
+        phase: 'eclipse_relief',
+        duration: 10,
+        posture: 'skyward',
+        camera: 'sky',
+        subtitle: '【訳·遠星】「こちらの世界も三体の苦しみを知る。深空に叫び続けるなら——」',
+      },
+      {
+        phase: 'deep_cold',
+        duration: 11,
+        posture: 'tending',
+        camera: 'witness',
+        subtitle: '【訳·遠星】「二度と応答するな。応答は座標。座標は両界が取り消せないものを呼ぶ。」',
+      },
+      {
+        phase: 'eclipse_relief',
+        duration: 9,
+        posture: 'upright',
+        camera: 'witness',
+        subtitle: '証人：二つの世界を救う者も、燃やす者もいる。私は記録だけする：今は沈黙すべき時。',
+      },
+      {
+        phase: 'stable_golden',
+        duration: 8,
+        posture: 'skyward',
+        camera: 'sky',
+        subtitle: '【側信道】「……二度と……応答……」 その後は白い雑音だけ。鉄板に雪が落ちるよう。',
+      },
+    ];
+  }
+  return [
+    {
+      phase: 'deep_cold',
+      duration: 9,
+      posture: 'upright',
+      camera: 'witness',
+      subtitle: '[Monitor — static] A pulse that does not belong to our three suns. In the calm, the decoder prints one word at a time.',
+    },
+    {
+      phase: 'eclipse_relief',
+      duration: 10,
+      posture: 'skyward',
+      camera: 'sky',
+      subtitle: '[Translation — distant star] “We too know the pain of three suns. If you still shout into the deep —”',
+    },
+    {
+      phase: 'deep_cold',
+      duration: 11,
+      posture: 'tending',
+      camera: 'witness',
+      subtitle: '[Translation — distant star] “Do not answer again. An answer is a coordinate. Coordinates call what neither world can recall.”',
+    },
+    {
+      phase: 'eclipse_relief',
+      duration: 9,
+      posture: 'upright',
+      camera: 'witness',
+      subtitle: 'Witness: some would save two worlds; some would burn them. I only record the order: silence, now.',
+    },
+    {
+      phase: 'stable_golden',
+      duration: 8,
+      posture: 'skyward',
+      camera: 'sky',
+      subtitle: '[Side channel — echo] “…do not… again…” Then white noise, like snow on iron.',
+    },
+  ];
+}
+
 /** Witness + sky framing when the distant-sky tablet is read (original fan beat; not VR/drama). */
 export function distantSkyCutsceneBeats(locale: Locale): CutsceneBeat[] {
   if (locale === 'zh') {

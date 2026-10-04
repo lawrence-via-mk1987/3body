@@ -1,5 +1,6 @@
 const CYCLES_CLEARED_KEY = '3body_cycles_cleared';
 const DISTANT_SKY_CUTSCENE_KEY = '3body_distant_sky_cutscene';
+const RADIO_SILENCE_CUTSCENE_KEY = '3body_radio_silence_cutscene';
 
 /** Meta progression across epilogue completions (Final Log read). */
 export class CivilizationLegacy {
@@ -49,6 +50,22 @@ export class CivilizationLegacy {
   markDistantSkyCutsceneSeen(): void {
     try {
       localStorage.setItem(DISTANT_SKY_CUTSCENE_KEY, '1');
+    } catch {
+      // ignore
+    }
+  }
+
+  hasSeenRadioSilenceCutscene(): boolean {
+    try {
+      return localStorage.getItem(RADIO_SILENCE_CUTSCENE_KEY) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  markRadioSilenceCutsceneSeen(): void {
+    try {
+      localStorage.setItem(RADIO_SILENCE_CUTSCENE_KEY, '1');
     } catch {
       // ignore
     }
