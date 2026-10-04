@@ -147,7 +147,9 @@ function bakeSurface(size: number, anisotropy: number, normalStrength: number, s
   const albedoTex = new THREE.CanvasTexture(albedo.canvas);
   albedoTex.colorSpace = THREE.SRGBColorSpace;
   const normalTex = new THREE.CanvasTexture(normal.canvas);
+  normalTex.colorSpace = THREE.NoColorSpace;
   const roughTex = new THREE.CanvasTexture(rough.canvas);
+  roughTex.colorSpace = THREE.NoColorSpace;
   for (const tex of [albedoTex, normalTex, roughTex]) {
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.RepeatWrapping;

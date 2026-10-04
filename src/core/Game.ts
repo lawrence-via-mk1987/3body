@@ -306,6 +306,8 @@ export class Game {
       powerPreference: 'high-performance',
     });
     this.renderQuality = resolveRenderQuality(deviceProfile);
+    document.body.dataset.renderTier = this.renderQuality.tier;
+    document.body.dataset.ssao = this.renderQuality.ssao ? 'on' : 'off';
     this.audio.configure({ musicArpeggio: this.renderQuality.musicArpeggio });
     this.audio.setMusicEnabled(loadMusicEnabled());
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.renderQuality.pixelRatioCap));

@@ -69,9 +69,10 @@ export class RenderPipeline {
     this.composer.addPass(new RenderPass(scene, camera));
     if (quality.ssao) {
       this.ssaoPass = new SSAOPass(scene, camera, size.x, size.y, 24);
-      this.ssaoPass.kernelRadius = 12;
-      this.ssaoPass.minDistance = 0.004;
-      this.ssaoPass.maxDistance = 0.12;
+      this.ssaoPass.output = SSAOPass.OUTPUT.Default;
+      this.ssaoPass.kernelRadius = 14;
+      this.ssaoPass.minDistance = 0.003;
+      this.ssaoPass.maxDistance = 0.14;
       this.composer.addPass(this.ssaoPass);
     }
     if (quality.bloom) {

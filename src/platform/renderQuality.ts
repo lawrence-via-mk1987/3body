@@ -18,7 +18,7 @@ export interface RenderQuality {
   grassBlades: number;
   /** Screen-space heat distortion. Needs the desktop post stack. */
   heatHaze: boolean;
-  /** Screen-space ambient occlusion (desktop post stack). */
+  /** Screen-space ambient occlusion — desktop only; off on phone/tablet for frame rate. */
   ssao: boolean;
   /** Cold-phase breath in front of the camera. Off on phones. */
   breath: boolean;
