@@ -1,6 +1,9 @@
 # Japanese locale and music — plan
 
-**Status:** draft. No implementation until a phase is explicitly started.  
+**Status:** **in progress** (Oct 2026).  
+**Shipped on branch `cursor/japanese-procedural-music-3d2d`:** locale `ja`, menu **日本語**, TTS scoring, full `ja` narrative tables (logs, NPCs, cutscenes), procedural **menu / chaos / stable** music beds + menu toggle (`3body_music_enabled`), duck under voice UI.  
+**Still optional later:** sampled OGG loops (M3), README locale line, grep CI for stray ternaries.  
+**Related:** `docs/MUSIC_AND_VOICE_SOURCING.md` (fan demo licensing and sourcing).  
 **Goal:** add **日本語** as a third language alongside English and 简体中文, and add **music** that makes Chaotic Eras, Stable Eras, and key story moments feel different — without breaking GitHub Pages, mobile Safari, or the fan-work disclaimer.
 
 This remains unofficial fan work inspired by Liu Cixin’s ideas. Japanese copy and any music should be **original to this demo**, not lifted from the novel, drama, or licensed soundtracks.
