@@ -17,6 +17,7 @@ This project is an unofficial, non-commercial fan work. It is not affiliated wit
 - [Game Design Document](./docs/GDD.md)
 - [World intro (Three Body Problem context)](./docs/WORLD_INTRO.md)
 - [Orbital System Specification](./docs/ORBITAL_SIM.md)
+- [FF8-tier visuals & Unity fork plan](./docs/VISUAL_TARGET_FF8_UNITY_FORK.md)
 
 ## Development
 
