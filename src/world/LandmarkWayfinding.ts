@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { EraKind } from '../orbital/types';
 import type { Terrain } from './Terrain';
+import { GROVE_SITE } from './Terrain';
 import {
   GROVE_LANDMARK,
   OBSERVATORY_LANDMARK,
@@ -45,7 +46,9 @@ export class LandmarkWayfinding {
       }),
     );
     this.pitRingPulse.rotation.x = Math.PI / 2;
-    this.pitRingPulse.position.set(PIT_LANDMARK.x, pitY + 0.12, PIT_LANDMARK.z);
+    // The pit is a bowl now; the ring hovers just above the stone coping on the rim.
+    const rimY = terrain.getHeightAt(PIT_LANDMARK.x + 10.5, PIT_LANDMARK.z);
+    this.pitRingPulse.position.set(PIT_LANDMARK.x, rimY + 0.55, PIT_LANDMARK.z);
     this.group.add(this.pitRingPulse);
 
     this.grovePoolGlow = new THREE.Mesh(
@@ -58,7 +61,7 @@ export class LandmarkWayfinding {
       }),
     );
     this.grovePoolGlow.rotation.x = -Math.PI / 2;
-    this.grovePoolGlow.position.set(GROVE_LANDMARK.x, groveY + 0.2, GROVE_LANDMARK.z);
+    this.grovePoolGlow.position.set(GROVE_LANDMARK.x, GROVE_SITE.level + 0.12, GROVE_LANDMARK.z);
     this.group.add(this.grovePoolGlow);
 
     const observatoryY = terrain.getHeightAt(OBSERVATORY_LANDMARK.x, OBSERVATORY_LANDMARK.z);
@@ -161,14 +164,21 @@ export class LandmarkWayfinding {
     const pitScale = nearPit ? 1.04 + Math.sin(this.pulseTime * 4) * 0.03 : 1;
     this.pitRingPulse.scale.set(pitScale, pitScale, pitScale);
 
+    // Beacons are long-range guides; up close they would block the view of the landmark.
+    const nearFade = (beacon: THREE.Mesh) => THREE.MathUtils.smoothstep(
+      Math.hypot(playerPosition.x - beacon.position.x, playerPosition.z - beacon.position.z),
+      8,
+      28,
+    );
+
     const pitBeaconMat = this.pitBeacon.material as THREE.MeshStandardMaterial;
     pitBeaconMat.emissiveIntensity = era === 'stable' ? 0.25 : 0.55 + Math.sin(this.pulseTime * 2) * 0.15;
-    pitBeaconMat.opacity = era === 'stable' ? 0.35 : 0.78;
+    pitBeaconMat.opacity = (era === 'stable' ? 0.35 : 0.78) * nearFade(this.pitBeacon);
 
     const groveActive = era === 'stable';
     const groveBeaconMat = this.groveBeacon.material as THREE.MeshStandardMaterial;
     groveBeaconMat.emissiveIntensity = groveActive ? 0.65 + Math.sin(this.pulseTime * 2.5) * 0.2 : 0.08;
-    groveBeaconMat.opacity = groveActive ? 0.82 : 0.18;
+    groveBeaconMat.opacity = (groveActive ? 0.82 : 0.18) * nearFade(this.groveBeacon);
     this.groveBeacon.visible = true;
 
     this.trailPit.visible = era !== 'stable' || playerPosition.distanceTo(this.pitBeacon.position) > 35;
@@ -180,7 +190,7 @@ export class LandmarkWayfinding {
     obsMat.emissiveIntensity = showObservatoryGuide
       ? 0.5 + Math.sin(this.pulseTime * 2.2) * 0.18
       : 0.12;
-    obsMat.opacity = showObservatoryGuide ? 0.7 : 0.22;
+    obsMat.opacity = (showObservatoryGuide ? 0.7 : 0.22) * nearFade(this.observatoryBeacon);
 
     const glowMat = this.grovePoolGlow.material as THREE.MeshBasicMaterial;
     glowMat.opacity = grovePoolVisible

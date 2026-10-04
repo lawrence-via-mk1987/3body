@@ -159,9 +159,9 @@ export class FirstPersonController {
     this.setFacing(SPAWN_YAW);
   }
 
-  /** Yaw in radians (0 = -Z), pitch reset to level. */
-  setFacing(yaw: number): void {
-    this.camera.quaternion.setFromEuler(new THREE.Euler(0, yaw, 0, 'YXZ'));
+  /** Yaw in radians (0 = -Z); pitch in radians, positive looks up. */
+  setFacing(yaw: number, pitch = 0): void {
+    this.camera.quaternion.setFromEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'));
   }
 
   setPosition(x: number, y: number, z: number): void {

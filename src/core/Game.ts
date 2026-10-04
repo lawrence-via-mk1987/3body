@@ -72,6 +72,8 @@ import {
   wayfindingCoords,
 } from '../world/WayfindingObjective';
 import { Ruins } from '../world/Ruins';
+import { getLandmarkMaterials, type LandmarkMaterials } from '../world/landmarkMaterials';
+import { GeometryBatch, boulderGeometry, seededRandom } from '../world/meshKit';
 import { Sky } from '../world/Sky';
 import { StableEraParticles } from '../world/StableEraParticles';
 import { Terrain } from '../world/Terrain';
@@ -133,6 +135,7 @@ export class Game {
   private readonly meta = new MetaProgress();
   private readonly logMarkers: LogMarkers;
   private readonly ruins: Ruins;
+  private readonly landmarkMats: LandmarkMaterials;
   private readonly stableParticles: StableEraParticles;
   private readonly waterSource: WaterSource;
   private readonly wayfinding: LandmarkWayfinding;
@@ -372,12 +375,16 @@ export class Game {
     );
 
     this.logMarkers = new LogMarkers(this.terrain, this.logDiscovery);
-    this.ruins = new Ruins(this.terrain);
+    this.landmarkMats = getLandmarkMaterials(
+      Math.max(256, this.renderQuality.textureSize / 2),
+      Math.min(this.renderQuality.anisotropy, this.renderer.capabilities.getMaxAnisotropy()),
+    );
+    this.ruins = new Ruins(this.terrain, this.landmarkMats);
     this.stableParticles = new StableEraParticles(this.terrain);
-    this.waterSource = new WaterSource(this.terrain);
+    this.waterSource = new WaterSource();
     this.wayfinding = new LandmarkWayfinding(this.terrain);
     this.settlementNpcs = new SettlementNpcs(this.terrain);
-    this.civilizationProps = new CivilizationProps(this.terrain, this.civilizationLegacy.getStage());
+    this.civilizationProps = new CivilizationProps(this.terrain, this.civilizationLegacy.getStage(), this.landmarkMats);
     this.npcPresence = new NpcPresence(this.terrain);
 
     this.scene.add(this.sky.mesh);
@@ -391,7 +398,7 @@ export class Game {
     this.scene.add(this.civilizationProps.group);
     this.scene.add(this.npcPresence.group);
     this.addLandmarks();
-    this.scene.add(new CaveShelter(this.terrain, this.shelterZones).group);
+    this.scene.add(new CaveShelter(this.terrain, this.shelterZones, this.landmarkMats).group);
 
     this.logReader.onOpen(() => {
       this.player.unlock();
@@ -513,6 +520,10 @@ export class Game {
     if (new URLSearchParams(window.location.search).has('debug')) {
       (window as unknown as { __3body?: unknown }).__3body = {
         setPhase: (phase: EraPhase) => this.orbital.debugSetPhase(phase),
+        teleport: (x: number, z: number, yaw: number, pitch = 0) => {
+          this.player.setPosition(x, this.terrain.getHeightAt(x, z) + 1.7, z);
+          this.player.setFacing(yaw, pitch);
+        },
         position: () => this.player.getPosition().toArray(),
         groundHeight: () => this.terrain.getHeightAt(this.player.getPosition().x, this.player.getPosition().z),
         quality: this.renderQuality,
@@ -557,49 +568,34 @@ export class Game {
   }
 
   private addLandmarks(): void {
-    const rockMaterial = new THREE.MeshStandardMaterial({
-      color: '#4a3428',
-      roughness: 0.95,
-      metalness: 0.02,
-    });
-
+    // Shelter boulders: positions are shared with ShelterZones (rock shadow / boulder lee).
     const placements = [
-      { position: new THREE.Vector3(-18, 0, -8), scale: 2.4 },
-      { position: new THREE.Vector3(24, 0, 12), scale: 3.1 },
-      { position: new THREE.Vector3(-6, 0, 28), scale: 2.8 },
-      { position: new THREE.Vector3(36, 0, -22), scale: 3.6 },
+      { x: -18, z: -8, scale: 2.4 },
+      { x: 24, z: 12, scale: 3.1 },
+      { x: -6, z: 28, scale: 2.8 },
+      { x: 36, z: -22, scale: 3.6 },
     ];
-
-    for (const placement of placements) {
-      const rock = new THREE.Mesh(
-        new THREE.DodecahedronGeometry(placement.scale, 0),
-        rockMaterial,
-      );
-      rock.position.copy(placement.position);
-      rock.position.y = this.terrain.getHeightAt(placement.position.x, placement.position.z) + placement.scale * 0.45;
-      rock.castShadow = true;
-      rock.receiveShadow = true;
-      rock.rotation.set(
-        Math.random() * Math.PI,
-        Math.random() * Math.PI,
-        Math.random() * Math.PI,
-      );
-      this.scene.add(rock);
-    }
-
-    const pitY = this.terrain.getHeightAt(-42, 18);
-    const pit = new THREE.Mesh(
-      new THREE.RingGeometry(8, 11, 48),
-      new THREE.MeshStandardMaterial({
-        color: '#2a1d16',
-        roughness: 1,
-        side: THREE.DoubleSide,
-      }),
-    );
-    pit.rotation.x = -Math.PI / 2;
-    pit.position.set(-42, pitY + 0.05, 18);
-    this.scene.add(pit);
-
+    const batch = new GeometryBatch();
+    placements.forEach((placement, index) => {
+      const rnd = seededRandom(800 + index);
+      const y = this.terrain.getHeightAt(placement.x, placement.z) + placement.scale * 0.3;
+      batch.add(boulderGeometry(placement.scale, 800 + index, 3), this.landmarkMats.stone, {
+        position: [placement.x, y, placement.z],
+        rotation: [(rnd() - 0.5) * 0.3, rnd() * Math.PI, (rnd() - 0.5) * 0.3],
+      });
+      for (let i = 0; i < 4; i += 1) {
+        const a = rnd() * Math.PI * 2;
+        const r = placement.scale * (1.1 + rnd() * 0.6);
+        const size = placement.scale * (0.12 + rnd() * 0.18);
+        const px = placement.x + Math.cos(a) * r;
+        const pz = placement.z + Math.sin(a) * r;
+        batch.add(boulderGeometry(size, 820 + index * 7 + i, 1), this.landmarkMats.stone, {
+          position: [px, this.terrain.getHeightAt(px, pz) + size * 0.4, pz],
+          rotation: [0, rnd() * Math.PI, 0],
+        });
+      }
+    });
+    this.scene.add(batch.build());
   }
 
   async ensureAudio(): Promise<void> {
@@ -924,7 +920,7 @@ export class Game {
     );
     this.scene.remove(this.civilizationProps.group);
     this.civilizationProps.dispose();
-    this.civilizationProps = new CivilizationProps(this.terrain, this.civilizationLegacy.getStage());
+    this.civilizationProps = new CivilizationProps(this.terrain, this.civilizationLegacy.getStage(), this.landmarkMats);
     this.scene.add(this.civilizationProps.group);
     this.survival.reset();
     this.meta.resetRun();
@@ -1088,6 +1084,7 @@ export class Game {
     this.terrain.updateVisuals(delta);
     this.ruins.setStableEraActive(stableEra);
     this.waterSource.setStableEraActive(stableEra);
+    this.waterSource.update(delta);
     this.stableParticles.setActive(stableEra, delta);
     this.stableBanner.update(delta);
 
@@ -1663,6 +1660,8 @@ export class Game {
     this.wayfinding.dispose();
     this.settlementNpcs.dispose();
     this.civilizationProps.dispose();
+    this.ruins.dispose();
+    this.landmarkMats.dispose();
     this.npcPresence.dispose();
     this.pipeline.dispose();
     this.renderer.dispose();

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { EraKind, EraPhase } from '../orbital/types';
 import { createGroundTextures, type GroundTextureSet } from './proceduralTextures';
+import { GROVE_LANDMARK, OBSERVATORY_LANDMARK, PIT_LANDMARK } from './landmarks';
 
 const TERRAIN_SIZE = 512;
 const DEFAULT_SEGMENTS = 192;
@@ -50,16 +51,46 @@ function fbm(x: number, z: number): number {
   return value;
 }
 
-/**
- * Height field. Shared by physics (getHeightAt) and the mesh, so the shape is
- * intentionally unchanged from the prototype — only the shading is new.
- */
-function sampleHeight(worldX: number, worldZ: number): number {
+/** Flat pad radius / floor for the pit bowl, the observatory plateau and the grove. */
+export const PIT_SITE = { x: PIT_LANDMARK.x, z: PIT_LANDMARK.z, floor: -3.4, rim: -0.9, floorRadius: 5.5, rimRadius: 9.5, flatRadius: 11, blendRadius: 15 } as const;
+export const OBSERVATORY_SITE = { x: OBSERVATORY_LANDMARK.x, z: OBSERVATORY_LANDMARK.z, level: 4.2, flatRadius: 8, blendRadius: 12 } as const;
+export const GROVE_SITE = { x: GROVE_LANDMARK.x, z: GROVE_LANDMARK.z, level: 5.2, flatRadius: 9, blendRadius: 13, poolRadius: 3.6, poolDepth: 0.8 } as const;
+
+function naturalHeight(worldX: number, worldZ: number): number {
   const ridge = Math.pow(Math.abs(fbm(worldX, worldZ) - 0.5) * 2, 1.4);
   const basin = fbm(worldX * 0.5 + 40, worldZ * 0.5 - 20);
   const cracks = Math.pow(1 - Math.abs(Math.sin(worldX * 0.08) * Math.cos(worldZ * 0.07)), 6);
 
   return (ridge * 0.75 + basin * 0.45 - cracks * 0.35) * HEIGHT_SCALE;
+}
+
+/**
+ * Height field shared by physics and the mesh. The prototype's shape is kept, with three
+ * landmark sites shaped into it so the pit is a real bowl, the observatory sits on a pad and
+ * the grove has a pool basin.
+ */
+function sampleHeight(worldX: number, worldZ: number): number {
+  let h = naturalHeight(worldX, worldZ);
+  const ss = THREE.MathUtils.smoothstep;
+
+  const pitR = Math.hypot(worldX - PIT_SITE.x, worldZ - PIT_SITE.z);
+  if (pitR < PIT_SITE.blendRadius) {
+    const bowl = PIT_SITE.floor + ss(pitR, PIT_SITE.floorRadius, PIT_SITE.rimRadius) * (PIT_SITE.rim - PIT_SITE.floor);
+    h = THREE.MathUtils.lerp(h, bowl, 1 - ss(pitR, PIT_SITE.flatRadius, PIT_SITE.blendRadius));
+  }
+
+  const obsR = Math.hypot(worldX - OBSERVATORY_SITE.x, worldZ - OBSERVATORY_SITE.z);
+  if (obsR < OBSERVATORY_SITE.blendRadius) {
+    h = THREE.MathUtils.lerp(h, OBSERVATORY_SITE.level, 1 - ss(obsR, OBSERVATORY_SITE.flatRadius, OBSERVATORY_SITE.blendRadius));
+  }
+
+  const groveR = Math.hypot(worldX - GROVE_SITE.x, worldZ - GROVE_SITE.z);
+  if (groveR < GROVE_SITE.blendRadius) {
+    const pool = GROVE_SITE.level - GROVE_SITE.poolDepth * (1 - ss(groveR, GROVE_SITE.poolRadius * 0.35, GROVE_SITE.poolRadius));
+    h = THREE.MathUtils.lerp(h, pool, 1 - ss(groveR, GROVE_SITE.flatRadius, GROVE_SITE.blendRadius));
+  }
+
+  return h;
 }
 
 export interface TerrainOptions {
@@ -302,6 +333,18 @@ export class Terrain {
       return h00 + (h10 - h00) * fx + (h01 - h00) * fz;
     }
     return h11 + (h01 - h11) * (1 - fx) + (h10 - h11) * (1 - fz);
+  }
+
+  /**
+   * Lowest mesh height under a prop footprint. Props placed with this sink into a slope a
+   * little instead of floating off its downhill side.
+   */
+  getSettleHeight(worldX: number, worldZ: number, radius: number): number {
+    let min = this.getHeightAt(worldX, worldZ);
+    for (const [dx, dz] of [[radius, 0], [-radius, 0], [0, radius], [0, -radius]]) {
+      min = Math.min(min, this.getHeightAt(worldX + dx, worldZ + dz));
+    }
+    return min;
   }
 
   getBounds(): number {

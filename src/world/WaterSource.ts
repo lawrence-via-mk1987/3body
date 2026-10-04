@@ -1,34 +1,48 @@
 import * as THREE from 'three';
-import type { Terrain } from './Terrain';
+import { GROVE_SITE } from './Terrain';
 
 const GROVE_X = 28;
 const GROVE_Z = -32;
 const INTERACT_RADIUS = 9;
 
+/**
+ * The grove pool. The basin is carved into the terrain; this is the water surface that fills
+ * it during a Stable Era. Low roughness so it mirrors the sky via the scene environment map.
+ */
 export class WaterSource {
   readonly mesh: THREE.Mesh;
   private visible = false;
+  private time = 0;
+  private readonly material: THREE.MeshStandardMaterial;
 
-  constructor(terrain: Terrain) {
-    const y = terrain.getHeightAt(GROVE_X, GROVE_Z);
-    this.mesh = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.2, 1.6, 0.25, 16),
-      new THREE.MeshStandardMaterial({
-        color: '#4a88b8',
-        emissive: '#1a4060',
-        emissiveIntensity: 0.35,
-        transparent: true,
-        opacity: 0.85,
-        roughness: 0.2,
-      }),
-    );
-    this.mesh.position.set(GROVE_X, y + 0.15, GROVE_Z);
+  constructor() {
+    this.material = new THREE.MeshStandardMaterial({
+      color: '#1e4048',
+      roughness: 0.06,
+      metalness: 0.05,
+      transparent: true,
+      opacity: 0.9,
+      envMapIntensity: 1.6,
+    });
+    this.mesh = new THREE.Mesh(new THREE.CircleGeometry(GROVE_SITE.poolRadius - 0.25, 48), this.material);
+    this.mesh.rotation.x = -Math.PI / 2;
+    this.mesh.position.set(GROVE_X, GROVE_SITE.level - GROVE_SITE.poolDepth * 0.45, GROVE_Z);
+    this.mesh.receiveShadow = true;
     this.mesh.visible = false;
   }
 
   setStableEraActive(active: boolean): void {
     this.visible = active;
     this.mesh.visible = active;
+  }
+
+  /** Gentle breathing of the surface tone so still water does not read as a painted disc. */
+  update(delta: number): void {
+    if (!this.visible) {
+      return;
+    }
+    this.time += delta;
+    this.material.roughness = 0.06 + Math.sin(this.time * 0.8) * 0.02;
   }
 
   isNear(position: THREE.Vector3): boolean {
