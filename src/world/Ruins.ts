@@ -26,6 +26,12 @@ export const GROVE_TREES = [
   { x: 31.5, z: -35.5, seed: 12 },
   { x: 34, z: -28, seed: 13 },
   { x: 27.5, z: -36.5, seed: 14 },
+  { x: 22, z: -34, seed: 15 },
+  { x: 36, z: -33, seed: 16 },
+  { x: 29, z: -26, seed: 17 },
+  { x: 26, z: -38, seed: 18 },
+  { x: 33, z: -27, seed: 19 },
+  { x: 21.5, z: -32.5, seed: 20 },
 ] as const;
 
 /**

@@ -84,6 +84,9 @@ import { GeometryBatch, boulderGeometry, seededRandom } from '../world/meshKit';
 import { Sky } from '../world/Sky';
 import { StableEraParticles } from '../world/StableEraParticles';
 import { GroveGrass } from '../world/GroveGrass';
+import { StableScatterTrees } from '../world/StableScatterTrees';
+import { StableWildlife } from '../world/StableWildlife';
+import { TriSolarLevitation } from '../world/TriSolarLevitation';
 import { ColdBreath } from '../world/ColdBreath';
 import { Terrain } from '../world/Terrain';
 import { WATER_REFILL_AMOUNT, WaterSource } from '../world/WaterSource';
@@ -154,6 +157,9 @@ export class Game {
   private readonly landmarkMats: LandmarkMaterials;
   private readonly stableParticles: StableEraParticles;
   private readonly groveGrass: GroveGrass;
+  private readonly stableScatterTrees: StableScatterTrees;
+  private readonly stableWildlife: StableWildlife;
+  private readonly triSolarLevitation: TriSolarLevitation;
   private readonly coldBreath: ColdBreath | null;
   private readonly waterSource: WaterSource;
   private readonly wayfinding: LandmarkWayfinding;
@@ -410,6 +416,13 @@ export class Game {
     this.ruins = new Ruins(this.terrain, this.landmarkMats);
     this.stableParticles = new StableEraParticles(this.terrain);
     this.groveGrass = new GroveGrass(this.terrain, this.renderQuality.grassBlades);
+    this.stableScatterTrees = new StableScatterTrees(this.terrain, this.renderQuality.stableScatterTrees);
+    this.stableWildlife = new StableWildlife(
+      this.terrain,
+      this.renderQuality.wildlifeCritters,
+      this.renderQuality.wildlifeBirds,
+    );
+    this.triSolarLevitation = new TriSolarLevitation(this.terrain, this.renderQuality.triSolarDebris);
     this.coldBreath = this.renderQuality.breath ? new ColdBreath() : null;
     this.waterSource = new WaterSource();
     this.wayfinding = new LandmarkWayfinding(this.terrain);
@@ -423,6 +436,9 @@ export class Game {
     this.scene.add(this.logMarkers.group);
     this.scene.add(this.stableParticles.points);
     this.scene.add(this.groveGrass.mesh);
+    this.scene.add(this.stableScatterTrees.group);
+    this.scene.add(this.stableWildlife.group);
+    this.scene.add(this.triSolarLevitation.group);
     if (this.coldBreath) {
       this.scene.add(this.coldBreath.points);
     }
@@ -1193,7 +1209,10 @@ export class Game {
     this.waterSource.update(delta);
     this.stableParticles.setActive(stableEra, delta);
     this.groveGrass.setStable(stableEra, delta);
+    this.stableScatterTrees.setStable(stableEra, delta);
+    this.stableWildlife.setStable(stableEra, delta, this.terrain);
     const phaseNow = this.orbital.getPhase();
+    this.triSolarLevitation.update(delta, phaseNow);
     const hotPhase = phaseNow === 'scorch' || phaseNow === 'tri_solar' || phaseNow === 'flying_star';
     const coldPhase = phaseNow === 'deep_cold' || phaseNow === 'eclipse_relief';
     this.pipeline.setHeat(hotPhase ? 1 : 0, delta);
@@ -1311,11 +1330,13 @@ export class Game {
         this.showSkyOmen(omen, 9);
       }
       if (phase === 'tri_solar') {
-        this.gameToast.show(
-          this.getLocale() === 'zh'
-            ? '三体时刻：三颗太阳同时在天空 — 极热，快找掩体。'
-            : 'Tri-Solar: all three suns share the sky — brutal heat; find shelter.',
-        );
+        const locale = this.getLocale();
+        const copy = {
+          en: 'Tri-Solar: three suns, brutal heat — loose stone and hide drift upward.',
+          zh: '三体时刻：三颗太阳同天 — 极热；碎石与皮屑离地飘起，快找掩体。',
+          ja: '三体：三つの太陽 — 灼熱。石や皮が地面から浮き上がる。掩蔽を。',
+        };
+        this.gameToast.show(copy[locale] ?? copy.en);
       } else if (phase === 'flying_star') {
         this.gameToast.show(
           this.getLocale() === 'zh'
@@ -1685,7 +1706,7 @@ export class Game {
     if (this.statusOverride) {
       statusMessage = this.statusOverride;
     } else if (stableEra && !nearWater && !interactionCtx.nearGroveKeeper && !nearbyLog) {
-      statusMessage = 'Stable Era — the grove lives. Follow the green trail to the pool or final tablets.';
+      statusMessage = 'Stable Era — scrub trees, skitters, and birds return. Follow the green trail to the pool or final tablets.';
     } else if (this.journal.isOpen()) {
       statusMessage = inputMode === 'touch'
         ? (this.getLocale() === 'zh' ? '正在查看循环日志。' : 'Reviewing your cycle journal.')
@@ -1783,6 +1804,9 @@ export class Game {
     this.audio.dispose();
     this.stableParticles.dispose();
     this.groveGrass.dispose();
+    this.stableScatterTrees.dispose();
+    this.stableWildlife.dispose();
+    this.triSolarLevitation.dispose();
     this.coldBreath?.dispose();
     this.orbital.dispose();
     this.terrain.dispose();

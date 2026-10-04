@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 const GROVE_CENTER = new THREE.Vector3(28, 0, -32);
-const PARTICLE_COUNT = 120;
+const PARTICLE_COUNT = 180;
 
 export class StableEraParticles {
   readonly points: THREE.Points;
@@ -15,7 +15,7 @@ export class StableEraParticles {
 
     for (let i = 0; i < PARTICLE_COUNT; i += 1) {
       const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 12;
+      const radius = 4 + Math.random() * 20;
       const x = GROVE_CENTER.x + Math.cos(angle) * radius;
       const z = GROVE_CENTER.z + Math.sin(angle) * radius;
       const y = terrain.getHeightAt(x, z) + 0.5 + Math.random() * 4;

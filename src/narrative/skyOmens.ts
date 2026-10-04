@@ -6,19 +6,19 @@ const PHASE_OMENS: Record<Locale, Partial<Record<EraPhase, string>>> = {
   en: {
     flying_star: 'Omen: the horizon remembers red.',
     scorch: 'Omen: the air will boil what water you keep.',
-    tri_solar: 'Omen: three suns argue — find shadow soon.',
+    tri_solar: 'Omen: three suns argue — stone and hide lift from the ground.',
     deep_cold: 'Omen: the night wants your heat.',
   },
   zh: {
     flying_star: '预兆：地平线记得红色。',
     scorch: '预兆：空气即将夺走你存下的每一滴水。',
-    tri_solar: '预兆：三颗太阳在争辩——快找阴影。',
+    tri_solar: '预兆：三颗太阳在争辩——石与皮屑离地飘起。',
     deep_cold: '预兆：夜要吸走你最后一点热。',
   },
   ja: {
     flying_star: '前兆：地平線は赤を覚えている。',
     scorch: '前兆：空気が蓄えた水をすべて奪い去る。',
-    tri_solar: '前兆：三つの太陽が争う——早く影を探せ。',
+    tri_solar: '前兆：三つの太陽が争う——石と皮が地面から浮く。',
     deep_cold: '前兆：夜が最後の熱を欲している。',
   },
 };

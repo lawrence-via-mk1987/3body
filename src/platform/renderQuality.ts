@@ -24,6 +24,10 @@ export interface RenderQuality {
   breath: boolean;
   /** Slow chaos arpeggio in procedural music beds; off on phones. */
   musicArpeggio: boolean;
+  stableScatterTrees: number;
+  wildlifeCritters: number;
+  wildlifeBirds: number;
+  triSolarDebris: number;
 }
 
 export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
@@ -43,6 +47,10 @@ export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
       ssao: false,
       breath: false,
       musicArpeggio: false,
+      stableScatterTrees: 14,
+      wildlifeCritters: 5,
+      wildlifeBirds: 8,
+      triSolarDebris: 28,
     };
   }
   if (profile.kind === 'tablet') {
@@ -61,6 +69,10 @@ export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
       ssao: false,
       breath: true,
       musicArpeggio: true,
+      stableScatterTrees: 22,
+      wildlifeCritters: 8,
+      wildlifeBirds: 14,
+      triSolarDebris: 44,
     };
   }
   return {
@@ -78,5 +90,9 @@ export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
     ssao: true,
     breath: true,
     musicArpeggio: true,
+    stableScatterTrees: 32,
+    wildlifeCritters: 12,
+    wildlifeBirds: 22,
+    triSolarDebris: 64,
   };
 }
