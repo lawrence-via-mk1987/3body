@@ -328,6 +328,9 @@ const logReader = new LogReader(
   logNextButton,
   logNavIndicator,
   logActionHint!,
+  narration,
+  () => localeMenu!.getLocale(),
+  () => MetaProgress.loadMasterVolume(),
 );
 const journal = new Journal(
   journalOverlay,
@@ -346,6 +349,9 @@ const dialoguePanel = new DialoguePanel(
   dialogueBody,
   dialogueChoices,
   dialogueCloseButton,
+  narration,
+  () => localeMenu!.getLocale(),
+  () => MetaProgress.loadMasterVolume(),
 );
 const hudCompass = new HudCompass(hudWayfinder, hudWayfinderLabel, hudWayfinderArrow);
 const stableEraBanner = new StableEraBanner(stableBanner, stableBannerSubtitle);
@@ -567,9 +573,10 @@ localeMenu = new LocaleMenu(
   },
   () => {
     void game.ensureAudio().then(() => {
-      introCinematic.setNarrationVolume(MetaProgress.loadMasterVolume());
-      introCinematic.play(localeMenu.getLocale(), () => {
-        game.setCinematicBed(false);
+      overlay.classList.add('hidden');
+      hud.classList.add('hidden');
+      game.playOpeningCutscene(() => {
+        showMainMenu();
       });
     });
   },
@@ -603,7 +610,10 @@ async function launchGame(
   introCinematic.setNarrationVolume(MetaProgress.loadMasterVolume());
 
   if (showCinematic) {
-    introCinematic.play(localeMenu.getLocale(), () => {
+    beginGame();
+    hud?.classList.add('hidden');
+    game.playOpeningCutscene(() => {
+      hud?.classList.remove('hidden');
       void startSession();
     });
     return;

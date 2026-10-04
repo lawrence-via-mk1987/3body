@@ -1,5 +1,6 @@
 import type { Locale } from '../i18n/locale';
-import { narrationProsody, pickPreferredVoice } from './voiceSelection';
+import { prosodyForRole, type VoiceRole } from './voiceProfiles';
+import { pickPreferredVoice } from './voiceSelection';
 
 export class NarrationDirector {
   private enabled = true;
@@ -8,6 +9,7 @@ export class NarrationDirector {
   private queue: string[] = [];
   private queueLocale: Locale = 'en';
   private queueVolume = 0.55;
+  private queueRole: VoiceRole = 'narrator';
   private gapTimer = 0;
 
   constructor() {
@@ -37,12 +39,17 @@ export class NarrationDirector {
     this.queue = [];
   }
 
-  speak(text: string, locale: Locale, volume = 0.55): void {
-    this.speakParts([text], locale, volume);
+  speak(text: string, locale: Locale, volume = 0.55, role: VoiceRole = 'narrator'): void {
+    this.speakParts([text], locale, volume, role);
   }
 
   /** Speaks each part in order with a short pause (e.g. title, then body). */
-  speakParts(parts: string[], locale: Locale, volume = 0.55): void {
+  speakParts(
+    parts: string[],
+    locale: Locale,
+    volume = 0.55,
+    role: VoiceRole = 'narrator',
+  ): void {
     if (!this.enabled || typeof window === 'undefined' || !window.speechSynthesis) {
       return;
     }
@@ -51,6 +58,7 @@ export class NarrationDirector {
     this.queue = parts.map((part) => part.trim()).filter(Boolean);
     this.queueLocale = locale;
     this.queueVolume = volume;
+    this.queueRole = role;
     this.refreshVoices();
     this.speakNextQueued();
   }
@@ -85,7 +93,7 @@ export class NarrationDirector {
 
     const text = this.queue.shift()!;
     const synth = window.speechSynthesis;
-    const prosody = narrationProsody(this.queueLocale);
+    const prosody = prosodyForRole(this.queueLocale, this.queueRole);
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = prosody.lang;
     utterance.rate = prosody.rate;

@@ -1,7 +1,7 @@
 import type { Locale } from '../i18n/locale';
 import type { LogDiscovery } from '../narrative/LogDiscovery';
 import type { RunJournal } from '../narrative/RunJournal';
-import type { TextLog } from '../narrative/logs';
+import { getLogCopy, type TextLog } from '../narrative/logs';
 import type { StoryBeatId } from '../narrative/storyContent';
 import {
   getQuestSteps,
@@ -200,7 +200,7 @@ export class Journal {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'journal-log-btn';
-        button.textContent = log.title;
+        button.textContent = getLogCopy(log, locale).title;
         button.addEventListener('click', () => {
           this.onReadLogCallback?.(log, discovered);
         });

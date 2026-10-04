@@ -258,6 +258,38 @@ h1 {
   font-style: italic;
 }
 
+.cutscene-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 31;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 1.25rem 1.5rem 2rem;
+  background: linear-gradient(to top, rgba(5, 4, 3, 0.82) 0%, rgba(5, 4, 3, 0.08) 45%, transparent 70%);
+}
+
+.cutscene-overlay.hidden {
+  display: none;
+}
+
+.cutscene-subtitle {
+  max-width: 42rem;
+  margin: 0 auto 1rem;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: #f0e4d4;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.85);
+  pointer-events: auto;
+}
+
+.cutscene-skip {
+  align-self: center;
+  pointer-events: auto;
+  margin-bottom: 0;
+}
+
 #intro-cinematic {
   position: fixed;
   inset: 0;

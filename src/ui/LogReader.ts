@@ -1,4 +1,6 @@
-import type { TextLog } from '../narrative/logs';
+import type { NarrationDirector } from '../audio/NarrationDirector';
+import type { Locale } from '../i18n/locale';
+import { getLogCopy, type TextLog } from '../narrative/logs';
 
 export class LogReader {
   private openState = false;
@@ -17,6 +19,9 @@ export class LogReader {
     private readonly nextButton: HTMLButtonElement,
     private readonly navIndicator: HTMLElement,
     private readonly actionHint: HTMLElement,
+    private readonly narration: NarrationDirector,
+    private readonly getLocale: () => Locale,
+    private readonly getVolume: () => number,
   ) {
     closeButton.addEventListener('click', (event) => {
       event.stopPropagation();
@@ -87,8 +92,10 @@ export class LogReader {
   }
 
   private showLog(log: TextLog, actionHint: string | null): void {
-    this.title.textContent = log.title;
-    this.body.textContent = log.body;
+    const locale = this.getLocale();
+    const copy = getLogCopy(log, locale);
+    this.title.textContent = copy.title;
+    this.body.textContent = copy.body;
     if (actionHint) {
       this.actionHint.textContent = actionHint;
       this.actionHint.classList.remove('hidden');
@@ -96,12 +103,19 @@ export class LogReader {
       this.actionHint.textContent = '';
       this.actionHint.classList.add('hidden');
     }
+    this.narration.speakParts(
+      [copy.title, copy.body],
+      locale,
+      this.getVolume(),
+      'tablet',
+    );
   }
 
   private step(delta: number): void {
     if (!this.gallery || this.gallery.length < 2) {
       return;
     }
+    this.narration.cancel();
     this.galleryIndex = (this.galleryIndex + delta + this.gallery.length) % this.gallery.length;
     this.showLog(this.gallery[this.galleryIndex]!, null);
     this.updateNavigation();
@@ -122,6 +136,7 @@ export class LogReader {
     if (!this.openState) {
       return;
     }
+    this.narration.cancel();
     this.overlay.classList.add('hidden');
     this.openState = false;
     this.gallery = null;

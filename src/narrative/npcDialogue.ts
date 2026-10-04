@@ -2,9 +2,9 @@ import type { Locale } from '../i18n/locale';
 import type { DialogueNode, DialogueTree } from './dialogueTypes';
 import type { CounselSnapshot } from './CounselChoices';
 import type { StoryBeatId } from './storyContent';
-import { GROVE_KEEPER_DIALOGUE } from './groveKeeperDialogue';
-import { PIT_REGISTRAR_DIALOGUE } from './pitRegistrarDialogue';
-import { PREDICTOR_DIALOGUE } from './predictorDialogue';
+import { GROVE_KEEPER_DIALOGUE, GROVE_KEEPER_DIALOGUE_ZH } from './groveKeeperDialogue';
+import { PIT_REGISTRAR_DIALOGUE, PIT_REGISTRAR_DIALOGUE_ZH } from './pitRegistrarDialogue';
+import { PREDICTOR_DIALOGUE, PREDICTOR_DIALOGUE_ZH } from './predictorDialogue';
 import type { PitRegistrarFlags } from './PitRegistrarState';
 
 export interface NpcDialogueContext {
@@ -279,9 +279,10 @@ function moralGroveNode(ctx: NpcDialogueContext): DialogueNode {
 }
 
 export function buildRegistrarDialogue(ctx: NpcDialogueContext): DialogueTree {
+  const base = ctx.locale === 'zh' ? PIT_REGISTRAR_DIALOGUE_ZH : PIT_REGISTRAR_DIALOGUE;
   const greet = cloneNode(
-    PIT_REGISTRAR_DIALOGUE.greet,
-    appendParagraph(PIT_REGISTRAR_DIALOGUE.greet.body, registrarCallback(ctx)),
+    base.greet,
+    appendParagraph(base.greet.body, registrarCallback(ctx)),
   );
 
   if (ctx.counsel.registrar === null) {
@@ -307,7 +308,7 @@ export function buildRegistrarDialogue(ctx: NpcDialogueContext): DialogueTree {
     };
 
   return {
-    ...PIT_REGISTRAR_DIALOGUE,
+    ...base,
     greet,
     moral_count: moralRegistrarNode(ctx),
     moral_done: moralDone,
@@ -315,9 +316,10 @@ export function buildRegistrarDialogue(ctx: NpcDialogueContext): DialogueTree {
 }
 
 export function buildPredictorDialogue(ctx: NpcDialogueContext): DialogueTree {
+  const base = ctx.locale === 'zh' ? PREDICTOR_DIALOGUE_ZH : PREDICTOR_DIALOGUE;
   const greet = cloneNode(
-    PREDICTOR_DIALOGUE.greet,
-    appendParagraph(PREDICTOR_DIALOGUE.greet.body, predictorCallback(ctx)),
+    base.greet,
+    appendParagraph(base.greet.body, predictorCallback(ctx)),
   );
 
   if (ctx.counsel.predictor === null) {
@@ -343,12 +345,12 @@ export function buildPredictorDialogue(ctx: NpcDialogueContext): DialogueTree {
     };
 
   const already = cloneNode(
-    PREDICTOR_DIALOGUE.already_calibrated,
-    appendParagraph(PREDICTOR_DIALOGUE.already_calibrated.body, predictorCallback(ctx)),
+    base.already_calibrated,
+    appendParagraph(base.already_calibrated.body, predictorCallback(ctx)),
   );
 
   return {
-    ...PREDICTOR_DIALOGUE,
+    ...base,
     greet,
     already_calibrated: already,
     moral_predict: moralPredictorNode(ctx),
@@ -357,9 +359,10 @@ export function buildPredictorDialogue(ctx: NpcDialogueContext): DialogueTree {
 }
 
 export function buildGroveDialogue(ctx: NpcDialogueContext): DialogueTree {
+  const base = ctx.locale === 'zh' ? GROVE_KEEPER_DIALOGUE_ZH : GROVE_KEEPER_DIALOGUE;
   const greet = cloneNode(
-    GROVE_KEEPER_DIALOGUE.greet,
-    appendParagraph(GROVE_KEEPER_DIALOGUE.greet.body, groveCallback(ctx)),
+    base.greet,
+    appendParagraph(base.greet.body, groveCallback(ctx)),
   );
 
   if (ctx.counsel.grove === null) {
@@ -385,7 +388,7 @@ export function buildGroveDialogue(ctx: NpcDialogueContext): DialogueTree {
     };
 
   return {
-    ...GROVE_KEEPER_DIALOGUE,
+    ...base,
     greet,
     moral_grove: moralGroveNode(ctx),
     moral_grove_done: moralDone,

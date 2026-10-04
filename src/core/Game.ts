@@ -28,6 +28,7 @@ import {
   PREDICTOR_DIALOGUE,
 } from '../narrative/predictorDialogue';
 import { NarrationDirector } from '../audio/NarrationDirector';
+import { voiceRoleForNpc } from '../audio/voiceProfiles';
 import { STABLE_ERA_NARRATION } from '../i18n/introContent';
 import { loadNarrationEnabled, type Locale } from '../i18n/locale';
 import { buildDeathObjective } from '../narrative/deathObjective';
@@ -88,6 +89,12 @@ import {
 import { MobileHudSheet } from '../ui/MobileHudSheet';
 import type { MobileHudBundle } from '../ui/mobileHudBundle';
 import { SoundUnlockBanner } from '../ui/SoundUnlockBanner';
+import { CutsceneController } from '../cinematic/CutsceneController';
+import {
+  deathCutsceneBeats,
+  openingCutsceneBeats,
+  victoryCutsceneBeats,
+} from '../cinematic/sceneContent';
 
 interface HudElements {
   root: HTMLElement;
@@ -192,6 +199,7 @@ export class Game {
   private readonly mobileHud: MobileHudBundle | null;
   private readonly mobileHudSheet: MobileHudSheet | null;
   private readonly soundBanner: SoundUnlockBanner | null;
+  private readonly cutscene: CutsceneController;
   private mobileUi = {
     hasNearbyLog: false,
     nearPit: false,
@@ -410,6 +418,26 @@ export class Game {
     this.addLandmarks();
     this.scene.add(new CaveShelter(this.terrain, this.shelterZones, this.landmarkMats).group);
 
+    const cutsceneOverlay = document.querySelector<HTMLElement>('#cutscene-overlay');
+    const cutsceneSubtitle = document.querySelector<HTMLElement>('#cutscene-subtitle');
+    const cutsceneSkip = document.querySelector<HTMLButtonElement>('#cutscene-skip');
+    if (!cutsceneOverlay || !cutsceneSubtitle || !cutsceneSkip) {
+      throw new Error('Missing cutscene overlay elements.');
+    }
+    this.cutscene = new CutsceneController(
+      this.scene,
+      this.pipeline,
+      this.orbital,
+      this.sky,
+      this.terrain,
+      this.player.camera,
+      this.narration,
+      cutsceneOverlay,
+      cutsceneSubtitle,
+      cutsceneSkip,
+      () => MetaProgress.loadMasterVolume(),
+    );
+
     this.logReader.onOpen(() => {
       this.player.unlock();
     });
@@ -614,6 +642,17 @@ export class Game {
 
   setCinematicBed(active: boolean): void {
     this.audio.setCinematicBed(active);
+  }
+
+  playOpeningCutscene(onComplete: () => void): void {
+    this.player.unlock();
+    this.setCinematicBed(true);
+    const locale = this.getLocale();
+    this.cutscene.play(openingCutsceneBeats(locale), locale, () => {
+      this.setCinematicBed(false);
+      this.player.resetToSpawn();
+      onComplete();
+    });
   }
 
   async startNewGame(): Promise<void> {
@@ -962,15 +1001,20 @@ export class Game {
     const worldStage = this.civilizationLegacy.getStage();
     this.civilizationLegacy.recordCycleCleared();
     const stageAfterClear = this.civilizationLegacy.getStage();
-    this.epilogue.show(
-      buildEpilogueBody(
-        this.getLocale(),
-        this.counselChoices.getSnapshot(),
-        this.civilizationCycle,
-        worldStage,
-        stageAfterClear,
-      ),
+    const locale = this.getLocale();
+    const body = buildEpilogueBody(
+      locale,
+      this.counselChoices.getSnapshot(),
+      this.civilizationCycle,
+      worldStage,
+      stageAfterClear,
     );
+    this.setCinematicBed(true);
+    this.cutscene.play(victoryCutsceneBeats(locale, body), locale, () => {
+      this.setCinematicBed(false);
+      this.player.resetToSpawn();
+      this.epilogue.show(body);
+    });
   }
 
   beginAgainFromEpilogue(): void {
@@ -1312,7 +1356,7 @@ export class Game {
   ): void {
     this.activeDialogueNpc = npc;
     this.activeDialogue = tree;
-    this.dialoguePanel.open(node);
+    this.dialoguePanel.open(node, voiceRoleForNpc(npc));
   }
 
   private refreshActiveDialogueTree(): void {
@@ -1382,16 +1426,16 @@ export class Game {
     }
 
     if (choice.nextId === 'calibrate_dynamic') {
-      const node = buildPredictorCalibrationNode(this.orbital.getPhase());
+      const node = buildPredictorCalibrationNode(this.orbital.getPhase(), this.getLocale());
       this.activeDialogue = { ...PREDICTOR_DIALOGUE, calibrate: node };
-      this.dialoguePanel.open(node);
+      this.dialoguePanel.open(node, voiceRoleForNpc('predictor'));
       return;
     }
 
     this.refreshActiveDialogueTree();
     const next = this.activeDialogue[choice.nextId];
-    if (next) {
-      this.dialoguePanel.open(next);
+    if (next && this.activeDialogueNpc) {
+      this.dialoguePanel.open(next, voiceRoleForNpc(this.activeDialogueNpc));
     }
   }
 
@@ -1429,6 +1473,7 @@ export class Game {
       && !this.journal.isOpen()
       && !this.dialoguePanel.isOpen()
       && !this.storyOverlay.isOpen()
+      && !this.cutscene.isPlaying()
       && this.survival.status !== 'dehydrated'
       && this.survival.status !== 'dead';
     this.player.setMovementEnabled(canMove);
@@ -1486,18 +1531,30 @@ export class Game {
     CheckpointSave.clear();
     this.audio.stop();
     this.player.unlock();
-    this.overlays.deathCycle.textContent = this.civilizationCounter.formatLabel(this.getLocale());
+    const locale = this.getLocale();
+    this.overlays.deathCycle.textContent = this.civilizationCounter.formatLabel(locale);
     this.overlays.deathMessage.textContent = this.survival.getDeathMessage();
     const total = this.logDiscovery.getAllLogs().length;
     const found = this.logDiscovery.getDiscoveredCount();
-    this.overlays.deathLogs.textContent = `Civilization memory preserved: ${found} / ${total} logs remain known to you across cycles.`;
+    this.overlays.deathLogs.textContent = locale === 'zh'
+      ? `文明记忆：你已知晓 ${found} / ${total} 块碑文。`
+      : `Civilization memory preserved: ${found} / ${total} logs remain known to you across cycles.`;
     this.overlays.deathObjective.textContent = buildDeathObjective({
       hasFinalLog: this.meta.hasSeenFinalLog(this.logDiscovery),
       forecastCalibrated: this.forecastMeta.isCalibrated(),
       logsFound: found,
       logsTotal: total,
     });
-    this.overlays.death.classList.remove('hidden');
+    this.setCinematicBed(true);
+    this.cutscene.play(
+      deathCutsceneBeats(locale, this.survival.deathReason),
+      locale,
+      () => {
+        this.setCinematicBed(false);
+        this.player.resetToSpawn();
+        this.overlays.death.classList.remove('hidden');
+      },
+    );
   }
 
   private toggleHudCompact(): void {

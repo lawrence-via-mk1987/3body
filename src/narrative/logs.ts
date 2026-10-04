@@ -1,3 +1,5 @@
+import { getLogCopy as resolveLogCopy } from '../i18n/logContent';
+import type { Locale } from '../i18n/locale';
 import type { EraKind } from '../orbital/types';
 
 export interface TextLog {
@@ -69,6 +71,10 @@ export const TEXT_LOGS: TextLog[] = [
     body: 'If you have survived long enough to read this beneath a gentle sun, then our cycle was not wasted. The three-body sky will turn again. Store water. Mark the pit. Teach the next traveler to look up — and to look away when the horizon glows red. Hope is not a prediction. It is a discipline.',
   },
 ];
+
+export function getLogCopy(log: TextLog, locale: Locale): { title: string; body: string } {
+  return resolveLogCopy(log.id, log.title, log.body, locale);
+}
 
 export function canReadLog(log: TextLog, era: EraKind): boolean {
   if (!log.requiresStableEra) {

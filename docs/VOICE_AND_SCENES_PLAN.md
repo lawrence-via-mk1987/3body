@@ -1,6 +1,6 @@
 # Voice and performed scenes — plan
 
-**Status:** draft. Nothing here is built until a phase is explicitly started.  
+**Status:** Phase 1–3 shipped in the browser build. Phase 4 (caption timing polish) remains optional.  
 **Goal:** stop handing the player a paragraph when someone speaks, when a log opens, when the world is introduced, and when a civilization ends. Those moments are heard, and the two big ones are watched.
 
 This is a fan-inspired sketch of Liu Cixin’s ideas. The speaker, the robe, and the lines are original. Do not copy a character, costume, voice, or shot from the novel or the TV drama.
@@ -71,6 +71,8 @@ They look up when the sky is the subject, and they face the camera when they spe
 
 **Done when:** talking to each of the three NPCs, in English and 中文, produces a voice that stops when the panel closes; opening each log does the same; a phone with narration off still shows the text.
 
+**Status: shipped.** `DialoguePanel` and `LogReader` call `NarrationDirector` with per-role prosody (`voiceProfiles.ts`). All eight logs have 中文 copy in `i18n/logContent.ts`. NPC trees use `*_DIALOGUE_ZH` when the locale is 中文.
+
 ## Phase 2 — Opening scene
 
 Replace the three-card cinematic. The menu item “Replay opening intro” plays this scene and does not start a run. Skip still enters the wasteland.
@@ -89,6 +91,8 @@ Beats, about half a minute:
 Chinese lines are written with the English, not left for the browser to translate. Subtitles sit at the bottom. The old card copy can retire once these four lines are in.
 
 **Done when:** a new game and “Replay opening intro” both play this scene with voice and moving suns; Skip still reaches the wasteland; the figure reads as a person, not a card.
+
+**Status: shipped.** The three-card overlay is replaced by `CutsceneController` plus the ash-robed Witness (`buildHumanoidNpc`). New runs and **Replay opening intro** use the same four-beat scene with live sun phases and browser voice. Esc / Skip ends it.
 
 ## Phase 3 — When a civilization ends
 
@@ -118,6 +122,8 @@ The line names the age that just closed (`Clan wasteland`, `Dehydration age`, `O
 - Neither: leave words at the markers for whoever unfolds next.
 
 **Done when:** dying to heat, cold, and thirst each plays a different sky and a different sentence; finishing a cycle plays the grove scene and speaks the age change; Skip reaches the existing restart button; gameplay rules are unchanged.
+
+**Status: shipped.** Death runs a Witness beat keyed to `deathReason` before the restart panel. Reading the Final Log runs a Stable Era grove beat (epilogue text spoken) before the epilogue panel.
 
 ## Phase 4 — Tighten
 

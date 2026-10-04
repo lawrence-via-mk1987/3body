@@ -63,3 +63,66 @@ export const GROVE_KEEPER_DIALOGUE: DialogueTree = {
     choices: [],
   },
 };
+
+export const GROVE_KEEPER_DIALOGUE_ZH: DialogueTree = {
+  greet: {
+    id: 'greet',
+    speaker: '守林人',
+    body:
+      '你展开得够久，看见了绿色。呼吸——但别信天空会一直仁慈。'
+      + '池中有凝露；石碑上有先前循环的教训。',
+    choices: [
+      { id: 'water', label: '水在哪里？', nextId: 'water_hint' },
+      { id: 'final', label: '最终日志在哪？', nextId: 'final_hint', sideEffect: 'grove_hint_logged' },
+      { id: 'hope', label: '希望合理吗？', nextId: 'hope', sideEffect: 'grove_hint_logged' },
+      { id: 'bye', label: '我会忍耐。', nextId: 'farewell', sideEffect: 'grove_mark_spoke' },
+    ],
+  },
+  water_hint: {
+    id: 'water_hint',
+    speaker: '守林人',
+    body:
+      '跟着我脚边的微光环向池边——在我东南。站在蓝色光晕里按 R。'
+      + '趁恒纪元饮水；裂缝很快会再次口渴。',
+    choices: [
+      { id: 'final2', label: '最终日志呢？', nextId: 'final_hint', sideEffect: 'grove_hint_logged' },
+      { id: 'back', label: '再问一事…', nextId: 'greet' },
+      { id: 'bye2', label: '多谢。', nextId: 'farewell', sideEffect: 'grove_mark_spoke' },
+    ],
+  },
+  final_hint: {
+    id: 'final_hint',
+    speaker: '守林人',
+    body:
+      '两块碑只在温和阳光下苏醒：树林碑与最终日志——靠近时按 F。'
+      + '最终石在池下坡几步，未读时会发光。',
+    choices: [
+      { id: 'water2', label: '再提醒我关于水。', nextId: 'water_hint' },
+      { id: 'back2', label: '再问一事…', nextId: 'greet' },
+      { id: 'bye3', label: '我去读它们。', nextId: 'farewell', sideEffect: 'grove_mark_spoke' },
+    ],
+  },
+  hope: {
+    id: 'hope',
+    speaker: '守林人',
+    body:
+      '希望不是预测。是纪律——存水、标坑、为下一位旅人留下文字。'
+      + '我们没有种下永久之物。我们种下的是：也许有人能再次看见绿色。你正站在其中。',
+    choices: [
+      { id: 'final3', label: '最终日志在哪？', nextId: 'final_hint', sideEffect: 'grove_hint_logged' },
+      { id: 'bye4', label: '我明白了。', nextId: 'farewell', sideEffect: 'grove_mark_spoke' },
+    ],
+  },
+  dormant: {
+    id: 'dormant',
+    speaker: '守林人',
+    body: '乱纪元里树林沉睡——我只是赭尘中的一个形。等横幅说恒纪元再来。',
+    choices: [],
+  },
+  farewell: {
+    id: 'farewell',
+    speaker: '守林人',
+    body: '趁天空仁慈，屏住呼吸。',
+    choices: [],
+  },
+};

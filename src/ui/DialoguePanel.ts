@@ -1,3 +1,6 @@
+import type { NarrationDirector } from '../audio/NarrationDirector';
+import type { VoiceRole } from '../audio/voiceProfiles';
+import type { Locale } from '../i18n/locale';
 import type { DialogueChoice, DialogueNode } from '../narrative/dialogueTypes';
 
 export class DialoguePanel {
@@ -5,6 +8,7 @@ export class DialoguePanel {
   private onOpenCallback: (() => void) | null = null;
   private onCloseCallback: (() => void) | null = null;
   private onChoiceCallback: ((choice: DialogueChoice) => void) | null = null;
+  private voiceRole: VoiceRole = 'registrar';
 
   constructor(
     private readonly overlay: HTMLElement,
@@ -12,6 +16,9 @@ export class DialoguePanel {
     private readonly bodyEl: HTMLElement,
     private readonly choicesEl: HTMLElement,
     closeButton: HTMLButtonElement,
+    private readonly narration: NarrationDirector,
+    private readonly getLocale: () => Locale,
+    private readonly getVolume: () => number,
   ) {
     closeButton.addEventListener('click', (event) => {
       event.stopPropagation();
@@ -53,7 +60,8 @@ export class DialoguePanel {
     return this.openState;
   }
 
-  open(node: DialogueNode): void {
+  open(node: DialogueNode, voiceRole: VoiceRole): void {
+    this.voiceRole = voiceRole;
     this.renderNode(node);
     this.overlay.classList.remove('hidden');
     this.openState = true;
@@ -64,6 +72,7 @@ export class DialoguePanel {
     if (!this.openState) {
       return;
     }
+    this.narration.cancel();
     this.overlay.classList.add('hidden');
     this.openState = false;
     this.choicesEl.replaceChildren();
@@ -71,9 +80,12 @@ export class DialoguePanel {
   }
 
   private renderNode(node: DialogueNode): void {
+    const locale = this.getLocale();
     this.speakerEl.textContent = node.speaker;
     this.bodyEl.textContent = node.body;
     this.choicesEl.replaceChildren();
+
+    this.narration.speak(node.body, locale, this.getVolume(), this.voiceRole);
 
     for (const choice of node.choices) {
       const button = document.createElement('button');
@@ -82,6 +94,7 @@ export class DialoguePanel {
       button.textContent = choice.label;
       button.addEventListener('click', (event) => {
         event.stopPropagation();
+        this.narration.cancel();
         this.onChoiceCallback?.(choice);
       });
       this.choicesEl.append(button);
@@ -90,7 +103,9 @@ export class DialoguePanel {
     if (node.choices.length === 0) {
       const hint = document.createElement('p');
       hint.className = 'dialogue-end-hint';
-      hint.textContent = 'Press Esc or Close to leave.';
+      hint.textContent = locale === 'zh'
+        ? '按 Esc 或关闭离开。'
+        : 'Press Esc or Close to leave.';
       this.choicesEl.append(hint);
     }
   }
