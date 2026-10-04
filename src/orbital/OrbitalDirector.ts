@@ -98,10 +98,10 @@ const SKY_PALETTES: Record<EraPhase, SkyPalette> = {
     horizon: '#e85224',
     bottom: '#661a08',
     fog: '#74260f',
-    fogDensity: 0.0019,
-    ambient: 0.62,
-    exposure: 1.18,
-    bloom: 0.8,
+    fogDensity: 0.00185,
+    ambient: 0.64,
+    exposure: 1.2,
+    bloom: 0.88,
     darkness: 0,
     cloudCover: 0.12,
     cloudBright: 0.95,
@@ -113,10 +113,10 @@ const SKY_PALETTES: Record<EraPhase, SkyPalette> = {
     horizon: '#ff5a22',
     bottom: '#761008',
     fog: '#92200a',
-    fogDensity: 0.0017,
-    ambient: 0.66,
-    exposure: 1.3,
-    bloom: 1.05,
+    fogDensity: 0.0016,
+    ambient: 0.68,
+    exposure: 1.34,
+    bloom: 1.22,
     darkness: 0,
     cloudCover: 0.05,
     cloudBright: 1.05,
@@ -299,7 +299,7 @@ export class OrbitalDirector {
       sunEnergy += input.intensity;
     }
     this.sky.setSuns(this.skySunInputs);
-    this.sky.setSunScatterScale(cutscene ? 0 : 1);
+    this.sky.setSunScatterScale(cutscene ? 0 : this.getSunScatterScale());
     const palette = SKY_PALETTES[this.eraState.phase];
     this.sky.setDarkness(Math.max(palette.darkness - sunEnergy * 0.35, 0));
 
@@ -316,6 +316,7 @@ export class OrbitalDirector {
     this.temperature = { value, ...description };
 
     this.applyAtmosphere();
+    this.accentSunLights();
   }
 
   getEraKind(): EraKind {
@@ -339,11 +340,91 @@ export class OrbitalDirector {
   }
 
   getExposureTarget(): number {
-    return SKY_PALETTES[this.eraState.phase].exposure;
+    const phase = this.eraState.phase;
+    let exposure = SKY_PALETTES[phase].exposure;
+    if (phase === 'flying_star') {
+      const t = this.eraState.getPhaseProgress();
+      exposure += t * 0.26;
+    } else if (phase === 'tri_solar') {
+      exposure += 0.04;
+    }
+    return exposure;
   }
 
   getBloomTarget(): number {
-    return SKY_PALETTES[this.eraState.phase].bloom;
+    const phase = this.eraState.phase;
+    let bloom = SKY_PALETTES[phase].bloom;
+    if (phase === 'flying_star') {
+      bloom += this.eraState.getPhaseProgress() * 0.42;
+    }
+    return bloom;
+  }
+
+  /** Lower threshold pulls more horizon energy into bloom during Flying Star. */
+  getBloomThreshold(): number {
+    if (this.eraState.phase === 'flying_star') {
+      return THREE.MathUtils.lerp(1.02, 0.62, this.eraState.getPhaseProgress());
+    }
+    if (this.eraState.phase === 'tri_solar') {
+      return 0.92;
+    }
+    return 1.05;
+  }
+
+  getSunScatterScale(): number {
+    const phase = this.eraState.phase;
+    if (phase === 'flying_star') {
+      return 1.25 + this.eraState.getPhaseProgress() * 0.95;
+    }
+    if (phase === 'tri_solar') {
+      return 1.18;
+    }
+    return 1;
+  }
+
+  getSolarGroundLighting(): {
+    blend: number;
+    suns: { direction: THREE.Vector3; color: THREE.Color; power: number }[];
+  } {
+    const phase = this.eraState.phase;
+    let blend = 0;
+    if (phase === 'tri_solar') {
+      blend = 1;
+    } else if (phase === 'flying_star') {
+      blend = 0.55;
+    } else if (phase === 'scorch' || phase === 'binary_chaos') {
+      blend = 0.22;
+    }
+    const suns = this.suns.map((sun) => ({
+      direction: sun.direction.clone(),
+      color: sun.color.clone(),
+      power: sun.active && sun.elevation > -0.05 ? sun.intensity : 0,
+    }));
+    return { blend, suns };
+  }
+
+  getPoolSkyReflection(): {
+    top: THREE.Color;
+    horizon: THREE.Color;
+    sunDirection: THREE.Vector3;
+    sunStrength: number;
+  } {
+    const palette = SKY_PALETTES[this.eraState.phase];
+    const top = new THREE.Color(palette.top);
+    const horizon = new THREE.Color(palette.horizon);
+    let sunDirection = this.sunA.direction.clone();
+    let sunStrength = this.sunA.active ? this.sunA.intensity : 0.4;
+    if (this.eraState.era === 'stable') {
+      horizon.set('#f0d8a8');
+      top.set('#6a9aaa');
+    }
+    for (const sun of this.suns) {
+      if (sun.active && sun.intensity > sunStrength) {
+        sunStrength = sun.intensity;
+        sunDirection = sun.direction.clone();
+      }
+    }
+    return { top, horizon, sunDirection, sunStrength };
   }
 
   /**
@@ -457,6 +538,7 @@ export class OrbitalDirector {
       0.04,
     );
 
+    const phase = this.eraState.phase;
     const tempBias = THREE.MathUtils.clamp(this.temperature.value / 3, -1, 1);
     // Environment lighting now carries part of the sky bounce, so the hemisphere is softer.
     // Hemisphere + fill are in physical units (divided by π in the BRDF), hence the scaling.
@@ -470,6 +552,35 @@ export class OrbitalDirector {
     this.fill.intensity = (this.eraState.era === 'stable'
       ? 0.22
       : 0.12 + Math.max(this.temperature.value, 0) * 0.08) * 2.4;
+
+    if (phase === 'tri_solar' || phase === 'flying_star') {
+      const mix = new THREE.Color(0, 0, 0);
+      let total = 0;
+      for (const sun of this.suns) {
+        if (!sun.active) {
+          continue;
+        }
+        mix.add(sun.color.clone().multiplyScalar(sun.intensity));
+        total += sun.intensity;
+      }
+      if (total > 0.01) {
+        mix.multiplyScalar(1 / total);
+        this.fill.color.copy(mix);
+        this.ambient.color.lerp(mix, phase === 'tri_solar' ? 0.35 : 0.55);
+      }
+      if (phase === 'flying_star') {
+        const t = this.eraState.getPhaseProgress();
+        this.fill.intensity *= 1.15 + t * 0.45;
+        this.ambient.intensity *= 1.05 + t * 0.12;
+        this.fog.color.lerp(this.sunC.color, 0.22 + t * 0.35);
+        this.scene.environmentIntensity = 0.75 + t * 0.35;
+      } else {
+        this.scene.environmentIntensity = 0.82;
+      }
+    } else {
+      this.fill.color.set('#4a5f8c');
+      this.scene.environmentIntensity = 0.75;
+    }
 
     // Stable Era: the one sun is softer. More sky fill, a dimmer key, a wider penumbra.
     const stable = this.eraState.era === 'stable';
@@ -486,6 +597,32 @@ export class OrbitalDirector {
       }
       if (sun.light.castShadow) {
         sun.light.shadow.radius = stable ? 4 : 2.5;
+      }
+    }
+  }
+
+  /** Phase accents on top of SunBody base intensities (tri-solar keys, flying-star red dominance). */
+  private accentSunLights(): void {
+    const phase = this.eraState.phase;
+    if (phase !== 'tri_solar' && phase !== 'flying_star') {
+      return;
+    }
+    for (const sun of this.suns) {
+      if (!sun.light || !sun.active) {
+        continue;
+      }
+      if (phase === 'tri_solar') {
+        sun.light.intensity *= sun.light.castShadow ? 1.06 : 1.42;
+        if (!sun.light.castShadow) {
+          sun.light.color.copy(sun.color);
+        }
+      } else if (phase === 'flying_star') {
+        if (sun.id === 'sun_c') {
+          sun.light.intensity *= 1.28;
+          sun.light.color.copy(sun.color);
+        } else {
+          sun.light.intensity *= 0.48;
+        }
       }
     }
   }

@@ -113,6 +113,18 @@ export class Terrain {
     uTime: { value: 0 },
     uTriScale: { value: 1 / DETAIL_TILE_METRES },
     uTriSolarBlend: { value: 0 },
+    uSolarLightBlend: { value: 0 },
+    uSunDirs: {
+      value: [
+        new THREE.Vector3(0, 1, 0),
+        new THREE.Vector3(0, 1, 0),
+        new THREE.Vector3(0, 1, 0),
+      ],
+    },
+    uSunCols: {
+      value: [new THREE.Color('#ffffff'), new THREE.Color('#ffffff'), new THREE.Color('#ffffff')],
+    },
+    uSunPowers: { value: [0, 0, 0] },
   };
   private targetCold = 0;
   private targetHeat = 0;
@@ -154,6 +166,12 @@ export class Terrain {
       shader.uniforms.uGroveCenter = this.uniforms.uGroveCenter;
       shader.uniforms.uGroveRadius = this.uniforms.uGroveRadius;
       shader.uniforms.uTime = this.uniforms.uTime;
+      shader.uniforms.uTriScale = this.uniforms.uTriScale;
+      shader.uniforms.uTriSolarBlend = this.uniforms.uTriSolarBlend;
+      shader.uniforms.uSolarLightBlend = this.uniforms.uSolarLightBlend;
+      shader.uniforms.uSunDirs = this.uniforms.uSunDirs;
+      shader.uniforms.uSunCols = this.uniforms.uSunCols;
+      shader.uniforms.uSunPowers = this.uniforms.uSunPowers;
 
       shader.vertexShader = shader.vertexShader.replace(
         '#include <color_pars_vertex>',
@@ -266,7 +284,18 @@ export class Terrain {
         // Damp soil around the pool. wet is read again by the roughness chunk.
         wet = (1.0 - smoothstep(2.4, 8.5, groveDist)) * uStableBlend;
         diffuseColor.rgb *= mix(1.0, 0.66, wet);
-        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.12, 0.2, 0.14), wet * 0.4);`,
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.12, 0.2, 0.14), wet * 0.4);
+        vec3 nGround = normalize(vWorldNormal);
+        vec3 sunLit = vec3(0.0);
+        float sunMax = 0.0;
+        for (int i = 0; i < 3; i++) {
+          float ndl = max(dot(nGround, normalize(uSunDirs[i])), 0.0);
+          sunMax = max(sunMax, ndl);
+          sunLit += uSunCols[i] * ndl * uSunPowers[i];
+        }
+        diffuseColor.rgb += sunLit * uSolarLightBlend * 0.2;
+        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.72, 0.68, 0.78),
+          uSolarLightBlend * (1.0 - sunMax) * 0.35);`,
       );
 
       shader.fragmentShader = shader.fragmentShader.replace(
@@ -293,7 +322,7 @@ export class Terrain {
         roughnessFactor = mix(roughnessFactor, 0.7, uColdBlend * 0.4);`,
       );
     };
-    this.material.customProgramCacheKey = () => 'terrain-realism-v4-triplanar';
+    this.material.customProgramCacheKey = () => 'terrain-realism-v5-solar-lighting';
 
     this.mesh = new THREE.Mesh(this.geometry, this.material);
     this.mesh.receiveShadow = true;
@@ -344,6 +373,23 @@ export class Terrain {
 
     this.geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     this.geometry.computeVertexNormals();
+  }
+
+  setSolarGroundLighting(
+    blend: number,
+    suns: { direction: THREE.Vector3; color: THREE.Color; power: number }[],
+  ): void {
+    this.uniforms.uSolarLightBlend.value = blend;
+    for (let i = 0; i < 3; i += 1) {
+      const sun = suns[i];
+      if (!sun) {
+        this.uniforms.uSunPowers.value[i] = 0;
+        continue;
+      }
+      this.uniforms.uSunDirs.value[i].copy(sun.direction);
+      this.uniforms.uSunCols.value[i].copy(sun.color);
+      this.uniforms.uSunPowers.value[i] = sun.power;
+    }
   }
 
   setEraVisuals(era: EraKind, phase: EraPhase): void {

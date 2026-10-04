@@ -1214,7 +1214,9 @@ export class Game {
     this.terrain.updateVisuals(delta);
     this.ruins.setStableEraActive(stableEra);
     this.waterSource.setStableEraActive(stableEra);
-    this.waterSource.update(delta);
+    this.waterSource.setSkyReflection(this.orbital.getPoolSkyReflection(), delta);
+    const solarGround = this.orbital.getSolarGroundLighting();
+    this.terrain.setSolarGroundLighting(solarGround.blend, solarGround.suns);
     this.stableParticles.setActive(stableEra, delta);
     this.groveGrass.setStable(stableEra, delta);
     this.stableScatterTrees.setStable(stableEra, delta);
@@ -1250,6 +1252,7 @@ export class Game {
       Math.min(delta * 1.2, 1),
     );
     this.pipeline.setBloomStrength(this.orbital.getBloomTarget());
+    this.pipeline.setBloomThreshold(this.orbital.getBloomThreshold());
 
     if (this.survival.status !== 'dead' && !this.logReader.isOpen()) {
       const shelter = this.shelterZones.sample(this.anchor);
@@ -1822,6 +1825,7 @@ export class Game {
     this.triSolarLevitation.dispose();
     this.coldBreath?.dispose();
     this.orbital.dispose();
+    this.waterSource.dispose();
     this.terrain.dispose();
     this.sky.dispose();
     this.wayfinding.dispose();
