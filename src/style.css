@@ -35,12 +35,23 @@ body.touch-ui {
 #overlay {
   position: fixed;
   inset: 0;
-  display: grid;
-  place-items: center;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding:
+    max(1.25rem, env(safe-area-inset-top))
+    max(0.75rem, env(safe-area-inset-right))
+    max(1.25rem, env(safe-area-inset-bottom))
+    max(0.75rem, env(safe-area-inset-left));
   background:
     radial-gradient(circle at 50% 20%, rgba(196, 92, 38, 0.18), transparent 45%),
     linear-gradient(180deg, rgba(8, 6, 5, 0.92), rgba(8, 6, 5, 0.98));
   z-index: 20;
+}
+
+#overlay .menu-panel {
+  margin: 0 auto;
 }
 
 #overlay.hidden {
@@ -53,6 +64,10 @@ body.touch-ui {
   border: 1px solid rgba(242, 230, 216, 0.18);
   background: rgba(18, 14, 11, 0.88);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.menu-panel {
+  max-height: none;
 }
 
 .eyebrow {
@@ -132,8 +147,11 @@ h1 {
 }
 
 .menu-lore .world-intro {
-  max-height: 42vh;
-  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.menu-details .disclaimer,
+.menu-details .controls {
   padding-right: 0.25rem;
 }
 
@@ -1351,14 +1369,11 @@ body.touch-ui .forecast-strip {
 
 body.touch-ui .panel {
   width: min(96vw, 560px);
-  max-height: min(88vh, 720px);
-  overflow-y: auto;
   padding: 1.25rem;
 }
 
-body.touch-ui .menu-panel {
-  margin: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right))
-    max(0.5rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left));
+body.touch-ui #overlay {
+  touch-action: pan-y;
 }
 
 .hud-mobile-strip {
