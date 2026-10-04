@@ -2,6 +2,12 @@
 
 Phases **1–4** of `REALISM_REMAKE_PLAN.md` are shipped in code (procedural landmarks, humanoids, era dressing, desktop SSAO, clouds, collision). This doc is the **recommended order** for the next visual wins without changing gameplay rules.
 
+## Shipped (5a / 5b / lighting pass)
+
+- **Tri-solar mixed light** — per-sun fill tint, boosted secondary directionals, terrain multi-sun tint (fake mixed shadows).
+- **Flying Star glare** — dynamic exposure/bloom/scatter, lower bloom threshold, red fog lerp.
+- **Stable grove pool** — fresnel sky reflection shader + ripples on the pool surface.
+
 ## Shipped (5a / 5b partial)
 
 - **Triplanar** dust/clay on **steep** trench walls (terrain shader blends planar ↔ triplanar by slope).

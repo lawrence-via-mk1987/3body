@@ -105,6 +105,12 @@ export class RenderPipeline {
     }
   }
 
+  setBloomThreshold(threshold: number): void {
+    if (this.bloomPass) {
+      this.bloomPass.threshold = THREE.MathUtils.lerp(this.bloomPass.threshold, threshold, 0.08);
+    }
+  }
+
   render(scene: THREE.Scene, camera: THREE.Camera): void {
     if (this.composer) {
       this.composer.render();
