@@ -11,41 +11,111 @@ const SUN_PALETTES: CelestialSunPalette[] = [
   { core: '#ff5a3a', limb: '#8a1008', emissive: '#d62818' },
 ];
 
-/** Semi-major axes of each star about the system barycenter (arbitrary units). */
-const STAR_SEMI_MAJOR = [3.4, 2.9, 3.8];
-const STAR_ECCENTRICITY = [0.38, 0.52, 0.44];
-const STAR_MEAN_MOTION = [0.52, 0.71, 0.46];
-const STAR_PHASE = [0.2, 2.15, 4.05];
+const G = 1;
+/** Softening avoids blow-ups when bodies pass close (still chaotic). */
+const SOFTEN = 0.18;
+const STAR_MASS = 1;
+const PLANET_MASS = 0.004;
+const SUBSTEPS = 10;
+const TRAIL_LEN = 72;
 
-/** Trisolaris orbits the barycenter inside the triple system — not the other way around. */
-const PLANET_ORBIT_RADIUS = 1.05;
-const PLANET_ORBIT_RATE = 0.28;
-
-function keplerRadius(a: number, e: number, meanAnomaly: number): number {
-  const E = meanAnomaly;
-  return a * (1 - e * Math.cos(E));
+interface NBody {
+  mass: number;
+  pos: THREE.Vector3;
+  vel: THREE.Vector3;
+  acc: THREE.Vector3;
 }
 
-function keplerAngle(e: number, meanAnomaly: number): number {
-  const E = meanAnomaly;
-  const sinE = Math.sin(E);
-  const cosE = Math.cos(E);
-  const sqrtTerm = Math.sqrt(Math.max(0.001, 1 - e * e));
-  return Math.atan2(sqrtTerm * sinE, cosE - e);
+/** Chaotic triple-star + planet: Newtonian N-body in the barycenter frame. */
+function createInitialSystem(): NBody[] {
+  const triangleR = 3.2;
+  const stars: NBody[] = [];
+  for (let i = 0; i < 3; i += 1) {
+    const ang = i * (Math.PI * 2) / 3 - Math.PI / 2;
+    const pos = new THREE.Vector3(Math.cos(ang) * triangleR, 0, Math.sin(ang) * triangleR);
+    const tangent = new THREE.Vector3(-Math.sin(ang), 0, Math.cos(ang));
+    const speed = 0.42 + i * 0.06;
+    const vel = tangent.multiplyScalar(speed * (i === 1 ? 1.08 : i === 2 ? 0.92 : 1));
+    vel.y = (i - 1) * 0.04;
+    stars.push({ mass: STAR_MASS, pos, vel, acc: new THREE.Vector3() });
+  }
+
+  const planet: NBody = {
+    mass: PLANET_MASS,
+    pos: new THREE.Vector3(1.1, 0.08, -0.65),
+    vel: new THREE.Vector3(-0.35, 0.02, 0.72),
+    acc: new THREE.Vector3(),
+  };
+
+  return [...stars, planet];
+}
+
+function computeAccelerations(bodies: NBody[]): void {
+  for (const body of bodies) {
+    body.acc.set(0, 0, 0);
+  }
+  for (let i = 0; i < bodies.length; i += 1) {
+    for (let j = i + 1; j < bodies.length; j += 1) {
+      const a = bodies[i]!;
+      const b = bodies[j]!;
+      const diff = new THREE.Vector3().subVectors(b.pos, a.pos);
+      const distSq = diff.lengthSq() + SOFTEN * SOFTEN;
+      const invDist = 1 / Math.sqrt(distSq);
+      const invDist3 = invDist * invDist * invDist;
+      const scalar = G * invDist3;
+      const fA = diff.clone().multiplyScalar(scalar * b.mass);
+      const fB = fA.clone().multiplyScalar(-a.mass / b.mass);
+      a.acc.add(fA);
+      b.acc.sub(fB);
+    }
+  }
+}
+
+function recenterBarycenter(bodies: NBody[]): void {
+  let totalMass = 0;
+  const com = new THREE.Vector3();
+  const comVel = new THREE.Vector3();
+  for (const body of bodies) {
+    totalMass += body.mass;
+    com.addScaledVector(body.pos, body.mass);
+    comVel.addScaledVector(body.vel, body.mass);
+  }
+  if (totalMass <= 0) {
+    return;
+  }
+  com.divideScalar(totalMass);
+  comVel.divideScalar(totalMass);
+  for (const body of bodies) {
+    body.pos.sub(com);
+    body.vel.sub(comVel);
+  }
+}
+
+function velocityVerletStep(bodies: NBody[], dt: number): void {
+  computeAccelerations(bodies);
+  for (const body of bodies) {
+    body.vel.addScaledVector(body.acc, dt * 0.5);
+    body.pos.addScaledVector(body.vel, dt);
+  }
+  computeAccelerations(bodies);
+  for (const body of bodies) {
+    body.vel.addScaledVector(body.acc, dt * 0.5);
+  }
+  recenterBarycenter(bodies);
 }
 
 /**
- * Stylized triple-star system for the intro:
- * - Three suns move on Kepler-like paths about the **barycenter** (origin).
- * - The planet is a small body on an inner orbit around that same center.
+ * Intro diagram: three massive stars + Trisolaris as a fourth body.
+ * All paths are chaotic; nothing sits on a fixed Kepler ring.
  */
 export class TrisolarisOrbitVisual {
   readonly group = new THREE.Group();
   private readonly barycenter: THREE.Group;
   private readonly planet: THREE.Mesh;
   private readonly sunGroups: THREE.Group[] = [];
-  private readonly starTrailRings: THREE.Mesh[] = [];
-  private readonly planetOrbitRing: THREE.Mesh;
+  private readonly bodies: NBody[];
+  private readonly planetTrail: THREE.Line;
+  private readonly trailPoints: THREE.Vector3[] = [];
   private time = 0;
   private mode: 'chaos' | 'stable' | 'blend' = 'chaos';
   private stableBlend = 0;
@@ -53,43 +123,27 @@ export class TrisolarisOrbitVisual {
   constructor() {
     this.group.name = 'trisolaris-orbit-visual';
     this.group.position.set(0, 24, 14);
+    this.bodies = createInitialSystem();
 
     this.barycenter = new THREE.Group();
     this.barycenter.name = 'barycenter';
     const baryMarker = new THREE.Mesh(
-      new THREE.SphereGeometry(0.06, 8, 6),
-      new THREE.MeshBasicMaterial({ color: '#5a5048', transparent: true, opacity: 0.55 }),
+      new THREE.SphereGeometry(0.05, 8, 6),
+      new THREE.MeshBasicMaterial({ color: '#5a5048', transparent: true, opacity: 0.45 }),
     );
     this.barycenter.add(baryMarker);
-    this.group.add(this.barycenter);
 
-    for (let i = 0; i < 3; i += 1) {
-      const a = STAR_SEMI_MAJOR[i]!;
-      const ring = new THREE.Mesh(
-        new THREE.RingGeometry(a * (1 - STAR_ECCENTRICITY[i]!) - 0.04, a * (1 + STAR_ECCENTRICITY[i]!) + 0.04, 80),
-        new THREE.MeshBasicMaterial({
-          color: '#5a5048',
-          transparent: true,
-          opacity: 0.12,
-          side: THREE.DoubleSide,
-        }),
-      );
-      ring.rotation.x = -Math.PI / 2;
-      this.starTrailRings.push(ring);
-      this.barycenter.add(ring);
-    }
-
-    this.planetOrbitRing = new THREE.Mesh(
-      new THREE.RingGeometry(PLANET_ORBIT_RADIUS - 0.025, PLANET_ORBIT_RADIUS + 0.025, 64),
+    const zone = new THREE.Mesh(
+      new THREE.RingGeometry(0.6, 4.8, 96),
       new THREE.MeshBasicMaterial({
-        color: '#4a6878',
+        color: '#4a4038',
         transparent: true,
-        opacity: 0.35,
+        opacity: 0.08,
         side: THREE.DoubleSide,
       }),
     );
-    this.planetOrbitRing.rotation.x = -Math.PI / 2;
-    this.barycenter.add(this.planetOrbitRing);
+    zone.rotation.x = -Math.PI / 2;
+    this.barycenter.add(zone);
 
     const planetMat = new THREE.MeshStandardMaterial({
       color: '#4a6a8a',
@@ -107,6 +161,27 @@ export class TrisolarisOrbitVisual {
       this.sunGroups.push(sunGroup);
       this.barycenter.add(sunGroup);
     }
+
+    for (let i = 0; i < TRAIL_LEN; i += 1) {
+      this.trailPoints.push(new THREE.Vector3());
+    }
+    const trailGeo = new THREE.BufferGeometry().setFromPoints(this.trailPoints);
+    this.planetTrail = new THREE.Line(
+      trailGeo,
+      new THREE.LineBasicMaterial({
+        color: '#6a98b8',
+        transparent: true,
+        opacity: 0.55,
+      }),
+    );
+    this.barycenter.add(this.planetTrail);
+
+    this.group.add(this.barycenter);
+
+    for (let i = 0; i < 120; i += 1) {
+      velocityVerletStep(this.bodies, 0.04);
+    }
+    this.syncMeshes(1);
   }
 
   setMode(mode: 'chaos' | 'stable' | 'blend', stableBlend = 0): void {
@@ -114,35 +189,28 @@ export class TrisolarisOrbitVisual {
     this.stableBlend = THREE.MathUtils.clamp(stableBlend, 0, 1);
   }
 
-  private starPosition(i: number, t: number, chaos: number): THREE.Vector3 {
-    const a = STAR_SEMI_MAJOR[i]!;
-    const e = STAR_ECCENTRICITY[i]! * (1 + chaos * 0.12);
-    const n = STAR_MEAN_MOTION[i]! * (1 + chaos * 0.85);
-    const M = STAR_PHASE[i]! + n * t + chaos * Math.sin(t * (1.15 + i * 0.31) + i) * 0.45;
-    const r = keplerRadius(a, e, M);
-    let theta = keplerAngle(e, M) + chaos * Math.sin(t * 0.85 + i * 1.9) * 0.25;
-
+  private syncMeshes(chaos: number): void {
     const stable = 1 - chaos;
-    if (stable > 0.001) {
-      const clusterAngle = -0.55;
-      const clusterR = a * 0.55;
-      const stableTheta = clusterAngle + (i - 1) * 0.28;
-      const stableX = Math.cos(stableTheta) * clusterR;
-      const stableZ = Math.sin(stableTheta) * clusterR;
-      const chaX = Math.cos(theta) * r;
-      const chaZ = Math.sin(theta) * r;
-      const x = THREE.MathUtils.lerp(chaX, stableX, stable);
-      const z = THREE.MathUtils.lerp(chaZ, stableZ, stable);
-      const y = THREE.MathUtils.lerp(
-        Math.sin(t * 0.6 + i) * 0.22 * chaos,
-        0.05 * (i - 1),
-        stable,
-      );
-      return new THREE.Vector3(x, y, z);
+    for (let i = 0; i < 3; i += 1) {
+      const sunGroup = this.sunGroups[i]!;
+      sunGroup.position.copy(this.bodies[i]!.pos);
+      const intensity = THREE.MathUtils.lerp(1.15 + chaos * 0.85, 0.52, stable);
+      updateCelestialSunVisual(sunGroup, intensity, this.time + i);
     }
+    const planetBody = this.bodies[3]!;
+    this.planet.position.copy(planetBody.pos);
+  }
 
-    const y = Math.sin(t * 0.55 + i * 2.1) * 0.28 * chaos;
-    return new THREE.Vector3(Math.cos(theta) * r, y, Math.sin(theta) * r);
+  private pushTrail(): void {
+    const p = this.bodies[3]!.pos;
+    this.trailPoints.shift();
+    this.trailPoints.push(p.clone());
+    const attr = this.planetTrail.geometry.getAttribute('position') as THREE.BufferAttribute;
+    for (let i = 0; i < TRAIL_LEN; i += 1) {
+      const pt = this.trailPoints[i]!;
+      attr.setXYZ(i, pt.x, pt.y, pt.z);
+    }
+    attr.needsUpdate = true;
   }
 
   update(delta: number): void {
@@ -150,31 +218,39 @@ export class TrisolarisOrbitVisual {
     const chaos = this.mode === 'chaos' ? 1 : this.mode === 'stable' ? 0 : 1 - this.stableBlend;
     const stable = 1 - chaos;
 
-    this.barycenter.rotation.y = Math.sin(this.time * 0.08) * 0.06 * chaos;
+    const timeScale = THREE.MathUtils.lerp(1.15, 0.55, stable);
+    const dt = (delta * timeScale) / SUBSTEPS;
 
-    const planetAngle = this.time * PLANET_ORBIT_RATE * (1 + chaos * 0.15);
-    this.planet.position.set(
-      Math.cos(planetAngle) * PLANET_ORBIT_RADIUS,
-      Math.sin(this.time * 0.9) * 0.04,
-      Math.sin(planetAngle) * PLANET_ORBIT_RADIUS,
+    for (let s = 0; s < SUBSTEPS; s += 1) {
+      velocityVerletStep(this.bodies, dt);
+      if (stable > 0.02 && s === SUBSTEPS - 1) {
+        for (let i = 0; i < 3; i += 1) {
+          const target = new THREE.Vector3(
+            -2.2 + i * 0.35,
+            0.04 * (i - 1),
+            0.55 + i * 0.12,
+          );
+          this.bodies[i]!.pos.lerp(target, stable * 0.012);
+          this.bodies[i]!.vel.multiplyScalar(1 - stable * 0.02);
+        }
+      }
+    }
+
+    this.barycenter.rotation.y = Math.sin(this.time * 0.06) * 0.04 * chaos;
+    this.planet.rotation.y += delta * (0.35 + chaos * 0.25);
+    this.syncMeshes(chaos);
+    this.pushTrail();
+
+    (this.planetTrail.material as THREE.LineBasicMaterial).opacity = THREE.MathUtils.lerp(
+      0.55,
+      0.35,
+      stable,
     );
-    this.planet.rotation.y += delta * (0.4 + chaos * 0.2);
-
-    for (let i = 0; i < this.sunGroups.length; i += 1) {
-      const sunGroup = this.sunGroups[i]!;
-      const pos = this.starPosition(i, this.time, chaos);
-      sunGroup.position.copy(pos);
-      const intensity = THREE.MathUtils.lerp(1.15 + chaos * 0.85, 0.5, stable);
-      updateCelestialSunVisual(sunGroup, intensity, this.time + i);
-    }
-
-    for (const ring of this.starTrailRings) {
-      (ring.material as THREE.MeshBasicMaterial).opacity = THREE.MathUtils.lerp(0.12, 0.06, stable);
-    }
-    (this.planetOrbitRing.material as THREE.MeshBasicMaterial).opacity = THREE.MathUtils.lerp(0.35, 0.45, stable);
   }
 
   dispose(): void {
+    this.planetTrail.geometry.dispose();
+    (this.planetTrail.material as THREE.Material).dispose();
     this.group.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {
         obj.geometry.dispose();
