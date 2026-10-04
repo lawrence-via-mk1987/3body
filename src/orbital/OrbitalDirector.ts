@@ -139,18 +139,18 @@ const SKY_PALETTES: Record<EraPhase, SkyPalette> = {
     galaxy: 0.35,
   },
   stable_golden: {
-    top: '#4f7e8a',
-    horizon: '#e6bf84',
-    bottom: '#6a5a44',
-    fog: '#8e7f58',
-    fogDensity: 0.0014,
-    ambient: 0.62,
-    exposure: 1.02,
-    bloom: 0.4,
+    top: '#3d6570',
+    horizon: '#c9a86a',
+    bottom: '#5a4a38',
+    fog: '#7a6d52',
+    fogDensity: 0.00155,
+    ambient: 0.5,
+    exposure: 0.9,
+    bloom: 0.32,
     darkness: 0,
-    cloudCover: 0.72,
-    cloudBright: 1.15,
-    cloudColor: '#f4f8ff',
+    cloudCover: 0.52,
+    cloudBright: 0.88,
+    cloudColor: '#e8eef4',
     galaxy: 0,
   },
 };
@@ -415,8 +415,8 @@ export class OrbitalDirector {
     let sunDirection = this.sunA.direction.clone();
     let sunStrength = this.sunA.active ? this.sunA.intensity : 0.4;
     if (this.eraState.era === 'stable') {
-      horizon.set('#f0d8a8');
-      top.set('#6a9aaa');
+      horizon.set('#c9a86a');
+      top.set('#4a7080');
     }
     for (const sun of this.suns) {
       if (sun.active && sun.intensity > sunStrength) {
@@ -539,6 +539,7 @@ export class OrbitalDirector {
     );
 
     const phase = this.eraState.phase;
+    const stable = this.eraState.era === 'stable';
     const tempBias = THREE.MathUtils.clamp(this.temperature.value / 3, -1, 1);
     // Environment lighting now carries part of the sky bounce, so the hemisphere is softer.
     // Hemisphere + fill are in physical units (divided by π in the BRDF), hence the scaling.
@@ -579,14 +580,17 @@ export class OrbitalDirector {
       }
     } else {
       this.fill.color.set('#4a5f8c');
-      this.scene.environmentIntensity = 0.75;
+      this.scene.environmentIntensity = stable ? 0.58 : 0.72;
     }
 
     // Stable Era: the one sun is softer. More sky fill, a dimmer key, a wider penumbra.
-    const stable = this.eraState.era === 'stable';
     if (stable) {
-      this.ambient.intensity *= 1.3;
-      this.fill.intensity *= 1.5;
+      this.ambient.intensity *= 1.08;
+      this.fill.intensity *= 1.12;
+      this.ambient.color.set('#a89878');
+      if (phase !== 'tri_solar' && phase !== 'flying_star') {
+        this.scene.environmentIntensity = 0.58;
+      }
     }
     for (const sun of this.suns) {
       if (!sun.light) {

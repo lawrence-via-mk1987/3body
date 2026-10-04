@@ -39,6 +39,12 @@ const STAGES: Record<Locale, StageCopy[]> = {
       blurb: 'Roads link pit, dome, and grove.',
       worldNote: 'Waystones and lanterns mark a living map.',
     },
+    {
+      id: 5,
+      name: 'Distant sky age',
+      blurb: 'Sages name a fixed star — not ours — and wonder who watches back.',
+      worldNote: 'The observatory pendulum slows; a new tablet speaks of other worlds.',
+    },
   ],
   zh: [
     {
@@ -71,6 +77,12 @@ const STAGES: Record<Locale, StageCopy[]> = {
       blurb: '道路连接坑、台与林。',
       worldNote: '路石与灯笼标出活地图。',
     },
+    {
+      id: 5,
+      name: '远天时代',
+      blurb: '智者命名一颗不属于我们的固定星——并猜想谁在回望。',
+      worldNote: '天文台摆趋缓；新碑述说他界。',
+    },
   ],
   ja: [
     {
@@ -102,6 +114,12 @@ const STAGES: Record<Locale, StageCopy[]> = {
       name: '統一サイクル',
       blurb: '道が穴、ドーム、林を結ぶ。',
       worldNote: '道標と灯が生きた地図を示す。',
+    },
+    {
+      id: 5,
+      name: '遠天の時代',
+      blurb: '賢者たちは我らの太陽ではない固定星に名を与え——誰が見返しているかを問う。',
+      worldNote: '天文台の振り子は緩み、新しい碑が他界を語る。',
     },
   ],
 };

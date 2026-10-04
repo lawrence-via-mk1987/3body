@@ -1,4 +1,5 @@
 const CYCLES_CLEARED_KEY = '3body_cycles_cleared';
+const DISTANT_SKY_CUTSCENE_KEY = '3body_distant_sky_cutscene';
 
 /** Meta progression across epilogue completions (Final Log read). */
 export class CivilizationLegacy {
@@ -12,9 +13,12 @@ export class CivilizationLegacy {
     return this.cyclesCleared;
   }
 
-  /** 0 = wasteland clans … 4 = late unified cycle (fan-inspired abstract tiers). */
+  /** 0 = wasteland clans … 5 = distant-sky age (fan-inspired abstract tiers). */
   getStage(): number {
     if (this.cyclesCleared >= 5) {
+      return 5;
+    }
+    if (this.cyclesCleared >= 4) {
       return 4;
     }
     if (this.cyclesCleared >= 3) {
@@ -32,6 +36,22 @@ export class CivilizationLegacy {
   recordCycleCleared(): void {
     this.cyclesCleared += 1;
     this.save();
+  }
+
+  hasSeenDistantSkyCutscene(): boolean {
+    try {
+      return localStorage.getItem(DISTANT_SKY_CUTSCENE_KEY) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  markDistantSkyCutsceneSeen(): void {
+    try {
+      localStorage.setItem(DISTANT_SKY_CUTSCENE_KEY, '1');
+    } catch {
+      // ignore
+    }
   }
 
   private load(): void {

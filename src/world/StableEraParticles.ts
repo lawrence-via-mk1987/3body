@@ -30,8 +30,8 @@ export class StableEraParticles {
     geometry.setAttribute('position', new THREE.BufferAttribute(this.positions, 3));
 
     const material = new THREE.PointsMaterial({
-      color: '#e8c878',
-      size: 0.35,
+      color: '#d8b868',
+      size: 0.18,
       transparent: true,
       opacity: 0,
       depthWrite: false,
@@ -45,7 +45,7 @@ export class StableEraParticles {
   setActive(active: boolean, delta: number): void {
     const target = active ? 1 : 0;
     this.blend = THREE.MathUtils.lerp(this.blend, target, Math.min(delta * 1.5, 1));
-    (this.points.material as THREE.PointsMaterial).opacity = this.blend * 0.75;
+    (this.points.material as THREE.PointsMaterial).opacity = this.blend * 0.38;
 
     if (this.blend <= 0.01) {
       this.points.visible = false;

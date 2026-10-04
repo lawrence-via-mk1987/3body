@@ -78,6 +78,7 @@ import {
   resolveWayfindingTarget,
   wayfindingCoords,
 } from '../world/WayfindingObjective';
+import { ObservatoryPendulum } from '../world/ObservatoryPendulum';
 import { Ruins } from '../world/Ruins';
 import { getLandmarkMaterials, type LandmarkMaterials } from '../world/landmarkMaterials';
 import { GeometryBatch, boulderGeometry, seededRandom } from '../world/meshKit';
@@ -102,6 +103,8 @@ import { SoundUnlockBanner } from '../ui/SoundUnlockBanner';
 import { CutsceneController } from '../cinematic/CutsceneController';
 import {
   deathCutsceneBeats,
+  distantSkyCutsceneBeats,
+  distantSkyOmen,
   openingCutsceneBeats,
   victoryCutsceneBeats,
 } from '../cinematic/sceneContent';
@@ -162,6 +165,7 @@ export class Game {
   private readonly stableWildlife: StableWildlife;
   private readonly stablePitHerds: StablePitHerds;
   private readonly triSolarLevitation: TriSolarLevitation;
+  private readonly observatoryPendulum: ObservatoryPendulum;
   private readonly coldBreath: ColdBreath | null;
   private readonly waterSource: WaterSource;
   private readonly wayfinding: LandmarkWayfinding;
@@ -430,6 +434,7 @@ export class Game {
       this.renderQuality.pitHerdMembers,
     );
     this.triSolarLevitation = new TriSolarLevitation(this.terrain, this.renderQuality.triSolarDebris);
+    this.observatoryPendulum = new ObservatoryPendulum(this.terrain);
     this.coldBreath = this.renderQuality.breath ? new ColdBreath() : null;
     this.waterSource = new WaterSource();
     this.wayfinding = new LandmarkWayfinding(this.terrain);
@@ -447,6 +452,7 @@ export class Game {
     this.scene.add(this.stableWildlife.group);
     this.scene.add(this.stablePitHerds.group);
     this.scene.add(this.triSolarLevitation.group);
+    this.scene.add(this.observatoryPendulum.group);
     if (this.coldBreath) {
       this.scene.add(this.coldBreath.points);
     }
@@ -914,7 +920,7 @@ export class Game {
       return;
     }
     const stableEra = this.orbital.getEraKind() === 'stable';
-    const nearbyLog = this.logMarkers.update(this.anchor, stableEra);
+    const nearbyLog = this.logMarkers.update(this.anchor, stableEra, this.civilizationLegacy.getStage());
     if (this.mobileUi.nearNpc) {
       this.tryTalkToNearbyNpc();
       return;
@@ -929,7 +935,7 @@ export class Game {
       return;
     }
     const stableEra = this.orbital.getEraKind() === 'stable';
-    const nearbyLog = this.logMarkers.update(this.anchor, stableEra);
+    const nearbyLog = this.logMarkers.update(this.anchor, stableEra, this.civilizationLegacy.getStage());
     const nearPit = this.shelterZones.isNearDehydrationPit(this.anchor);
     const nearWater = this.waterSource.isNear(this.anchor);
     if (nearPit && !nearbyLog) {
@@ -1140,7 +1146,7 @@ export class Game {
     }
 
     this.anchor.copy(this.player.getPosition());
-    const nearbyLog = this.logMarkers.update(this.anchor, stableEra);
+    const nearbyLog = this.logMarkers.update(this.anchor, stableEra, this.civilizationLegacy.getStage());
     const nearPit = this.shelterZones.isNearDehydrationPit(this.anchor);
     const nearWater = this.waterSource.isNear(this.anchor);
     this.mobileUi = {
@@ -1225,6 +1231,8 @@ export class Game {
     const phaseNow = this.orbital.getPhase();
     this.triSolarLevitation.update(delta, phaseNow);
     this.ruins.setTriSolarHideWind(phaseNow === 'tri_solar' ? 1 : 0, delta);
+    this.observatoryPendulum.setForecastCalibrated(this.forecastMeta.isCalibrated());
+    this.observatoryPendulum.update(delta, this.orbital.getEraKind());
     const hotPhase = phaseNow === 'scorch' || phaseNow === 'tri_solar' || phaseNow === 'flying_star';
     const coldPhase = phaseNow === 'deep_cold' || phaseNow === 'eclipse_relief';
     this.pipeline.setHeat(hotPhase ? 1 : 0, delta);
@@ -1529,7 +1537,7 @@ export class Game {
   }
 
   private tryReadNearbyLog(stableEra: boolean): void {
-    const nearbyLog = this.logMarkers.update(this.anchor, stableEra);
+    const nearbyLog = this.logMarkers.update(this.anchor, stableEra, this.civilizationLegacy.getStage());
     if (!nearbyLog) {
       return;
     }
@@ -1553,8 +1561,30 @@ export class Game {
         this.runJournal.recordCounsel(actionHint);
       }
     }
-    this.logReader.open(nearbyLog.log, actionHint);
-    this.syncMovementState();
+
+    const openLog = (): void => {
+      this.logReader.open(nearbyLog.log, actionHint);
+      this.syncMovementState();
+    };
+
+    if (
+      nearbyLog.log.id === 'distant_sky'
+      && isNew
+      && !this.civilizationLegacy.hasSeenDistantSkyCutscene()
+    ) {
+      this.civilizationLegacy.markDistantSkyCutsceneSeen();
+      this.player.unlock();
+      this.setCinematicBed(true);
+      this.cutscene.play(distantSkyCutsceneBeats(locale), locale, () => {
+        this.setCinematicBed(false);
+        this.showSkyOmen(distantSkyOmen(locale), 12);
+        openLog();
+      });
+      this.syncMovementState();
+      return;
+    }
+
+    openLog();
   }
 
   private syncMovementState(): void {
@@ -1823,6 +1853,7 @@ export class Game {
     this.stableWildlife.dispose();
     this.stablePitHerds.dispose();
     this.triSolarLevitation.dispose();
+    this.observatoryPendulum.dispose();
     this.coldBreath?.dispose();
     this.orbital.dispose();
     this.waterSource.dispose();

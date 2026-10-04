@@ -9,6 +9,8 @@ export interface TextLog {
   position: { x: number; z: number };
   interactionRadius: number;
   requiresStableEra?: boolean;
+  /** Meta stage from epilogue clears; tablet hidden until then. */
+  requiresWorldStage?: number;
 }
 
 export const TEXT_LOGS: TextLog[] = [
@@ -69,6 +71,19 @@ export const TEXT_LOGS: TextLog[] = [
     interactionRadius: 4,
     requiresStableEra: true,
     body: 'If you have survived long enough to read this beneath a gentle sun, then our cycle was not wasted. The three-body sky will turn again. Store water. Mark the pit. Teach the next traveler to look up — and to look away when the horizon glows red. Hope is not a prediction. It is a discipline.',
+  },
+  {
+    id: 'distant_sky',
+    title: 'Distant Sky Tablet',
+    position: { x: 41.5, z: -31.5 },
+    interactionRadius: 4.5,
+    requiresStableEra: true,
+    requiresWorldStage: 5,
+    body:
+      'The pendulum no longer lies to us about tomorrow — only about how long the calm will last. '
+      + 'We fixed a second sky in our charts: a pale, steady star that does not share our three suns. '
+      + 'We do not know its name. We know it has a world. We know that someday our descendants may look toward it '
+      + 'the way it may already look toward us. Store water anyway. The chaos is still ours.',
   },
 ];
 

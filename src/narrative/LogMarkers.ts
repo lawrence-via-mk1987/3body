@@ -55,7 +55,7 @@ export class LogMarkers {
     return marker;
   }
 
-  update(position: THREE.Vector3, stableEraActive: boolean): NearbyLog | null {
+  update(position: THREE.Vector3, stableEraActive: boolean, worldStage = 0): NearbyLog | null {
     let nearest: NearbyLog | null = null;
 
     for (const log of TEXT_LOGS) {
@@ -65,7 +65,8 @@ export class LogMarkers {
       }
 
       const hiddenByEra = log.requiresStableEra && !stableEraActive;
-      marker.visible = !hiddenByEra;
+      const hiddenByStage = log.requiresWorldStage !== undefined && worldStage < log.requiresWorldStage;
+      marker.visible = !hiddenByEra && !hiddenByStage;
 
       const dx = position.x - log.position.x;
       const dz = position.z - log.position.z;
@@ -74,7 +75,7 @@ export class LogMarkers {
       const glow = marker.children[0] as THREE.Mesh;
       const glowMaterial = glow.material as THREE.MeshBasicMaterial;
 
-      if (hiddenByEra) {
+      if (hiddenByEra || hiddenByStage) {
         continue;
       }
 

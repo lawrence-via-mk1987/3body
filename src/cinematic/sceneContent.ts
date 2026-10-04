@@ -281,3 +281,75 @@ export function victoryCutsceneBeats(locale: Locale, epilogueSpeech: string): Cu
       : []),
   ];
 }
+
+/** Witness + sky framing when the distant-sky tablet is read (original fan beat; not VR/drama). */
+export function distantSkyCutsceneBeats(locale: Locale): CutsceneBeat[] {
+  if (locale === 'zh') {
+    return [
+      {
+        phase: 'stable_golden',
+        duration: 11,
+        posture: 'skyward',
+        camera: 'sky',
+        subtitle:
+          '见证者：摆锤教我们的不是答案，是问题。在乱纪元里它狂舞；在恒纪元里它几乎静止——像屏住的一口气。',
+      },
+      {
+        phase: 'eclipse_relief',
+        duration: 10,
+        posture: 'upright',
+        camera: 'sky',
+        subtitle:
+          '见证者：星图上有第二片天空——固定、温和、不属于这三颗太阳。我们不写它的名字。我们只承认：那里也有世界，也许也有眼睛。',
+      },
+    ];
+  }
+  if (locale === 'ja') {
+    return [
+      {
+        phase: 'stable_golden',
+        duration: 11,
+        posture: 'skyward',
+        camera: 'sky',
+        subtitle:
+          '証人：振り子が教えるのは答えではなく問いだ。乱紀元では狂おしく振れ、恒紀元では息を止めたようにほとんど止まる。',
+      },
+      {
+        phase: 'eclipse_relief',
+        duration: 10,
+        posture: 'upright',
+        camera: 'sky',
+        subtitle:
+          '証人：星図に第二の空がある——固定し、穏やかで、我らの三つの太陽のものではない。名は書かない。そこにも世界があり、目があるかもしれないとだけ認める。',
+      },
+    ];
+  }
+  return [
+    {
+      phase: 'stable_golden',
+      duration: 11,
+      posture: 'skyward',
+      camera: 'sky',
+      subtitle:
+        'Witness: the pendulum does not teach answers — only questions. In chaos it thrashes; in a Stable Era it barely moves, like a held breath.',
+    },
+    {
+      phase: 'eclipse_relief',
+      duration: 10,
+      posture: 'upright',
+      camera: 'sky',
+      subtitle:
+        'Witness: our charts hold a second sky — fixed, gentle, not owned by these three suns. We do not write its name. We admit only that it has a world, and perhaps eyes of its own.',
+    },
+  ];
+}
+
+export function distantSkyOmen(locale: Locale): string {
+  if (locale === 'zh') {
+    return '预兆：远方有一颗不随三日起舞的星——存水，并记住它。';
+  }
+  if (locale === 'ja') {
+    return '前兆：三つの太陽と共に踊らない遠い星——水を蓄え、それを覚えよ。';
+  }
+  return 'Omen: a distant star does not dance with our three suns — store water, and remember it.';
+}
