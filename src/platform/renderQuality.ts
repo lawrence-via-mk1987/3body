@@ -14,6 +14,12 @@ export interface RenderQuality {
   bloom: boolean;
   /** Secondary suns contribute coloured directional light (no shadows). */
   secondarySunLights: boolean;
+  /** Instanced grove blades. Short and brown in chaos, tall and green in a Stable Era. */
+  grassBlades: number;
+  /** Screen-space heat distortion. Needs the desktop post stack. */
+  heatHaze: boolean;
+  /** Cold-phase breath in front of the camera. Off on phones. */
+  breath: boolean;
 }
 
 export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
@@ -28,6 +34,9 @@ export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
       anisotropy: 4,
       bloom: false,
       secondarySunLights: true,
+      grassBlades: 180,
+      heatHaze: false,
+      breath: false,
     };
   }
   if (profile.kind === 'tablet') {
@@ -41,6 +50,9 @@ export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
       anisotropy: 8,
       bloom: false,
       secondarySunLights: true,
+      grassBlades: 360,
+      heatHaze: false,
+      breath: true,
     };
   }
   return {
@@ -53,5 +65,8 @@ export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
     anisotropy: 16,
     bloom: true,
     secondarySunLights: true,
+    grassBlades: 700,
+    heatHaze: true,
+    breath: true,
   };
 }

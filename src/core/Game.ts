@@ -76,6 +76,8 @@ import { getLandmarkMaterials, type LandmarkMaterials } from '../world/landmarkM
 import { GeometryBatch, boulderGeometry, seededRandom } from '../world/meshKit';
 import { Sky } from '../world/Sky';
 import { StableEraParticles } from '../world/StableEraParticles';
+import { GroveGrass } from '../world/GroveGrass';
+import { ColdBreath } from '../world/ColdBreath';
 import { Terrain } from '../world/Terrain';
 import { WATER_REFILL_AMOUNT, WaterSource } from '../world/WaterSource';
 import {
@@ -137,6 +139,8 @@ export class Game {
   private readonly ruins: Ruins;
   private readonly landmarkMats: LandmarkMaterials;
   private readonly stableParticles: StableEraParticles;
+  private readonly groveGrass: GroveGrass;
+  private readonly coldBreath: ColdBreath | null;
   private readonly waterSource: WaterSource;
   private readonly wayfinding: LandmarkWayfinding;
   private readonly settlementNpcs: SettlementNpcs;
@@ -381,6 +385,8 @@ export class Game {
     );
     this.ruins = new Ruins(this.terrain, this.landmarkMats);
     this.stableParticles = new StableEraParticles(this.terrain);
+    this.groveGrass = new GroveGrass(this.terrain, this.renderQuality.grassBlades);
+    this.coldBreath = this.renderQuality.breath ? new ColdBreath() : null;
     this.waterSource = new WaterSource();
     this.wayfinding = new LandmarkWayfinding(this.terrain);
     this.settlementNpcs = new SettlementNpcs(this.terrain);
@@ -392,6 +398,10 @@ export class Game {
     this.scene.add(this.ruins.group);
     this.scene.add(this.logMarkers.group);
     this.scene.add(this.stableParticles.points);
+    this.scene.add(this.groveGrass.mesh);
+    if (this.coldBreath) {
+      this.scene.add(this.coldBreath.points);
+    }
     this.scene.add(this.waterSource.mesh);
     this.scene.add(this.wayfinding.group);
     this.scene.add(this.settlementNpcs.group);
@@ -1086,6 +1096,12 @@ export class Game {
     this.waterSource.setStableEraActive(stableEra);
     this.waterSource.update(delta);
     this.stableParticles.setActive(stableEra, delta);
+    this.groveGrass.setStable(stableEra, delta);
+    const phaseNow = this.orbital.getPhase();
+    const hotPhase = phaseNow === 'scorch' || phaseNow === 'tri_solar' || phaseNow === 'flying_star';
+    const coldPhase = phaseNow === 'deep_cold' || phaseNow === 'eclipse_relief';
+    this.pipeline.setHeat(hotPhase ? 1 : 0, delta);
+    this.coldBreath?.update(this.player.camera, coldPhase, delta);
     this.stableBanner.update(delta);
 
     if (this.statusOverrideTimer > 0) {
@@ -1654,6 +1670,8 @@ export class Game {
     window.removeEventListener('resize', this.onResize);
     this.audio.dispose();
     this.stableParticles.dispose();
+    this.groveGrass.dispose();
+    this.coldBreath?.dispose();
     this.orbital.dispose();
     this.terrain.dispose();
     this.sky.dispose();

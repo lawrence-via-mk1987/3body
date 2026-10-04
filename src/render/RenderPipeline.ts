@@ -3,7 +3,39 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import type { RenderQuality } from '../platform/renderQuality';
+
+/**
+ * Refracts the lower part of the frame while the ground is hot. Sits after bloom and before
+ * the output pass, so the sun disks still bloom cleanly and only the air above the ground wavers.
+ */
+const HeatHazeShader = {
+  uniforms: {
+    tDiffuse: { value: null as THREE.Texture | null },
+    uTime: { value: 0 },
+    uAmount: { value: 0 },
+  },
+  vertexShader: /* glsl */ `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: /* glsl */ `
+    uniform sampler2D tDiffuse;
+    uniform float uTime;
+    uniform float uAmount;
+    varying vec2 vUv;
+    void main() {
+      float ground = smoothstep(0.42, 0.02, vUv.y);
+      float n = sin(vUv.y * 38.0 + uTime * 5.0) * sin(vUv.x * 22.0 - uTime * 3.0);
+      vec2 offset = vec2(n, n * 0.25) * 0.0016 * uAmount * ground;
+      gl_FragColor = texture2D(tDiffuse, vUv + offset);
+    }
+  `,
+};
 
 /**
  * Wraps the renderer so Game can call render()/setSize() without caring whether
@@ -12,6 +44,8 @@ import type { RenderQuality } from '../platform/renderQuality';
 export class RenderPipeline {
   private composer: EffectComposer | null = null;
   private bloomPass: UnrealBloomPass | null = null;
+  private heatPass: ShaderPass | null = null;
+  private heatAmount = 0;
 
   constructor(
     private readonly renderer: THREE.WebGLRenderer,
@@ -32,7 +66,23 @@ export class RenderPipeline {
     this.composer.addPass(new RenderPass(scene, camera));
     this.bloomPass = new UnrealBloomPass(size.clone(), 0.55, 0.45, 1.05);
     this.composer.addPass(this.bloomPass);
+    if (quality.heatHaze) {
+      this.heatPass = new ShaderPass(HeatHazeShader);
+      this.heatPass.enabled = false;
+      this.composer.addPass(this.heatPass);
+    }
     this.composer.addPass(new OutputPass());
+  }
+
+  /** 0 = still air, 1 = scorch / tri-solar / flying star. No-ops where the pass was not built. */
+  setHeat(target: number, delta: number): void {
+    if (!this.heatPass) {
+      return;
+    }
+    this.heatAmount = THREE.MathUtils.lerp(this.heatAmount, target, Math.min(delta * 1.2, 1));
+    this.heatPass.enabled = this.heatAmount > 0.02;
+    this.heatPass.uniforms.uAmount.value = this.heatAmount;
+    this.heatPass.uniforms.uTime.value += delta;
   }
 
   /** Scale bloom with the sky: flying stars glare, deep cold barely glows. */

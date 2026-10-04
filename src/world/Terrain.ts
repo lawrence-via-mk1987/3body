@@ -110,6 +110,7 @@ export class Terrain {
     uStableBlend: { value: 0 },
     uGroveCenter: { value: new THREE.Vector2(GROVE_CENTER.x, GROVE_CENTER.y) },
     uGroveRadius: { value: GROVE_RADIUS },
+    uTime: { value: 0 },
   };
   private targetCold = 0;
   private targetHeat = 0;
@@ -148,6 +149,7 @@ export class Terrain {
       shader.uniforms.uStableBlend = this.uniforms.uStableBlend;
       shader.uniforms.uGroveCenter = this.uniforms.uGroveCenter;
       shader.uniforms.uGroveRadius = this.uniforms.uGroveRadius;
+      shader.uniforms.uTime = this.uniforms.uTime;
 
       shader.vertexShader = shader.vertexShader.replace(
         '#include <color_pars_vertex>',
@@ -168,6 +170,8 @@ export class Terrain {
         uniform float uStableBlend;
         uniform vec2 uGroveCenter;
         uniform float uGroveRadius;
+        uniform float uTime;
+        float wet;
         varying vec3 vWorldPosition;
         float detailFade;
         float terrainHash(vec2 p) {
@@ -213,10 +217,24 @@ export class Terrain {
         vec3 groveTint = vec3(0.26, 0.48, 0.22);
         float lowland = smoothstep(10.0, 2.0, vWorldPosition.y);
         diffuseColor.rgb = mix(diffuseColor.rgb, iceTint, uColdBlend * (0.3 + lowland * 0.42));
+        // Rime: pale patches on exposed ground, not a flat blue wash.
+        float frost = smoothstep(0.32, 0.72, terrainNoise(vWorldPosition.xz * 0.55 + 2.0));
+        float ridge = 1.0 - lowland;
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.78, 0.84, 0.9), uColdBlend * 0.28);
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.9, 0.94, 0.97),
+          uColdBlend * frost * (0.45 + ridge * 0.4));
         diffuseColor.rgb = mix(diffuseColor.rgb, scorchTint, uHeatBlend * 0.28);
+        // A slow brightness crawl so hot ground shimmers even without a post pass.
+        float heatShimmer = sin(vWorldPosition.x * 2.4 + uTime * 3.5)
+          * sin(vWorldPosition.z * 2.1 - uTime * 2.7);
+        diffuseColor.rgb += heatShimmer * uHeatBlend * detailFade * 0.04;
         float groveDist = distance(vWorldPosition.xz, uGroveCenter);
         float groveMask = 1.0 - smoothstep(uGroveRadius * 0.35, uGroveRadius, groveDist);
-        diffuseColor.rgb = mix(diffuseColor.rgb, groveTint, uStableBlend * groveMask * 0.8);`,
+        diffuseColor.rgb = mix(diffuseColor.rgb, groveTint, uStableBlend * groveMask * 0.8);
+        // Damp soil around the pool. wet is read again by the roughness chunk.
+        wet = (1.0 - smoothstep(2.4, 8.5, groveDist)) * uStableBlend;
+        diffuseColor.rgb *= mix(1.0, 0.66, wet);
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.12, 0.2, 0.14), wet * 0.4);`,
       );
 
       shader.fragmentShader = shader.fragmentShader.replace(
@@ -229,10 +247,11 @@ export class Terrain {
         '#include <roughnessmap_fragment>',
         `#include <roughnessmap_fragment>
         roughnessFactor = mix(roughnessFactor, 0.55, uStableBlend * groveMask * 0.7);
+        roughnessFactor = mix(roughnessFactor, 0.16, wet);
         roughnessFactor = mix(roughnessFactor, 0.7, uColdBlend * 0.4);`,
       );
     };
-    this.material.customProgramCacheKey = () => 'terrain-realism-v2';
+    this.material.customProgramCacheKey = () => 'terrain-realism-v3';
 
     this.mesh = new THREE.Mesh(this.geometry, this.material);
     this.mesh.receiveShadow = true;
@@ -308,6 +327,7 @@ export class Terrain {
       this.targetStable,
       lerpSpeed,
     );
+    this.uniforms.uTime.value += delta;
   }
 
   /**

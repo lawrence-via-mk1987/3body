@@ -408,6 +408,24 @@ export class OrbitalDirector {
     this.fill.intensity = (this.eraState.era === 'stable'
       ? 0.22
       : 0.12 + Math.max(this.temperature.value, 0) * 0.08) * 2.4;
+
+    // Stable Era: the one sun is softer. More sky fill, a dimmer key, a wider penumbra.
+    const stable = this.eraState.era === 'stable';
+    if (stable) {
+      this.ambient.intensity *= 1.3;
+      this.fill.intensity *= 1.5;
+    }
+    for (const sun of this.suns) {
+      if (!sun.light) {
+        continue;
+      }
+      if (stable) {
+        sun.light.intensity *= 0.7;
+      }
+      if (sun.light.castShadow) {
+        sun.light.shadow.radius = stable ? 4 : 2.5;
+      }
+    }
   }
 
   consumeTransition(): EraTransition | null {

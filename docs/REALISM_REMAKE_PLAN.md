@@ -154,6 +154,8 @@ label no longer draws over the hood. The Last Predictor stands just outside the 
 
 **Done when:** a Chaotic screenshot and a Stable screenshot of the same grove are obviously different without reading the HUD.
 
+**Status: shipped (procedural).** The grove grows a single instanced grass mesh (`src/world/GroveGrass.ts`): short straw in a Chaotic Era, tall green in a Stable Era, driven by one uniform. Soil around the pool darkens and turns glossy while the era is stable, and the stable suns drop to a softer key with a wider shadow and a stronger sky fill (`OrbitalDirector`). Scorch, Tri-Solar, and Flying Star add a ground shimmer plus a desktop-only heat-haze pass under the existing sun bloom. Deep cold lays rime on the ridges; breath puffs sit in front of the camera on tablet and desktop and are omitted on phones (`renderQuality.breath`, `heatHaze`). Civilization stage props already come from the Phase 2 kits — cairns, cart, banners, scaffold, flagstones, lantern roads — so era swaps do not add a second set of primitives.
+
 ### Phase 5 — Polish and ship
 
 - Compress textures, measure iPhone-class frame time, drop features that miss 30 fps.
