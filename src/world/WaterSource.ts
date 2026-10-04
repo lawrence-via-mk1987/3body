@@ -17,12 +17,12 @@ export class WaterSource {
 
   constructor() {
     this.material = new THREE.MeshStandardMaterial({
-      color: '#1e4048',
-      roughness: 0.06,
-      metalness: 0.05,
+      color: '#1a4852',
+      roughness: 0.045,
+      metalness: 0.08,
       transparent: true,
-      opacity: 0.9,
-      envMapIntensity: 1.6,
+      opacity: 0.92,
+      envMapIntensity: 2.1,
     });
     this.mesh = new THREE.Mesh(new THREE.CircleGeometry(GROVE_SITE.poolRadius - 0.25, 48), this.material);
     this.mesh.rotation.x = -Math.PI / 2;

@@ -9,6 +9,7 @@ import {
   GROVE_KEEPER_STYLE,
   PREDICTOR_STYLE,
 } from './HumanoidNpc';
+import { addContactShadow } from './contactShadow';
 
 export class SettlementNpcs {
   readonly group = new THREE.Group();
@@ -42,6 +43,7 @@ export class SettlementNpcs {
       hands.right.add(staff, ring, ring2);
     });
     this.predictorGroup.add(figure);
+    addContactShadow(this.predictorGroup, 0.62);
     const y = terrain.getHeightAt(LAST_PREDICTOR.x, LAST_PREDICTOR.z);
     this.predictorGroup.position.set(LAST_PREDICTOR.x, y, LAST_PREDICTOR.z);
     this.predictorGroup.rotation.y = -0.6;
@@ -69,6 +71,7 @@ export class SettlementNpcs {
       hands.belt.add(basket);
     });
     this.groveKeeperGroup.add(figure);
+    addContactShadow(this.groveKeeperGroup, 0.58);
     const y = terrain.getHeightAt(GROVE_KEEPER.x, GROVE_KEEPER.z);
     this.groveKeeperGroup.position.set(GROVE_KEEPER.x, y, GROVE_KEEPER.z);
     this.groveKeeperGroup.rotation.y = 2.2;

@@ -2,6 +2,14 @@
 
 Phases **1–4** of `REALISM_REMAKE_PLAN.md` are shipped in code (procedural landmarks, humanoids, era dressing, desktop SSAO, clouds, collision). This doc is the **recommended order** for the next visual wins without changing gameplay rules.
 
+## Shipped (5a / 5b partial)
+
+- **Triplanar** dust/clay on **steep** trench walls (terrain shader blends planar ↔ triplanar by slope).
+- **Tri-solar** patchy warm ground tint (`uTriSolarBlend`); flying star uses a lighter mix.
+- **Flying star** sun disk scale increased (dominant red sun reads enormous at the horizon).
+- **Contact shadows** under predictor and grove keeper (`contactShadow.ts`).
+- **Stable grove pool** glossier (lower roughness, stronger env reflection).
+
 ## Principles
 
 - **Phone first:** every step must stay playable at ~30 fps on a recent iPhone; desktop gets extras (SSAO, heat haze, richer music arpeggio).

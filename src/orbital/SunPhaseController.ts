@@ -59,9 +59,9 @@ export class SunPhaseController {
         sunB.setLayout(-2.35, 0.18, 0.65, 0.18, approach < 0.55);
         sunC.setLayout(
           lerp(-0.35, 0.05, approach),
-          lerp(0.05, 0.22, approach),
+          lerp(0.04, 0.18, approach),
+          lerp(2.4, 5.4, approach),
           lerp(1.8, 3.4, approach),
-          lerp(1.6, 2.9, approach),
           true,
         );
         break;

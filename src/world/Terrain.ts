@@ -111,10 +111,14 @@ export class Terrain {
     uGroveCenter: { value: new THREE.Vector2(GROVE_CENTER.x, GROVE_CENTER.y) },
     uGroveRadius: { value: GROVE_RADIUS },
     uTime: { value: 0 },
+    uTriScale: { value: 1 / DETAIL_TILE_METRES },
+    uTriSolarBlend: { value: 0 },
   };
   private targetCold = 0;
   private targetHeat = 0;
   private targetStable = 0;
+  private targetTriSolar = 0;
+  private currentTriSolar = 0;
   /** Baked vertex heights, row-major (z rows, x columns), for mesh-exact collision. */
   private readonly heights: Float32Array;
   private readonly segments: number;
@@ -154,12 +158,14 @@ export class Terrain {
       shader.vertexShader = shader.vertexShader.replace(
         '#include <color_pars_vertex>',
         `#include <color_pars_vertex>
-        varying vec3 vWorldPosition;`,
+        varying vec3 vWorldPosition;
+        varying vec3 vWorldNormal;`,
       );
       shader.vertexShader = shader.vertexShader.replace(
         '#include <worldpos_vertex>',
         `#include <worldpos_vertex>
-        vWorldPosition = worldPosition.xyz;`,
+        vWorldPosition = worldPosition.xyz;
+        vWorldNormal = normalize(mat3(modelMatrix) * objectNormal);`,
       );
 
       shader.fragmentShader = shader.fragmentShader.replace(
@@ -171,9 +177,22 @@ export class Terrain {
         uniform vec2 uGroveCenter;
         uniform float uGroveRadius;
         uniform float uTime;
+        uniform float uTriScale;
+        uniform float uTriSolarBlend;
         float wet;
         varying vec3 vWorldPosition;
+        varying vec3 vWorldNormal;
         float detailFade;
+        vec3 triBlendWeights(vec3 n) {
+          vec3 b = pow(abs(n), vec3(4.0));
+          return b / (b.x + b.y + b.z);
+        }
+        vec4 triSample(sampler2D tex, vec3 w) {
+          vec2 uvX = vWorldPosition.zy * uTriScale;
+          vec2 uvY = vWorldPosition.xz * uTriScale;
+          vec2 uvZ = vWorldPosition.xy * uTriScale;
+          return texture2D(tex, uvX) * w.x + texture2D(tex, uvY) * w.y + texture2D(tex, uvZ) * w.z;
+        }
         float terrainHash(vec2 p) {
           return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
         }
@@ -195,12 +214,19 @@ export class Terrain {
         `
         float camDist = distance(vWorldPosition, cameraPosition);
         detailFade = smoothstep(95.0, 18.0, camDist);
+        float slope = 1.0 - clamp(vWorldNormal.y, 0.0, 1.0);
+        float triMix = smoothstep(0.26, 0.62, slope);
+        vec3 triW = triBlendWeights(vWorldNormal);
+        vec4 texTriA = triSample(map, triW);
+        vec4 texTriB = triSample(map, triBlendWeights(normalize(vWorldNormal + vec3(0.08, 0.04, -0.06))));
         vec4 texA = texture2D(map, vMapUv);
         vec2 uvB = mat2(0.8, -0.6, 0.6, 0.8) * vMapUv * 0.23 + vec2(0.37, 0.11);
         vec4 texB = texture2D(map, uvB);
         float macro = terrainNoise(vWorldPosition.xz * 0.045) * 0.6
           + terrainNoise(vWorldPosition.xz * 0.011 + 7.3) * 0.4;
-        vec4 sampledDiffuseColor = mix(texA, texB, 0.35 + macro * 0.3);
+        vec4 planarColor = mix(texA, texB, 0.35 + macro * 0.3);
+        vec4 triColor = mix(texTriA, texTriB, 0.35 + macro * 0.25);
+        vec4 sampledDiffuseColor = mix(planarColor, triColor, triMix);
         vec3 avgGround = vec3(0.49, 0.35, 0.25) * (0.9 + terrainNoise(vWorldPosition.xz * 0.09 + 3.1) * 0.2);
         sampledDiffuseColor.rgb = mix(avgGround, sampledDiffuseColor.rgb, 0.18 + detailFade * 0.82);
         sampledDiffuseColor.rgb *= 0.86 + macro * 0.3;
@@ -224,6 +250,12 @@ export class Terrain {
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.9, 0.94, 0.97),
           uColdBlend * frost * (0.45 + ridge * 0.4));
         diffuseColor.rgb = mix(diffuseColor.rgb, scorchTint, uHeatBlend * 0.28);
+        float triPatch = terrainNoise(vWorldPosition.xz * 0.38 + vec2(2.1, 5.4));
+        diffuseColor.rgb = mix(
+          diffuseColor.rgb,
+          diffuseColor.rgb * vec3(1.12, 0.84, 0.62),
+          uTriSolarBlend * triPatch * 0.42);
+        diffuseColor.rgb += vec3(0.07, 0.02, 0.01) * uTriSolarBlend * ridge * 0.55;
         // A slow brightness crawl so hot ground shimmers even without a post pass.
         float heatShimmer = sin(vWorldPosition.x * 2.4 + uTime * 3.5)
           * sin(vWorldPosition.z * 2.1 - uTime * 2.7);
@@ -239,7 +271,17 @@ export class Terrain {
 
       shader.fragmentShader = shader.fragmentShader.replace(
         'mapN.xy *= normalScale;',
-        'mapN.xy *= normalScale * (0.25 + detailFade * 0.75);',
+        `{
+          float slopeN = 1.0 - clamp(vWorldNormal.y, 0.0, 1.0);
+          float triMixN = smoothstep(0.26, 0.62, slopeN);
+          vec3 wN = triBlendWeights(vWorldNormal);
+          vec3 tx = texture2D(normalMap, vWorldPosition.zy * uTriScale).xyz * 2.0 - 1.0;
+          vec3 ty = texture2D(normalMap, vWorldPosition.xz * uTriScale).xyz * 2.0 - 1.0;
+          vec3 tz = texture2D(normalMap, vWorldPosition.xy * uTriScale).xyz * 2.0 - 1.0;
+          vec3 triN = normalize(tx * wN.x + ty * wN.y + tz * wN.z);
+          mapN.xy = mix(mapN.xy, triN.xy, triMixN);
+          mapN.xy *= normalScale * (0.25 + detailFade * 0.75);
+        }`,
       );
 
       // Wet grove soil and frost both lower roughness a little.
@@ -251,7 +293,7 @@ export class Terrain {
         roughnessFactor = mix(roughnessFactor, 0.7, uColdBlend * 0.4);`,
       );
     };
-    this.material.customProgramCacheKey = () => 'terrain-realism-v3';
+    this.material.customProgramCacheKey = () => 'terrain-realism-v4-triplanar';
 
     this.mesh = new THREE.Mesh(this.geometry, this.material);
     this.mesh.receiveShadow = true;
@@ -308,6 +350,7 @@ export class Terrain {
     this.targetCold = phase === 'deep_cold' || phase === 'eclipse_relief' ? 1 : 0;
     this.targetHeat = phase === 'scorch' || phase === 'tri_solar' || phase === 'flying_star' ? 1 : 0;
     this.targetStable = era === 'stable' ? 1 : 0;
+    this.targetTriSolar = phase === 'tri_solar' ? 1 : phase === 'flying_star' ? 0.35 : 0;
   }
 
   updateVisuals(delta: number): void {
@@ -328,6 +371,8 @@ export class Terrain {
       lerpSpeed,
     );
     this.uniforms.uTime.value += delta;
+    this.currentTriSolar = THREE.MathUtils.lerp(this.currentTriSolar, this.targetTriSolar, lerpSpeed);
+    this.uniforms.uTriSolarBlend.value = this.currentTriSolar;
   }
 
   /**
