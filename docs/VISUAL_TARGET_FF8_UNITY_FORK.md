@@ -94,9 +94,16 @@ Goal: **less blocky, more “set piece”** while keeping GitHub Pages and phone
 - Terrain **ORM-style** stack: baked **AO map**, triplanar AO/roughness, **detail normal** micro-breakup (`terrain-realism-v6-orm-detail-normal`)
 - Regenerate heroes: `npm run assets:heroes`
 
+**Shipped (Path A — milestone 3):**
+
+- **Rigged predictor** glTF (`body` / `head` / `armL` / `armR`) with procedural idle + optional glTF `AnimationMixer`
+- **Grove keeper** hero glTF + `swapGroveKeeperMesh`
+- **Observatory shell hide** — procedural dome/drum/door trim batch toggled off when dome + trim heroes load (`Ruins.observatoryShellGroup`)
+- **Draco GLB** pipeline: `npm run assets:heroes:all`, runtime `heroGltfLoader.ts` + `public/assets/draco/gltf/`
+
 Ordered wins (each shippable on `main`):
 
-1. **Hero glTF set (Phase 5c)** — pit rim, observatory dome, grove pool edge (KTX2 + Draco); **one skinned NPC** with idle (registrar OR predictor). *(Milestone 1: static registrar mesh + three landmarks — skinned predictor next.)*  
+1. **Hero glTF set (Phase 5c)** — pit rim, observatory dome, grove pool edge (KTX2 + Draco); rigged NPC idle. *(M3: Draco GLB + rigged predictor; KTX2 textures optional next.)*  
 2. **Material upgrade** — ORM textures on landmarks; triplanar + detail normal on terrain; drop visible “box” props from `meshKit` where glTF replaces them.  
 3. **Sky & suns** — larger limb-darkened disks, god-rays/bloom tuning, era LUTs (stable gold vs chaos ochre vs flying-star red).  
 4. **Set dressing** — instanced rocks, banners, dehydration rows as **merged meshes**, not loose primitives.  

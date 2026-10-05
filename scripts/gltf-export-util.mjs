@@ -1,4 +1,42 @@
 import fs from 'node:fs';
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+
+/** Node polyfill for GLTFExporter embedded buffers. */
+function ensureFileReaderPolyfill() {
+  if (globalThis.FileReader) {
+    return;
+  }
+  globalThis.FileReader = class FileReader {
+    readAsArrayBuffer(blob) {
+      blob.arrayBuffer().then((arrayBuffer) => {
+        this.result = arrayBuffer;
+        this.onload?.({ target: this });
+      });
+    }
+
+    readAsDataURL(blob) {
+      blob.arrayBuffer().then((arrayBuffer) => {
+        const b64 = Buffer.from(arrayBuffer).toString('base64');
+        const mime = blob.type || 'application/octet-stream';
+        this.result = `data:${mime};base64,${b64}`;
+        this.onload?.({ target: this });
+      });
+    }
+  };
+}
+
+/** Export a THREE.Object3D hierarchy (rigged heroes). */
+export async function exportSceneToGltf(root, outPath, { binary = false } = {}) {
+  ensureFileReaderPolyfill();
+  const exporter = new GLTFExporter();
+  const data = await exporter.parseAsync(root, { binary });
+  if (binary) {
+    fs.writeFileSync(outPath, Buffer.from(data));
+  } else {
+    fs.writeFileSync(outPath, JSON.stringify(data, null, 0));
+  }
+  return fs.statSync(outPath).size;
+}
 
 /** Write a single-mesh glTF 2.0 JSON with embedded base64 buffer. */
 export function exportGeometryToGltf(geo, { outPath, meshName, material }) {

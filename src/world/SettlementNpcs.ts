@@ -4,11 +4,13 @@ import type { Terrain } from './Terrain';
 import { GROVE_KEEPER, LAST_PREDICTOR } from './landmarks';
 import {
   applyNpcGlow,
+  applyHumanoidPosture,
   buildHumanoidNpc,
   stepHumanoidIdle,
   GROVE_KEEPER_STYLE,
   PREDICTOR_STYLE,
 } from './HumanoidNpc';
+import { stepPredictorHeroIdle } from './predictorHeroIdle';
 import { addContactShadow } from './contactShadow';
 
 export class SettlementNpcs {
@@ -16,6 +18,10 @@ export class SettlementNpcs {
   readonly predictorGroup = new THREE.Group();
   readonly groveKeeperGroup = new THREE.Group();
   private proceduralPredictor: THREE.Object3D | null = null;
+  private proceduralGroveKeeper: THREE.Object3D | null = null;
+  private predictorHero: THREE.Object3D | null = null;
+  private predictorMixer: THREE.AnimationMixer | null = null;
+  private groveKeeperHero: THREE.Object3D | null = null;
 
   constructor(terrain: Terrain) {
     this.buildPredictor(terrain);
@@ -44,6 +50,7 @@ export class SettlementNpcs {
       hands.right.add(staff, ring, ring2);
     });
     this.proceduralPredictor = figure;
+    figure.name = 'ProceduralPredictor';
     this.predictorGroup.add(figure);
     addContactShadow(this.predictorGroup, 0.62);
     const y = terrain.getHeightAt(LAST_PREDICTOR.x, LAST_PREDICTOR.z);
@@ -72,6 +79,8 @@ export class SettlementNpcs {
       basket.position.y = -0.08;
       hands.belt.add(basket);
     });
+    this.proceduralGroveKeeper = figure;
+    figure.name = 'ProceduralGroveKeeper';
     this.groveKeeperGroup.add(figure);
     addContactShadow(this.groveKeeperGroup, 0.58);
     const y = terrain.getHeightAt(GROVE_KEEPER.x, GROVE_KEEPER.z);
@@ -80,16 +89,25 @@ export class SettlementNpcs {
     this.groveKeeperGroup.visible = false;
   }
 
-  update(era: EraKind, playerPosition: THREE.Vector3, pulseTime: number): void {
+  update(era: EraKind, playerPosition: THREE.Vector3, pulseTime: number, delta: number): void {
     const stable = era === 'stable';
     this.groveKeeperGroup.visible = stable;
 
     const nearPredictor = this.isNearPredictor(playerPosition);
     this.setGroupGlow(this.predictorGroup, nearPredictor, pulseTime, 0.35, 0.65);
+    if (this.predictorHero) {
+      stepPredictorHeroIdle(this.predictorHero, pulseTime, this.predictorMixer, delta);
+    } else if (this.proceduralPredictor) {
+      stepHumanoidIdle(this.proceduralPredictor, pulseTime);
+    }
 
     if (stable) {
       const nearKeeper = this.isNearGroveKeeper(playerPosition);
       this.setGroupGlow(this.groveKeeperGroup, nearKeeper, pulseTime, 0.3, 0.55);
+      const keeperRoot = this.groveKeeperHero ?? this.proceduralGroveKeeper;
+      if (keeperRoot && keeperRoot.visible !== false) {
+        stepHumanoidIdle(keeperRoot, pulseTime);
+      }
     }
   }
 
@@ -104,16 +122,37 @@ export class SettlementNpcs {
       ? nearBoost + Math.sin(pulseTime * 3) * 0.1
       : base + Math.sin(pulseTime * 2) * 0.05;
     applyNpcGlow(group, intensity);
-    stepHumanoidIdle(group, pulseTime);
   }
 
-  swapPredictorMesh(heroRoot: THREE.Object3D): void {
+  swapPredictorMesh(heroRoot: THREE.Object3D, animations: THREE.AnimationClip[] = []): void {
     if (this.proceduralPredictor) {
       this.proceduralPredictor.visible = false;
+    }
+    if (this.predictorMixer) {
+      this.predictorMixer.stopAllAction();
+      this.predictorMixer = null;
     }
     heroRoot.position.set(0, 0, 0);
     heroRoot.rotation.set(0, 0, 0);
     this.predictorGroup.add(heroRoot);
+    this.predictorHero = heroRoot;
+    if (animations.length > 0) {
+      this.predictorMixer = new THREE.AnimationMixer(heroRoot);
+      const clip = animations[0];
+      this.predictorMixer.clipAction(clip).play();
+    }
+  }
+
+  swapGroveKeeperMesh(heroRoot: THREE.Object3D): void {
+    if (this.proceduralGroveKeeper) {
+      this.proceduralGroveKeeper.visible = false;
+    }
+    heroRoot.position.set(0, 0, 0);
+    heroRoot.rotation.set(0, 0, 0);
+    heroRoot.userData.idleSeed ??= 0.52;
+    applyHumanoidPosture(heroRoot, 'tending');
+    this.groveKeeperGroup.add(heroRoot);
+    this.groveKeeperHero = heroRoot;
   }
 
   isNearPredictor(position: THREE.Vector3): boolean {

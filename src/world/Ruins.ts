@@ -42,6 +42,8 @@ export const GROVE_TREES = [
 export class Ruins {
   readonly group = new THREE.Group();
   readonly groveGroup = new THREE.Group();
+  /** Procedural dome/drum/trim duplicated by Path A glTF — toggled off when heroes load. */
+  readonly observatoryShellGroup = new THREE.Group();
 
   private readonly bark: THREE.MeshStandardMaterial;
   private readonly canopy: THREE.MeshStandardMaterial;
@@ -60,9 +62,13 @@ export class Ruins {
     this.pitHideMat = pitHideSetup.material;
     this.pitHideWind = pitHideSetup.uniforms;
 
+    this.observatoryShellGroup.name = 'ObservatoryShell';
     const batch = new GeometryBatch();
+    const observatoryShellBatch = new GeometryBatch();
     const pitHideBatch = new GeometryBatch();
-    this.buildObservatory(batch);
+    this.buildObservatory(batch, observatoryShellBatch);
+    observatoryShellBatch.build(this.observatoryShellGroup);
+    this.group.add(this.observatoryShellGroup);
     this.buildCollapsedShelter(batch);
     this.buildDehydrationPit(batch, pitHideBatch);
     this.buildWaystone(batch);
@@ -80,6 +86,10 @@ export class Ruins {
       strength,
       Math.min(delta * (strength > this.pitHideWind.uWind.value ? 2.5 : 4), 1),
     );
+  }
+
+  setObservatoryShellVisible(visible: boolean): void {
+    this.observatoryShellGroup.visible = visible;
   }
 
   setStableEraActive(active: boolean): void {
@@ -100,25 +110,23 @@ export class Ruins {
 
   // ---------------------------------------------------------------- observatory
 
-  private buildObservatory(batch: GeometryBatch): void {
+  private buildObservatory(batch: GeometryBatch, shellBatch: GeometryBatch): void {
     const { x, z } = OBSERVATORY_LANDMARK;
     const y = OBSERVATORY_SITE.level;
     const { stone, stoneDark, stonePale, bronze } = this.mats;
 
-    // Plinth and drum.
-    batch.add(roughen(new THREE.CylinderGeometry(5.4, 5.7, 0.45, 28), 0.04, 2, 1), stone, { position: [x, y + 0.22, z] });
-    batch.add(roughen(new THREE.CylinderGeometry(4.6, 4.9, 3.3, 28, 3), 0.06, 1.2, 2), stone, { position: [x, y + 0.45 + 1.65, z] });
-    // A string course and masonry seams so the drum reads as stacked courses, not a tube.
-    batch.add(new THREE.TorusGeometry(4.78, 0.09, 6, 40), stoneDark, { position: [x, y + 1.6, z], rotation: [Math.PI / 2, 0, 0] });
-    batch.add(new THREE.TorusGeometry(4.68, 0.1, 6, 40), stoneDark, { position: [x, y + 3.75, z], rotation: [Math.PI / 2, 0, 0] });
+    // Plinth and drum (hidden when dome + trim glTF heroes mount).
+    shellBatch.add(roughen(new THREE.CylinderGeometry(5.4, 5.7, 0.45, 28), 0.04, 2, 1), stone, { position: [x, y + 0.22, z] });
+    shellBatch.add(roughen(new THREE.CylinderGeometry(4.6, 4.9, 3.3, 28, 3), 0.06, 1.2, 2), stone, { position: [x, y + 0.45 + 1.65, z] });
+    shellBatch.add(new THREE.TorusGeometry(4.78, 0.09, 6, 40), stoneDark, { position: [x, y + 1.6, z], rotation: [Math.PI / 2, 0, 0] });
+    shellBatch.add(new THREE.TorusGeometry(4.68, 0.1, 6, 40), stoneDark, { position: [x, y + 3.75, z], rotation: [Math.PI / 2, 0, 0] });
 
-    // Dome, missing the wedge that collapsed toward the east.
     const gap = 1.38;
     const outer = new THREE.SphereGeometry(4.7, 30, 14, Math.PI + gap / 2, Math.PI * 2 - gap, 0, Math.PI * 0.5);
     roughen(outer, 0.05, 1.4, 3);
-    batch.add(outer, stone, { position: [x, y + 3.75, z] });
+    shellBatch.add(outer, stone, { position: [x, y + 3.75, z] });
     const inner = new THREE.SphereGeometry(4.5, 30, 14, Math.PI + gap / 2, Math.PI * 2 - gap, 0, Math.PI * 0.5);
-    batch.add(inner, stoneDark, { position: [x, y + 3.75, z] });
+    shellBatch.add(inner, stoneDark, { position: [x, y + 3.75, z] });
     // Broken edges along the gap.
     for (const side of [-1, 1]) {
       const a = Math.PI + side * gap / 2;
@@ -158,26 +166,25 @@ export class Ruins {
     const dx = Math.sin(doorYaw);
     const dz = Math.cos(doorYaw);
     const doorR = 4.75;
-    batch.add(new THREE.BoxGeometry(1.6, 2.6, 0.7), stoneDark, {
+    shellBatch.add(new THREE.BoxGeometry(1.6, 2.6, 0.7), stoneDark, {
       position: [x + dx * doorR, y + 0.45 + 1.3, z + dz * doorR],
       rotation: [0, doorYaw, 0],
     });
-    batch.add(stoneBlockGeometry(2.4, 0.45, 0.9, 5), stonePale, {
+    shellBatch.add(stoneBlockGeometry(2.4, 0.45, 0.9, 5), stonePale, {
       position: [x + dx * (doorR + 0.15), y + 0.45 + 2.85, z + dz * (doorR + 0.15)],
       rotation: [0, doorYaw, 0],
     });
     for (const side of [-1, 1]) {
       const jx = x + dx * (doorR + 0.1) + dz * side * 1.05;
       const jz = z + dz * (doorR + 0.1) - dx * side * 1.05;
-      batch.add(stoneBlockGeometry(0.5, 2.6, 0.8, 6 + side), stonePale, {
+      shellBatch.add(stoneBlockGeometry(0.5, 2.6, 0.8, 6 + side), stonePale, {
         position: [jx, y + 0.45 + 1.3, jz],
         rotation: [0, doorYaw, 0],
       });
     }
-    // Threshold steps.
     for (let i = 0; i < 2; i += 1) {
       const sr = doorR + 1.1 + i * 0.7;
-      batch.add(stoneBlockGeometry(2.6, 0.22, 0.7, 9 + i), stone, {
+      shellBatch.add(stoneBlockGeometry(2.6, 0.22, 0.7, 9 + i), stone, {
         position: [x + dx * sr, y + 0.34 - i * 0.14, z + dz * sr],
         rotation: [0, doorYaw, 0],
       });

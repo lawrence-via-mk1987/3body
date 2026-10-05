@@ -1281,7 +1281,7 @@ export class Game {
         this.waterSource.mesh.visible,
         this.forecastMeta.isCalibrated(),
       );
-      this.settlementNpcs.update(this.orbital.getEraKind(), this.anchor, this.npcPulseTime);
+      this.settlementNpcs.update(this.orbital.getEraKind(), this.anchor, this.npcPulseTime, delta);
       this.npcPresence.update(delta, this.orbital.getEraKind(), this.anchor.x, this.anchor.z);
       this.pipeline.render(this.scene, this.player.camera);
       this.animationId = requestAnimationFrame(this.animate);
@@ -1434,7 +1434,7 @@ export class Game {
       this.waterSource.mesh.visible,
       this.forecastMeta.isCalibrated(),
     );
-    this.settlementNpcs.update(this.orbital.getEraKind(), this.anchor, this.npcPulseTime);
+    this.settlementNpcs.update(this.orbital.getEraKind(), this.anchor, this.npcPulseTime, delta);
     this.npcPresence.update(delta, this.orbital.getEraKind(), this.anchor.x, this.anchor.z);
     this.updateHud(nearbyLog, stableEra, nearPit, nearWater);
 

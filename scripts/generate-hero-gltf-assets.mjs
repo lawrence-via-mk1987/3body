@@ -7,7 +7,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { exportGeometryToGltf } from './gltf-export-util.mjs';
+import { exportGeometryToGltf, exportSceneToGltf } from './gltf-export-util.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const outDir = path.join(__dirname, '../public/assets');
@@ -163,8 +163,34 @@ const predictorClothMat = {
   merged.dispose();
 }
 
-// Last Predictor — robe + staff + armillary rings (static hero)
-{
+const groveClothMat = {
+  name: 'GroveKeeperCloth',
+  pbrMetallicRoughness: {
+    baseColorFactor: [0.52, 0.58, 0.42, 1],
+    metallicFactor: 0.02,
+    roughnessFactor: 0.9,
+  },
+};
+
+function meshFromGeo(geo, matColor) {
+  const mat = new THREE.MeshStandardMaterial({
+    color: matColor,
+    roughness: 0.9,
+    metalness: 0.02,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.castShadow = true;
+  return mesh;
+}
+
+function makePredictorRigScene() {
+  const figure = new THREE.Group();
+  figure.name = 'PredictorHero';
+  figure.userData.idleSeed = 0.37;
+
+  const body = new THREE.Group();
+  body.name = 'body';
+
   const robeProfile = [
     new THREE.Vector2(0.4, 0.04),
     new THREE.Vector2(0.34, 0.42),
@@ -173,36 +199,102 @@ const predictorClothMat = {
     new THREE.Vector2(0.22, 1.52),
     new THREE.Vector2(0.12, 1.62),
   ];
+  const gown = meshFromGeo(new THREE.LatheGeometry(robeProfile, 20), '#7e92a6');
+  const cowl = meshFromGeo(
+    new THREE.LatheGeometry(
+      [new THREE.Vector2(0.32, 0), new THREE.Vector2(0.38, 0.12), new THREE.Vector2(0.2, 0.26)],
+      16,
+    ),
+    '#7e92a6',
+  );
+  cowl.position.y = 1.48;
+  body.add(gown, cowl);
+
+  const head = new THREE.Group();
+  head.name = 'head';
+  head.position.y = 1.66;
+  head.rotation.x = -0.2;
+  const hood = meshFromGeo(
+    new THREE.SphereGeometry(0.26, 14, 12, Math.PI / 2 + 0.95, Math.PI * 2 - 1.9, 0.25, Math.PI * 0.62),
+    '#7e92a6',
+  );
+  head.add(hood);
+  body.add(head);
+
+  const armL = new THREE.Group();
+  armL.name = 'armL';
+  armL.position.set(-0.3, 1.46, 0);
+  armL.rotation.x = -0.15;
+  armL.rotation.z = 0.12;
+  armL.add(meshFromGeo(new THREE.CylinderGeometry(0.06, 0.09, 0.56, 8), '#7e92a6'));
+
+  const armR = new THREE.Group();
+  armR.name = 'armR';
+  armR.position.set(0.3, 1.46, 0);
+  armR.rotation.x = -0.4;
+  armR.rotation.z = -0.18;
+  armR.add(meshFromGeo(new THREE.CylinderGeometry(0.06, 0.09, 0.56, 8), '#7e92a6'));
+  const staff = meshFromGeo(new THREE.CylinderGeometry(0.032, 0.038, 1.65, 8), '#6a5038');
+  staff.position.set(0, -0.55, 0.08);
+  staff.rotation.z = 0.15;
+  const ring1 = meshFromGeo(new THREE.TorusGeometry(0.17, 0.014, 8, 24), '#b08a4a');
+  ring1.position.set(0, 0.05, 0.08);
+  ring1.rotation.x = Math.PI / 2;
+  const ring2 = meshFromGeo(new THREE.TorusGeometry(0.12, 0.012, 8, 20), '#b08a4a');
+  ring2.position.set(0, 0.05, 0.08);
+  ring2.rotation.x = 1.05;
+  ring2.rotation.z = 0.4;
+  armR.add(staff, ring1, ring2);
+
+  body.add(armL, armR);
+  figure.add(body);
+  figure.position.y = -0.02;
+  return figure;
+}
+
+async function exportRiggedHeroes() {
+  const scene = makePredictorRigScene();
+  const bytes = await exportSceneToGltf(scene, path.join(outDir, 'predictor-hero.gltf'));
+  console.log(`predictor-hero.gltf (${bytes} bytes, rigged)`);
+}
+
+function exportGroveKeeperHero() {
+  const robeProfile = [
+    new THREE.Vector2(0.42, 0.04),
+    new THREE.Vector2(0.36, 0.38),
+    new THREE.Vector2(0.22, 0.96),
+    new THREE.Vector2(0.28, 1.26),
+    new THREE.Vector2(0.24, 1.48),
+    new THREE.Vector2(0.13, 1.62),
+  ];
   const robe = new THREE.LatheGeometry(robeProfile, 20);
-  robe.rotateZ(0.12);
   const cowl = new THREE.LatheGeometry(
-    [new THREE.Vector2(0.32, 0), new THREE.Vector2(0.38, 0.12), new THREE.Vector2(0.2, 0.26)],
+    [new THREE.Vector2(0.34, 0), new THREE.Vector2(0.4, 0.1), new THREE.Vector2(0.22, 0.24)],
     16,
   );
   cowl.translate(0, 1.48, 0);
-  cowl.rotateZ(0.18);
-  const staff = new THREE.CylinderGeometry(0.032, 0.038, 1.65, 8);
-  staff.translate(0.28, 0.82, 0.08);
-  staff.rotateZ(0.15);
-  const ring1 = new THREE.TorusGeometry(0.17, 0.014, 8, 24);
-  ring1.translate(0.28, 1.38, 0.08);
-  ring1.rotateX(Math.PI / 2);
-  const ring2 = new THREE.TorusGeometry(0.12, 0.012, 8, 20);
-  ring2.translate(0.28, 1.38, 0.08);
-  ring2.rotateX(1.05);
-  ring2.rotateZ(0.4);
-  const merged = mergeGeometries([robe, cowl, staff, ring1, ring2]);
+  const basket = new THREE.CylinderGeometry(0.1, 0.08, 0.1, 8, 1, true);
+  basket.translate(0.08, 1.0, 0.28);
+  const merged = mergeGeometries([robe, cowl, basket]);
   merged.translate(0, -0.02, 0);
   const bytes = exportGeometryToGltf(merged, {
-    outPath: path.join(outDir, 'predictor-hero.gltf'),
-    meshName: 'PredictorHero',
-    material: predictorClothMat,
+    outPath: path.join(outDir, 'grove-keeper-hero.gltf'),
+    meshName: 'GroveKeeperHero',
+    material: groveClothMat,
   });
-  console.log(`predictor-hero.gltf (${bytes} bytes)`);
+  console.log(`grove-keeper-hero.gltf (${bytes} bytes)`);
   robe.dispose();
   cowl.dispose();
-  staff.dispose();
-  ring1.dispose();
-  ring2.dispose();
+  basket.dispose();
   merged.dispose();
 }
+
+async function main() {
+  exportGroveKeeperHero();
+  await exportRiggedHeroes();
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

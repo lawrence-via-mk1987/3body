@@ -1,45 +1,31 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { GROVE_LANDMARK, OBSERVATORY_LANDMARK, PIT_LANDMARK } from './landmarks';
 import { GROVE_SITE, OBSERVATORY_SITE } from './Terrain';
 import type { Terrain } from './Terrain';
 import type { Ruins } from './Ruins';
 import type { LandmarkWayfinding } from './LandmarkWayfinding';
 import type { SettlementNpcs } from './SettlementNpcs';
+import { loadHeroGltf, polishHeroRoot } from './heroGltfLoader';
+import { applyPredictorHeroIdleBases } from './predictorHeroIdle';
 
-const BASE = import.meta.env.BASE_URL;
-
-function assetPath(name: string): string {
-  return `${BASE}assets/${name}`;
-}
-
-function polishHeroRoot(root: THREE.Object3D): void {
-  root.traverse((obj) => {
-    if (!(obj instanceof THREE.Mesh)) {
-      return;
-    }
-    obj.castShadow = true;
-    obj.receiveShadow = true;
-    const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-    for (const m of mats) {
-      if (m instanceof THREE.MeshStandardMaterial) {
-        m.envMapIntensity = 1.05;
-        m.polygonOffset = true;
-        m.polygonOffsetFactor = -1;
-        m.polygonOffsetUnits = -2;
-      }
-    }
-  });
-}
-
-async function loadHero(name: string): Promise<THREE.Object3D | null> {
-  try {
-    const gltf = await new GLTFLoader().loadAsync(assetPath(name));
-    polishHeroRoot(gltf.scene);
-    return gltf.scene;
-  } catch {
+async function loadHero(baseName: string): Promise<THREE.Object3D | null> {
+  const loaded = await loadHeroGltf(baseName);
+  if (!loaded) {
     return null;
   }
+  polishHeroRoot(loaded.scene);
+  return loaded.scene;
+}
+
+async function loadHeroWithAnimations(
+  baseName: string,
+): Promise<{ scene: THREE.Object3D; animations: THREE.AnimationClip[] } | null> {
+  const loaded = await loadHeroGltf(baseName);
+  if (!loaded) {
+    return null;
+  }
+  polishHeroRoot(loaded.scene);
+  return loaded;
 }
 
 /** Path A — authored glTF overlays on procedural landmarks (Pages-friendly). */
@@ -49,7 +35,7 @@ export async function attachPathAHeroAssets(
   settlementNpcs: SettlementNpcs,
   terrain: Terrain,
 ): Promise<void> {
-  const pit = await loadHero('pit-rim-hero.gltf');
+  const pit = await loadHero('pit-rim-hero');
   if (pit) {
     pit.name = 'PitHeroGltf';
     const y = terrain.getHeightAt(PIT_LANDMARK.x, PIT_LANDMARK.z);
@@ -59,8 +45,8 @@ export async function attachPathAHeroAssets(
     ruins.group.add(pit);
   }
 
-  const dome = await loadHero('observatory-dome-hero.gltf');
-  const trim = await loadHero('observatory-trim-hero.gltf');
+  const dome = await loadHero('observatory-dome-hero');
+  const trim = await loadHero('observatory-trim-hero');
   if (dome) {
     dome.name = 'ObservatoryDomeHero';
     const { x, z } = OBSERVATORY_LANDMARK;
@@ -75,23 +61,33 @@ export async function attachPathAHeroAssets(
     trim.scale.setScalar(1.01);
     ruins.group.add(trim);
   }
+  if (dome && trim) {
+    ruins.setObservatoryShellVisible(false);
+  }
 
-  const groveRim = await loadHero('grove-pool-rim-hero.gltf');
+  const groveRim = await loadHero('grove-pool-rim-hero');
   if (groveRim) {
     groveRim.name = 'GrovePoolRimHero';
     groveRim.position.set(GROVE_LANDMARK.x, GROVE_SITE.level + 0.08, GROVE_LANDMARK.z);
     ruins.groveGroup.add(groveRim);
   }
 
-  const registrar = await loadHero('registrar-hero.gltf');
+  const registrar = await loadHero('registrar-hero');
   if (registrar) {
     registrar.name = 'RegistrarHeroGltf';
     wayfinding.swapRegistrarMesh(registrar);
   }
 
-  const predictor = await loadHero('predictor-hero.gltf');
-  if (predictor) {
-    predictor.name = 'PredictorHeroGltf';
-    settlementNpcs.swapPredictorMesh(predictor);
+  const predictorLoad = await loadHeroWithAnimations('predictor-hero');
+  if (predictorLoad) {
+    predictorLoad.scene.name = 'PredictorHeroGltf';
+    applyPredictorHeroIdleBases(predictorLoad.scene);
+    settlementNpcs.swapPredictorMesh(predictorLoad.scene, predictorLoad.animations);
+  }
+
+  const groveKeeper = await loadHero('grove-keeper-hero');
+  if (groveKeeper) {
+    groveKeeper.name = 'GroveKeeperHeroGltf';
+    settlementNpcs.swapGroveKeeperMesh(groveKeeper);
   }
 }

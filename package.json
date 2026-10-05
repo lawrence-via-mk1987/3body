@@ -10,14 +10,20 @@
     "preview": "vite preview",
     "preview:pages": "cross-env GITHUB_PAGES=true vite preview",
     "assets:pit-hero": "node scripts/generate-pit-hero-glb.mjs",
-    "assets:heroes": "node scripts/generate-hero-gltf-assets.mjs"
+    "assets:heroes": "node scripts/generate-hero-gltf-assets.mjs",
+    "assets:heroes:compress": "node scripts/compress-hero-gltf.mjs",
+    "assets:heroes:all": "npm run assets:heroes && npm run assets:heroes:compress"
   },
   "dependencies": {
     "three": "^0.177.0"
   },
   "devDependencies": {
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/extensions": "^4.5.1",
+    "@gltf-transform/functions": "^4.5.1",
     "@types/three": "^0.177.0",
     "cross-env": "^7.0.3",
+    "draco3dgltf": "^1.5.7",
     "typescript": "^5.8.3",
     "vite": "^6.3.5"
   }
