@@ -1353,7 +1353,7 @@ export class Game {
     this.handleEraTransitions();
 
     this.terrain.setEraVisuals(this.orbital.getEraKind(), this.orbital.getPhase());
-    this.terrain.updateVisuals(delta);
+    this.terrain.updateVisuals(delta, this.player.isGrounded());
     this.ruins.setStableEraActive(stableEra);
     this.waterSource.setStableEraActive(stableEra);
     this.waterSource.setSkyReflection(this.orbital.getPoolSkyReflection(), delta);

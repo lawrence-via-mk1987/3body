@@ -400,6 +400,7 @@ export class Terrain {
 
     this.mesh = new THREE.Mesh(this.geometry, this.material);
     this.mesh.receiveShadow = true;
+    this.mesh.renderOrder = 0;
   }
 
   private bakeVertices(): void {
@@ -473,7 +474,7 @@ export class Terrain {
     this.targetTriSolar = phase === 'tri_solar' ? 1 : phase === 'flying_star' ? 0.35 : 0;
   }
 
-  updateVisuals(delta: number): void {
+  updateVisuals(delta: number, playerGrounded = false): void {
     const lerpSpeed = Math.min(delta * 1.8, 1);
     this.uniforms.uColdBlend.value = THREE.MathUtils.lerp(
       this.uniforms.uColdBlend.value,
@@ -494,7 +495,8 @@ export class Terrain {
     this.currentTriSolar = THREE.MathUtils.lerp(this.currentTriSolar, this.targetTriSolar, lerpSpeed);
     this.uniforms.uTriSolarBlend.value = this.currentTriSolar;
 
-    const wantSolid = this.targetStable > 0.5 && this.uniforms.uStableBlend.value > 0.35;
+    const wantSolid = playerGrounded
+      || (this.targetStable > 0.5 && this.uniforms.uStableBlend.value > 0.35);
     if (wantSolid !== this.usingStableSolid) {
       this.usingStableSolid = wantSolid;
       this.mesh.material = wantSolid ? this.stableSolidMaterial : this.material;

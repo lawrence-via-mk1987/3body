@@ -97,7 +97,8 @@ export function resolveRenderQuality(profile: DeviceProfile): RenderQuality {
     secondarySunLights: true,
     grassBlades: 700,
     heatHaze: true,
-    ssao: true,
+    /** Off: custom terrain shader + SSAO washed flat ground once the camera lands. */
+    ssao: false,
     breath: true,
     musicArpeggio: true,
     stableScatterTrees: 32,

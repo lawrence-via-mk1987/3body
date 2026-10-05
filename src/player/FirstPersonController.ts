@@ -24,7 +24,7 @@ export class FirstPersonController {
   private readonly moveDirection = new THREE.Vector3();
   private readonly forward = new THREE.Vector3();
   private readonly right = new THREE.Vector3();
-  private isGrounded = false;
+  private onGround = false;
   private movementEnabled = true;
   private touchMode = false;
   private touchEngaged = false;
@@ -145,6 +145,10 @@ export class FirstPersonController {
     return true;
   }
 
+  isGrounded(): boolean {
+    return this.onGround;
+  }
+
   isSprinting(): boolean {
     return this.movementEnabled && (
       this.isKeyActive('ShiftLeft')
@@ -217,12 +221,12 @@ export class FirstPersonController {
       this.velocity.z = THREE.MathUtils.damp(this.velocity.z, 0, 12, delta);
     }
 
-    if (this.isGrounded && this.isKeyActive('Space')) {
+    if (this.onGround && this.isKeyActive('Space')) {
       this.velocity.y = 8.5;
-      this.isGrounded = false;
+      this.onGround = false;
     }
 
-    if (!this.isGrounded) {
+    if (!this.onGround) {
       this.velocity.y -= GRAVITY * delta;
     }
 
@@ -243,9 +247,9 @@ export class FirstPersonController {
     if (position.y <= groundHeight) {
       position.y = groundHeight;
       this.velocity.y = 0;
-      this.isGrounded = true;
+      this.onGround = true;
     } else {
-      this.isGrounded = false;
+      this.onGround = false;
     }
   }
 
