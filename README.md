@@ -18,6 +18,7 @@ This project is an unofficial, non-commercial fan work. It is not affiliated wit
 - [World intro (Three Body Problem context)](./docs/WORLD_INTRO.md)
 - [Orbital System Specification](./docs/ORBITAL_SIM.md)
 - [FF8-tier visuals & Unity fork plan](./docs/VISUAL_TARGET_FF8_UNITY_FORK.md)
+- [Path B — Unity production plan](./docs/PATH_B_UNITY_PLAN.md)
 
 ## Development
 
@@ -32,7 +33,13 @@ Open the local URL shown in the terminal. Choose **Continue from checkpoint** or
 npm run build        # production build to dist/ (relative paths)
 npm run build:pages  # build for GitHub Pages (/3body/ base)
 npm run preview      # preview production build
+npm run export:unity # JSON snapshot for Unity fork → export/unity-snapshot/
 ```
+
+### Unity fork (Path B)
+
+1. Read [`docs/PATH_B_UNITY_PLAN.md`](./docs/PATH_B_UNITY_PLAN.md) and copy [`unity/MILESTONES.md`](./unity/MILESTONES.md) into your Unity repo.
+2. Run `npm run export:unity` and copy `export/unity-snapshot/` into Unity `Assets/StreamingAssets/WebReference/` ([import guide](./unity/IMPORT_CONTENT_SNAPSHOT.md)).
 
 ## Deploy to GitHub Pages
 
