@@ -102,8 +102,12 @@ export interface TerrainOptions {
 export class Terrain {
   readonly mesh: THREE.Mesh;
   private readonly geometry: THREE.PlaneGeometry;
+  /** Full PBR ground (chaotic eras). */
   private readonly material: THREE.MeshStandardMaterial;
+  /** Unlit albedo in Stable Era — immune to sky PMREM / hemisphere wash. */
+  private readonly stableSolidMaterial: THREE.MeshBasicMaterial;
   private readonly textures: GroundTextureSet;
+  private usingStableSolid = false;
   private readonly uniforms = {
     uColdBlend: { value: 0 },
     uHeatBlend: { value: 0 },
@@ -162,6 +166,12 @@ export class Terrain {
       metalness: 0.0,
       envMapIntensity: 0,
       // Scene fog matched stable sky/horizon and erased readable ground at gameplay distances.
+      fog: false,
+    });
+
+    this.stableSolidMaterial = new THREE.MeshBasicMaterial({
+      map: this.textures.albedo,
+      color: new THREE.Color('#dcc0a0'),
       fog: false,
     });
 
@@ -483,6 +493,12 @@ export class Terrain {
     this.uniforms.uTime.value += delta;
     this.currentTriSolar = THREE.MathUtils.lerp(this.currentTriSolar, this.targetTriSolar, lerpSpeed);
     this.uniforms.uTriSolarBlend.value = this.currentTriSolar;
+
+    const wantSolid = this.targetStable > 0.5 && this.uniforms.uStableBlend.value > 0.35;
+    if (wantSolid !== this.usingStableSolid) {
+      this.usingStableSolid = wantSolid;
+      this.mesh.material = wantSolid ? this.stableSolidMaterial : this.material;
+    }
   }
 
   /**
@@ -529,6 +545,7 @@ export class Terrain {
   dispose(): void {
     this.geometry.dispose();
     this.material.dispose();
+    this.stableSolidMaterial.dispose();
     this.textures.albedo.dispose();
     this.textures.normal.dispose();
     this.textures.roughness.dispose();

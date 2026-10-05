@@ -139,13 +139,13 @@ const SKY_PALETTES: Record<EraPhase, SkyPalette> = {
     galaxy: 0.35,
   },
   stable_golden: {
-    top: '#5a7088',
-    horizon: '#9eb8cc',
-    bottom: '#1a120c',
+    top: '#6a9ec4',
+    horizon: '#c8dce8',
+    bottom: '#2a2018',
     fog: '#2a2018',
     fogDensity: 0.00028,
     ambient: 0.5,
-    exposure: 0.9,
+    exposure: 1.05,
     bloom: 0.18,
     darkness: 0,
     cloudCover: 0.24,
@@ -572,8 +572,10 @@ export class OrbitalDirector {
     if (solidStableGround) {
       this.scene.environment = null;
       this.scene.environmentIntensity = 0;
+      (this.scene.background as THREE.Color).set(palette.top);
     } else if (this.envTexture) {
       this.scene.environment = this.envTexture;
+      (this.scene.background as THREE.Color).set('#120d0a');
     }
     const tempBias = THREE.MathUtils.clamp(this.temperature.value / 3, -1, 1);
     // Environment lighting now carries part of the sky bounce, so the hemisphere is softer.
