@@ -300,6 +300,7 @@ export class OrbitalDirector {
     }
     this.sky.setSuns(this.skySunInputs);
     this.sky.setSunScatterScale(cutscene ? 0 : this.getSunScatterScale());
+    this.sky.setGodRayStrength(cutscene ? 0 : this.getGodRayStrength());
     const palette = SKY_PALETTES[this.eraState.phase];
     this.sky.setDarkness(Math.max(palette.darkness - sunEnergy * 0.35, 0));
 
@@ -379,7 +380,31 @@ export class OrbitalDirector {
     if (phase === 'tri_solar') {
       return 1.18;
     }
+    if (this.eraState.era === 'stable') {
+      return 1.08;
+    }
     return 1;
+  }
+
+  /** Sky-dome forward scatter / streaks toward the suns. */
+  getGodRayStrength(): number {
+    const phase = this.eraState.phase;
+    if (this.eraState.era === 'stable') {
+      return 0.42;
+    }
+    if (phase === 'flying_star') {
+      return 0.82 + this.eraState.getPhaseProgress() * 0.55;
+    }
+    if (phase === 'tri_solar') {
+      return 0.78;
+    }
+    if (phase === 'deep_cold' || phase === 'eclipse_relief') {
+      return 0.22;
+    }
+    if (phase === 'scorch' || phase === 'binary_chaos') {
+      return 0.62;
+    }
+    return 0.5;
   }
 
   getSolarGroundLighting(): {

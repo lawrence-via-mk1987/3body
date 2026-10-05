@@ -59,7 +59,7 @@ If the prototype still feels too blocky for your target, read **[VISUAL_TARGET_F
 - **Path A:** more glTF/PBR on the current Three.js demo (Pages-friendly)  
 - **Path B:** separate Unity repo (URP/HDRP) for cinematic / photoreal vertical slice  
 
-Planning: [`VISUAL_TARGET_FF8_UNITY_FORK.md`](./VISUAL_TARGET_FF8_UNITY_FORK.md). **Path A on `main`:** hero glTF set (predictor rig + grove keeper, observatory shell hide, Draco GLB), terrain ORM/detail normal, era grade (`npm run assets:heroes:all`).
+Planning: [`VISUAL_TARGET_FF8_UNITY_FORK.md`](./VISUAL_TARGET_FF8_UNITY_FORK.md). **Path A on `main`:** hero glTF + KTX2 PBR, set dressing instancing, sky god-rays + era LUTs (`npm run assets:path-a-m4` after hero regen).
 
 ## Not pursuing (unless web budget fails)
 

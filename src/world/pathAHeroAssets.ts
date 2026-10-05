@@ -7,6 +7,7 @@ import type { LandmarkWayfinding } from './LandmarkWayfinding';
 import type { SettlementNpcs } from './SettlementNpcs';
 import { loadHeroGltf, polishHeroRoot } from './heroGltfLoader';
 import { applyPredictorHeroIdleBases } from './predictorHeroIdle';
+import { applyHeroKtx2Textures } from './heroKtx2Textures';
 
 async function loadHero(baseName: string): Promise<THREE.Object3D | null> {
   const loaded = await loadHeroGltf(baseName);
@@ -29,11 +30,18 @@ async function loadHeroWithAnimations(
 }
 
 /** Path A — authored glTF overlays on procedural landmarks (Pages-friendly). */
+async function textureHero(root: THREE.Object3D | null, renderer: THREE.WebGLRenderer): Promise<void> {
+  if (root) {
+    await applyHeroKtx2Textures(root, renderer);
+  }
+}
+
 export async function attachPathAHeroAssets(
   ruins: Ruins,
   wayfinding: LandmarkWayfinding,
   settlementNpcs: SettlementNpcs,
   terrain: Terrain,
+  renderer: THREE.WebGLRenderer,
 ): Promise<void> {
   const pit = await loadHero('pit-rim-hero');
   if (pit) {
@@ -90,4 +98,14 @@ export async function attachPathAHeroAssets(
     groveKeeper.name = 'GroveKeeperHeroGltf';
     settlementNpcs.swapGroveKeeperMesh(groveKeeper);
   }
+
+  await Promise.all([
+    textureHero(pit, renderer),
+    textureHero(dome, renderer),
+    textureHero(trim, renderer),
+    textureHero(groveRim, renderer),
+    textureHero(registrar, renderer),
+    textureHero(predictorLoad?.scene ?? null, renderer),
+    textureHero(groveKeeper, renderer),
+  ]);
 }

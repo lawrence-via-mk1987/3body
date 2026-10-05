@@ -118,6 +118,8 @@ import { formatCounselHudLine } from '../narrative/counselLabels';
 import type { DeathReason } from '../survival/SurvivalSystem';
 import { PredictorRingRitual, type PredictorRitualResult } from '../ui/PredictorRingRitual';
 import { attachPathAHeroAssets } from '../world/pathAHeroAssets';
+import { preloadHeroTextureSets } from '../world/heroKtx2Textures';
+import { SetDressing } from '../world/SetDressing';
 
 interface HudElements {
   root: HTMLElement;
@@ -168,6 +170,7 @@ export class Game {
   private readonly meta = new MetaProgress();
   private readonly logMarkers: LogMarkers;
   private readonly ruins: Ruins;
+  private readonly setDressing: SetDressing;
   private readonly landmarkMats: LandmarkMaterials;
   private readonly stableParticles: StableEraParticles;
   private readonly groveGrass: GroveGrass;
@@ -436,6 +439,7 @@ export class Game {
       Math.min(this.renderQuality.anisotropy, this.renderer.capabilities.getMaxAnisotropy()),
     );
     this.ruins = new Ruins(this.terrain, this.landmarkMats);
+    this.setDressing = new SetDressing(this.terrain, this.landmarkMats);
     this.stableParticles = new StableEraParticles(this.terrain);
     this.groveGrass = new GroveGrass(this.terrain, this.renderQuality.grassBlades);
     this.stableScatterTrees = new StableScatterTrees(this.terrain, this.renderQuality.stableScatterTrees);
@@ -461,9 +465,18 @@ export class Game {
     this.scene.add(this.sky.mesh);
     this.scene.add(this.terrain.mesh);
     this.scene.add(this.ruins.group);
+    this.scene.add(this.setDressing.group);
+    preloadHeroTextureSets(this.renderer);
+    void this.pipeline.loadEraLuts(import.meta.env.BASE_URL);
     if (!this.pitHeroLoadStarted) {
       this.pitHeroLoadStarted = true;
-      void attachPathAHeroAssets(this.ruins, this.wayfinding, this.settlementNpcs, this.terrain);
+      void attachPathAHeroAssets(
+        this.ruins,
+        this.wayfinding,
+        this.settlementNpcs,
+        this.terrain,
+        this.renderer,
+      );
     }
     this.scene.add(this.logMarkers.group);
     this.scene.add(this.stableParticles.points);
@@ -1205,14 +1218,24 @@ export class Game {
       r = 1.06;
       g = 1.03;
       b = 0.94;
-    } else if (phase === 'flying_star' || phase === 'scorch') {
+      this.pipeline.setEraLutBlend('era-neutral', 'era-stable', 1, 0.62, delta);
+    } else if (phase === 'flying_star') {
+      r = 1.12;
+      g = 0.88;
+      b = 0.82;
+      this.pipeline.setEraLutBlend('era-chaos', 'era-flying', 0.7, 0.74, delta);
+    } else if (phase === 'scorch' || phase === 'tri_solar' || phase === 'binary_chaos') {
       r = 1.1;
       g = 0.9;
       b = 0.86;
+      this.pipeline.setEraLutBlend('era-neutral', 'era-chaos', 0.88, 0.6, delta);
     } else if (phase === 'deep_cold' || phase === 'eclipse_relief') {
       r = 0.92;
       g = 0.96;
       b = 1.05;
+      this.pipeline.setEraLutBlend('era-neutral', 'era-cold', 0.92, 0.5, delta);
+    } else {
+      this.pipeline.setEraLutBlend('era-neutral', 'era-chaos', 0.32, 0.36, delta);
     }
     this.pipeline.setEraColorGrade(r, g, b, delta);
   }

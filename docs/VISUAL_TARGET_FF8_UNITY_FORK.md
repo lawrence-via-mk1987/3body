@@ -101,9 +101,15 @@ Goal: **less blocky, more “set piece”** while keeping GitHub Pages and phone
 - **Observatory shell hide** — procedural dome/drum/door trim batch toggled off when dome + trim heroes load (`Ruins.observatoryShellGroup`)
 - **Draco GLB** pipeline: `npm run assets:heroes:all`, runtime `heroGltfLoader.ts` + `public/assets/draco/gltf/`
 
+**Shipped (Path A — milestone 4):**
+
+- **KTX2 hero PBR** — stone/moss/cloth sets (`heroKtx2Textures.ts`, `public/assets/textures/*.ktx2`, Basis transcoder in `public/assets/basis/`)
+- **Set dressing** — instanced scatter rocks, pit/observatory banners, dehydration bundles (`SetDressing.ts`)
+- **Sky + LUT polish** — god-ray streaks on `Sky.ts`, era strip LUTs in cinematic post (`npm run assets:luts`)
+
 Ordered wins (each shippable on `main`):
 
-1. **Hero glTF set (Phase 5c)** — pit rim, observatory dome, grove pool edge (KTX2 + Draco); rigged NPC idle. *(M3: Draco GLB + rigged predictor; KTX2 textures optional next.)*  
+1. **Hero glTF set (Phase 5c)** — pit rim, observatory dome, grove pool edge (KTX2 + Draco); rigged NPC idle. *(M4: KTX2 maps on heroes.)*  
 2. **Material upgrade** — ORM textures on landmarks; triplanar + detail normal on terrain; drop visible “box” props from `meshKit` where glTF replaces them.  
 3. **Sky & suns** — larger limb-darkened disks, god-rays/bloom tuning, era LUTs (stable gold vs chaos ochre vs flying-star red).  
 4. **Set dressing** — instanced rocks, banners, dehydration rows as **merged meshes**, not loose primitives.  

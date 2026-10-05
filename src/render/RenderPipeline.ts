@@ -11,12 +11,18 @@ import type { RenderQuality } from '../platform/renderQuality';
  * Refracts the lower part of the frame while the ground is hot. Sits after bloom and before
  * the output pass, so the sun disks still bloom cleanly and only the air above the ground wavers.
  */
+const LUT_SIZE = 16;
+
 const CinematicPostShader = {
   uniforms: {
     tDiffuse: { value: null as THREE.Texture | null },
     uTime: { value: 0 },
     uAmount: { value: 0.35 },
     uEraTint: { value: new THREE.Vector3(1, 1, 1) },
+    uLutA: { value: null as THREE.Texture | null },
+    uLutB: { value: null as THREE.Texture | null },
+    uLutMix: { value: 0 },
+    uLutStrength: { value: 0.55 },
   },
   vertexShader: /* glsl */ `
     varying vec2 vUv;
@@ -30,16 +36,37 @@ const CinematicPostShader = {
     uniform float uTime;
     uniform float uAmount;
     uniform vec3 uEraTint;
+    uniform sampler2D uLutA;
+    uniform sampler2D uLutB;
+    uniform float uLutMix;
+    uniform float uLutStrength;
     varying vec2 vUv;
     float hash(vec2 p) {
       return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
     }
+    vec3 sampleLut(vec3 color, sampler2D lutTex) {
+      float b = color.b * 15.0;
+      float g = color.g * 15.0;
+      float r = color.r * 15.0;
+      float bFloor = floor(b);
+      vec2 uv1 = vec2((r + bFloor * ${LUT_SIZE}.0 + 0.5) / 256.0, (g + 0.5) / ${LUT_SIZE}.0);
+      vec2 uv2 = vec2((r + min(bFloor + 1.0, 15.0) * ${LUT_SIZE}.0 + 0.5) / 256.0, (g + 0.5) / ${LUT_SIZE}.0);
+      vec3 c1 = texture2D(lutTex, uv1).rgb;
+      vec3 c2 = texture2D(lutTex, uv2).rgb;
+      return mix(c1, c2, fract(b));
+    }
+
     void main() {
       vec2 uv = vUv;
       vec2 c = uv - 0.5;
       float vig = 1.0 - dot(c, c) * 1.35 * uAmount;
       float grain = (hash(uv * (uTime * 60.0 + 1.0)) - 0.5) * 0.035 * uAmount;
-      vec3 col = texture2D(tDiffuse, uv).rgb * uEraTint * vig + grain;
+      vec3 col = texture2D(tDiffuse, uv).rgb * uEraTint;
+      if (uLutStrength > 0.01) {
+        vec3 lutCol = mix(sampleLut(col, uLutA), sampleLut(col, uLutB), uLutMix);
+        col = mix(col, lutCol, uLutStrength * uAmount);
+      }
+      col = col * vig + grain;
       gl_FragColor = vec4(col, 1.0);
     }
   `,
@@ -84,6 +111,12 @@ export class RenderPipeline {
   private cinematicPass: ShaderPass | null = null;
   private heatAmount = 0;
   private cinematicAmount = 0.32;
+  private readonly eraLuts = new Map<string, THREE.Texture>();
+  private lutMixTarget = 0;
+  private lutMixCurrent = 0;
+  private lutStrengthTarget = 0.55;
+  private lutAKey = 'era-neutral';
+  private lutBKey = 'era-stable';
 
   constructor(
     private readonly renderer: THREE.WebGLRenderer,
@@ -136,6 +169,53 @@ export class RenderPipeline {
     this.cinematicAmount = THREE.MathUtils.lerp(this.cinematicAmount, target, Math.min(delta * 1.5, 1));
     this.cinematicPass.uniforms.uAmount.value = this.cinematicAmount;
     this.cinematicPass.uniforms.uTime.value += delta;
+  }
+
+  /** Load 16³ strip LUT PNGs (desktop cinematic post). */
+  async loadEraLuts(baseUrl: string): Promise<void> {
+    const loader = new THREE.TextureLoader();
+    const names = ['era-neutral', 'era-stable', 'era-chaos', 'era-flying', 'era-cold'] as const;
+    await Promise.all(
+      names.map(async (name) => {
+        const tex = await loader.loadAsync(`${baseUrl}assets/luts/${name}.png`);
+        tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
+        tex.wrapS = THREE.ClampToEdgeWrapping;
+        tex.wrapT = THREE.ClampToEdgeWrapping;
+        tex.colorSpace = THREE.SRGBColorSpace;
+        this.eraLuts.set(name, tex);
+      }),
+    );
+    this.applyLutUniforms();
+  }
+
+  /** Cross-fade between two named LUT presets. */
+  setEraLutBlend(lutA: string, lutB: string, mix: number, strength: number, delta: number): void {
+    if (!this.cinematicPass) {
+      return;
+    }
+    this.lutAKey = lutA;
+    this.lutBKey = lutB;
+    this.lutMixTarget = THREE.MathUtils.clamp(mix, 0, 1);
+    this.lutStrengthTarget = THREE.MathUtils.clamp(strength, 0, 1);
+    this.lutMixCurrent = THREE.MathUtils.lerp(this.lutMixCurrent, this.lutMixTarget, Math.min(delta * 0.65, 1));
+    this.cinematicPass.uniforms.uLutMix.value = this.lutMixCurrent;
+    this.cinematicPass.uniforms.uLutStrength.value = THREE.MathUtils.lerp(
+      this.cinematicPass.uniforms.uLutStrength.value as number,
+      this.lutStrengthTarget,
+      Math.min(delta * 0.65, 1),
+    );
+    this.applyLutUniforms();
+  }
+
+  private applyLutUniforms(): void {
+    if (!this.cinematicPass) {
+      return;
+    }
+    const a = this.eraLuts.get(this.lutAKey) ?? this.eraLuts.get('era-neutral');
+    const b = this.eraLuts.get(this.lutBKey) ?? a;
+    this.cinematicPass.uniforms.uLutA.value = a ?? null;
+    this.cinematicPass.uniforms.uLutB.value = b ?? null;
   }
 
   /** Desktop color grade toward era mood (Path A). */

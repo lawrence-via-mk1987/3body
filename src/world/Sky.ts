@@ -42,6 +42,7 @@ export class Sky {
   private readonly targetCloudColor = new THREE.Color('#eef2f8');
   private readonly currentCloudColor = new THREE.Color('#eef2f8');
   private sunScatterScale = 1;
+  private godRayStrength = 1;
   private time = 0;
 
   constructor() {
@@ -58,6 +59,7 @@ export class Sky {
         uSunIntensities: { value: this.sunIntensities },
         uSunScales: { value: this.sunScales },
         uSunScatterScale: { value: 1 },
+        uGodRayStrength: { value: 1 },
         uDarkness: { value: 0 },
         uGalaxy: { value: 0 },
         uCloudCover: { value: 0 },
@@ -83,6 +85,7 @@ export class Sky {
         uniform float uSunIntensities[MAX_SUNS];
         uniform float uSunScales[MAX_SUNS];
         uniform float uSunScatterScale;
+        uniform float uGodRayStrength;
         uniform float uDarkness;
         uniform float uGalaxy;
         uniform float uCloudCover;
@@ -134,14 +137,18 @@ export class Sky {
           color += uHorizonColor * haze * 0.35;
 
           float scatter = uSunScatterScale;
+          float rays = uGodRayStrength;
           for (int i = 0; i < MAX_SUNS; i++) {
             float inten = uSunIntensities[i] * scatter;
             if (inten <= 0.001) continue;
             float cosA = max(dot(dir, uSunDirections[i]), 0.0);
-            float wide = pow(cosA, 6.0) * 0.22 * inten;
-            float tight = pow(cosA, 180.0 / uSunScales[i]) * 0.9 * inten;
-            float horizonBoost = 1.0 + (1.0 - clamp(uSunDirections[i].y * 2.5, 0.0, 1.0)) * 0.8;
-            color += uSunColors[i] * (wide + tight) * horizonBoost;
+            float limb = 0.35 + 0.65 * cosA;
+            float wide = pow(cosA, mix(5.0, 8.0, rays)) * (0.2 + rays * 0.12) * inten;
+            float diskPow = mix(140.0, 52.0, rays) / max(uSunScales[i], 0.45);
+            float tight = pow(cosA, diskPow) * (0.75 + rays * 0.35) * inten * limb;
+            float streak = pow(cosA, 2.5) * (1.0 - smoothstep(0.0, 0.55, dir.y)) * 0.18 * rays * inten;
+            float horizonBoost = 1.0 + (1.0 - clamp(uSunDirections[i].y * 2.5, 0.0, 1.0)) * (0.75 + rays * 0.35);
+            color += uSunColors[i] * (wide + tight + streak) * horizonBoost;
           }
 
           if (uGalaxy > 0.01 && dir.y > -0.05) {
@@ -205,7 +212,12 @@ export class Sky {
 
   /** Scales sky-dome sun glare only (gameplay sun meshes are separate). */
   setSunScatterScale(value: number): void {
-    this.sunScatterScale = THREE.MathUtils.clamp(value, 0, 1);
+    this.sunScatterScale = THREE.MathUtils.clamp(value, 0, 2.5);
+  }
+
+  /** Forward-scatter / god-ray intensity on the sky dome (0–1.5). */
+  setGodRayStrength(value: number): void {
+    this.godRayStrength = THREE.MathUtils.clamp(value, 0, 1.5);
   }
 
   /** Feed the current suns every frame; inactive suns should pass intensity 0. */
@@ -250,6 +262,11 @@ export class Sky {
     u.uCloudCover.value = THREE.MathUtils.lerp(u.uCloudCover.value as number, this.targetCloudCover, 0.04);
     u.uCloudBright.value = THREE.MathUtils.lerp(u.uCloudBright.value as number, this.targetCloudBright, 0.04);
     u.uSunScatterScale.value = this.sunScatterScale;
+    u.uGodRayStrength.value = THREE.MathUtils.lerp(
+      u.uGodRayStrength.value as number,
+      this.godRayStrength,
+      0.06,
+    );
     u.uTime.value = this.time;
   }
 
