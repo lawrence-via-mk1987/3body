@@ -1,7 +1,7 @@
 # Visual target — “FF8+” fidelity vs Unity fork
 
-**Status:** planning (no engine switch on `main` until this doc is agreed).  
-**Branch:** `cursor/ff8-visual-target-3d2d` — design only; gameplay and orbital sim stay on the current web demo until you choose a path.
+**Status:** Path **B (Unity)** selected — see **[PATH_B_UNITY_PLAN.md](./PATH_B_UNITY_PLAN.md)** for milestones. Web `main` stays the design reference and Pages demo; no Unity tree in this repo root.  
+**Path A** milestones on web are **complete enough** for the browser; further graphics effort moves to Unity.
 
 ---
 
@@ -160,14 +160,11 @@ Goal: prove **one Chaotic Era walk + one Stable Era grove** looks like the targe
 
 ---
 
-## Immediate next step (your call)
+## Immediate next step
 
-1. **Approve this doc** (stylized JRPG vs photoreal HDRP).  
-2. Either:  
-   - **A:** Merge incremental web art (`cursor/web-pbr-hero-3d2d` when built), or  
-   - **B:** Create `3body-unity` repo from [`unity/README.md`](../unity/README.md) stub and start U0 mood board.  
+**Path B:** Follow **[PATH_B_UNITY_PLAN.md](./PATH_B_UNITY_PLAN.md)** — create `3body-unity` repo, U0 foundation, then U1 vertical slice.
 
-No Unity project is required in *this* repo for Path B — only shared documentation and optional `unity/` pointer.
+No Unity project is required in *this* repo — only shared documentation and [`unity/README.md`](../unity/README.md) pointer.
 
 ---
 

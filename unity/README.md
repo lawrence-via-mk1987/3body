@@ -2,7 +2,7 @@
 
 This folder is a **pointer**, not a Unity project yet.
 
-When you start Path B from [`docs/VISUAL_TARGET_FF8_UNITY_FORK.md`](../docs/VISUAL_TARGET_FF8_UNITY_FORK.md):
+When you start Path B from [`docs/PATH_B_UNITY_PLAN.md`](../docs/PATH_B_UNITY_PLAN.md) (see also [`docs/VISUAL_TARGET_FF8_UNITY_FORK.md`](../docs/VISUAL_TARGET_FF8_UNITY_FORK.md)):
 
 1. Create a **new repository** (recommended) e.g. `3body-unity` or open Unity Hub → New URP/HDRP project here.  
 2. Copy or submodule shared design: `docs/GDD.md`, `docs/ORBITAL_SIM.md`, narrative export.  
