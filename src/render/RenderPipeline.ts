@@ -16,6 +16,7 @@ const CinematicPostShader = {
     tDiffuse: { value: null as THREE.Texture | null },
     uTime: { value: 0 },
     uAmount: { value: 0.35 },
+    uEraTint: { value: new THREE.Vector3(1, 1, 1) },
   },
   vertexShader: /* glsl */ `
     varying vec2 vUv;
@@ -28,6 +29,7 @@ const CinematicPostShader = {
     uniform sampler2D tDiffuse;
     uniform float uTime;
     uniform float uAmount;
+    uniform vec3 uEraTint;
     varying vec2 vUv;
     float hash(vec2 p) {
       return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -37,7 +39,7 @@ const CinematicPostShader = {
       vec2 c = uv - 0.5;
       float vig = 1.0 - dot(c, c) * 1.35 * uAmount;
       float grain = (hash(uv * (uTime * 60.0 + 1.0)) - 0.5) * 0.035 * uAmount;
-      vec3 col = texture2D(tDiffuse, uv).rgb * vig + grain;
+      vec3 col = texture2D(tDiffuse, uv).rgb * uEraTint * vig + grain;
       gl_FragColor = vec4(col, 1.0);
     }
   `,
@@ -134,6 +136,17 @@ export class RenderPipeline {
     this.cinematicAmount = THREE.MathUtils.lerp(this.cinematicAmount, target, Math.min(delta * 1.5, 1));
     this.cinematicPass.uniforms.uAmount.value = this.cinematicAmount;
     this.cinematicPass.uniforms.uTime.value += delta;
+  }
+
+  /** Desktop color grade toward era mood (Path A). */
+  setEraColorGrade(r: number, g: number, b: number, delta: number): void {
+    if (!this.cinematicPass) {
+      return;
+    }
+    const tint = this.cinematicPass.uniforms.uEraTint.value as THREE.Vector3;
+    tint.x = THREE.MathUtils.lerp(tint.x, r, Math.min(delta * 0.8, 1));
+    tint.y = THREE.MathUtils.lerp(tint.y, g, Math.min(delta * 0.8, 1));
+    tint.z = THREE.MathUtils.lerp(tint.z, b, Math.min(delta * 0.8, 1));
   }
 
   /** 0 = still air, 1 = scorch / tri-solar / flying star. No-ops where the pass was not built. */

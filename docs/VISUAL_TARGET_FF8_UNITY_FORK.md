@@ -86,9 +86,15 @@ unity/TrisolarianSurvival/      ← optional stub; or new repo 3body-unity
 
 Goal: **less blocky, more “set piece”** while keeping GitHub Pages and phones.
 
+**Shipped (Path A — milestone 1, `cursor/web-pbr-hero-3d2d`):**
+
+- glTF overlays: **pit rim**, **observatory dome**, **grove pool coping**, **registrar** (`npm run assets:heroes` → `public/assets/*.gltf`, loaded by `pathAHeroAssets.ts`)
+- Desktop **era color grade** on cinematic post (warm stable / red scorch / cool deep cold)
+- Procedural landmarks remain as fallback if a file fails to load
+
 Ordered wins (each shippable on `main`):
 
-1. **Hero glTF set (Phase 5c)** — pit rim, observatory dome, grove pool edge (KTX2 + Draco); **one skinned NPC** with idle (registrar OR predictor).  
+1. **Hero glTF set (Phase 5c)** — pit rim, observatory dome, grove pool edge (KTX2 + Draco); **one skinned NPC** with idle (registrar OR predictor). *(Milestone 1: static registrar mesh + three landmarks — skinned predictor next.)*  
 2. **Material upgrade** — ORM textures on landmarks; triplanar + detail normal on terrain; drop visible “box” props from `meshKit` where glTF replaces them.  
 3. **Sky & suns** — larger limb-darkened disks, god-rays/bloom tuning, era LUTs (stable gold vs chaos ochre vs flying-star red).  
 4. **Set dressing** — instanced rocks, banners, dehydration rows as **merged meshes**, not loose primitives.  

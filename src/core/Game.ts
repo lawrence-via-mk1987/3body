@@ -117,7 +117,7 @@ import { getCinematicReplayUi, type MenuCutsceneReplayId } from '../i18n/cinemat
 import { formatCounselHudLine } from '../narrative/counselLabels';
 import type { DeathReason } from '../survival/SurvivalSystem';
 import { PredictorRingRitual, type PredictorRitualResult } from '../ui/PredictorRingRitual';
-import { attachPitHeroGltf } from '../world/PitHeroGltf';
+import { attachPathAHeroAssets } from '../world/pathAHeroAssets';
 
 interface HudElements {
   root: HTMLElement;
@@ -463,7 +463,7 @@ export class Game {
     this.scene.add(this.ruins.group);
     if (!this.pitHeroLoadStarted) {
       this.pitHeroLoadStarted = true;
-      void attachPitHeroGltf(this.ruins.group, this.terrain);
+      void attachPathAHeroAssets(this.ruins, this.wayfinding, this.terrain);
     }
     this.scene.add(this.logMarkers.group);
     this.scene.add(this.stableParticles.points);
@@ -1197,6 +1197,26 @@ export class Game {
     this.restart();
   }
 
+  private updateEraColorGrade(delta: number, stableEra: boolean, phase: EraPhase): void {
+    let r = 1;
+    let g = 0.98;
+    let b = 0.94;
+    if (stableEra) {
+      r = 1.06;
+      g = 1.03;
+      b = 0.94;
+    } else if (phase === 'flying_star' || phase === 'scorch') {
+      r = 1.1;
+      g = 0.9;
+      b = 0.86;
+    } else if (phase === 'deep_cold' || phase === 'eclipse_relief') {
+      r = 0.92;
+      g = 0.96;
+      b = 1.05;
+    }
+    this.pipeline.setEraColorGrade(r, g, b, delta);
+  }
+
   private animate = (): void => {
     if (!this.running) {
       return;
@@ -1341,6 +1361,7 @@ export class Game {
     const cinematicTarget =
       phaseNow === 'flying_star' ? 0.58 : stableEra ? 0.42 : 0.28;
     this.pipeline.setCinematicPost(cinematicTarget, delta);
+    this.updateEraColorGrade(delta, stableEra, phaseNow);
     const coldPhase = phaseNow === 'deep_cold' || phaseNow === 'eclipse_relief';
     this.pipeline.setHeat(hotPhase ? 1 : 0, delta);
     this.coldBreath?.update(this.player.camera, coldPhase, delta);

@@ -125,6 +125,18 @@ export class LandmarkWayfinding {
     return mesh;
   }
 
+  private proceduralRegistrar: THREE.Object3D | null = null;
+
+  /** Path A glTF registrar replaces the blocky procedural mesh; idle/glow stay on the group. */
+  swapRegistrarMesh(heroRoot: THREE.Object3D): void {
+    if (this.proceduralRegistrar) {
+      this.proceduralRegistrar.visible = false;
+    }
+    heroRoot.position.set(0, 0, 0);
+    heroRoot.rotation.set(0, 0, 0);
+    this.registrarGroup.add(heroRoot);
+  }
+
   private buildRegistrar(): void {
     const figure = buildHumanoidNpc(REGISTRAR_STYLE, 'upright', (hands) => {
       const scroll = new THREE.Mesh(
@@ -146,6 +158,7 @@ export class LandmarkWayfinding {
       tie.position.copy(scroll.position);
       hands.right.add(scroll, tie);
     });
+    this.proceduralRegistrar = figure;
     this.registrarGroup.add(figure);
     const regY = this.terrain.getHeightAt(PIT_REGISTRAR.x, PIT_REGISTRAR.z);
     this.registrarGroup.position.set(PIT_REGISTRAR.x, regY, PIT_REGISTRAR.z);
