@@ -59,7 +59,7 @@ If the prototype still feels too blocky for your target, read **[VISUAL_TARGET_F
 - **Path A:** more glTF/PBR on the current Three.js demo (Pages-friendly)  
 - **Path B:** separate Unity repo (URP/HDRP) for cinematic / photoreal vertical slice  
 
-Planning branch: `cursor/ff8-visual-target-3d2d` (docs only).
+Planning: [`VISUAL_TARGET_FF8_UNITY_FORK.md`](./VISUAL_TARGET_FF8_UNITY_FORK.md). **Path A milestone 1** on `main`: four hero glTF overlays + era grade (`npm run assets:heroes`).
 
 ## Not pursuing (unless web budget fails)
 
