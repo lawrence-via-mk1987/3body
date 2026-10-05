@@ -155,10 +155,12 @@ export class Terrain {
       normalScale: new THREE.Vector2(1.05, 1.05),
       roughnessMap: this.textures.roughness,
       aoMap: this.textures.ao,
-      aoMapIntensity: 1.15,
+      aoMapIntensity: 1.35,
+      color: new THREE.Color('#5a4232'),
       vertexColors: true,
       roughness: 1,
       metalness: 0.0,
+      envMapIntensity: 0,
       // Scene fog matched stable sky/horizon and erased readable ground at gameplay distances.
       fog: false,
     });
@@ -201,10 +203,12 @@ export class Terrain {
         uniform float uTime;
         uniform float uTriScale;
         uniform float uTriSolarBlend;
+        uniform float uSolarLightBlend;
         float wet;
         varying vec3 vWorldPosition;
         varying vec3 vWorldNormal;
         float detailFade;
+        float macroGround;
         vec3 triBlendWeights(vec3 n) {
           vec3 b = pow(abs(n), vec3(4.0));
           return b / (b.x + b.y + b.z);
@@ -244,8 +248,9 @@ export class Terrain {
         vec4 texA = texture2D(map, vMapUv);
         vec2 uvB = mat2(0.8, -0.6, 0.6, 0.8) * vMapUv * 0.23 + vec2(0.37, 0.11);
         vec4 texB = texture2D(map, uvB);
-        float macro = terrainNoise(vWorldPosition.xz * 0.045) * 0.6
+        macroGround = terrainNoise(vWorldPosition.xz * 0.045) * 0.6
           + terrainNoise(vWorldPosition.xz * 0.011 + 7.3) * 0.4;
+        float macro = macroGround;
         vec4 planarColor = mix(texA, texB, 0.35 + macro * 0.3);
         vec4 triColor = mix(texTriA, texTriB, 0.35 + macro * 0.25);
         vec4 sampledDiffuseColor = mix(planarColor, triColor, triMix);
@@ -307,7 +312,12 @@ export class Terrain {
         diffuseColor.rgb *= 1.0 - horizonSilhouette * (0.38 + uStableBlend * 0.22);
         float stableSoil = uStableBlend * (1.0 - groveMask * 0.35);
         diffuseColor.rgb *= mix(vec3(1.0), vec3(0.68, 0.58, 0.48), stableSoil * 0.72);
-        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * (0.82 + macro * 0.36), stableSoil * 0.35);
+        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * (0.82 + macroGround * 0.36), stableSoil * 0.35);
+        float flatUp = clamp(vWorldNormal.y, 0.0, 1.0);
+        diffuseColor.rgb = mix(
+          diffuseColor.rgb,
+          diffuseColor.rgb * vec3(0.38, 0.3, 0.24),
+          uStableBlend * flatUp * 0.62);
         // Damp soil around the pool. wet is read again by the roughness chunk.
         wet = (1.0 - smoothstep(2.4, 8.5, groveDist)) * uStableBlend;
         diffuseColor.rgb *= mix(1.0, 0.66, wet);
@@ -367,8 +377,16 @@ export class Terrain {
         '#include <fog_fragment>',
         '/* terrain: excluded from scene fog for solid ground readability */',
       );
+
+      // PMREM sky was washing flat soil to cloud-grey; keep terrain albedo-only.
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <envmap_fragment>',
+        `#include <envmap_fragment>
+        reflectedLight.indirectDiffuse *= mix(vec3(1.0), vec3(0.35, 0.32, 0.3), uStableBlend * 0.85);
+        reflectedLight.indirectSpecular *= mix(vec3(1.0), vec3(0.0), uStableBlend);`,
+      );
     };
-    this.material.customProgramCacheKey = () => 'terrain-realism-v8-solid-ground';
+    this.material.customProgramCacheKey = () => 'terrain-realism-v9-no-env-wash';
 
     this.mesh = new THREE.Mesh(this.geometry, this.material);
     this.mesh.receiveShadow = true;

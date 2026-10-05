@@ -268,6 +268,13 @@ export class RenderPipeline {
     }
   }
 
+  /** Flat terrain + SSAO can read as a grey sky floor; disable in Stable Era. */
+  setSsaoEnabled(enabled: boolean): void {
+    if (this.ssaoPass) {
+      this.ssaoPass.enabled = enabled;
+    }
+  }
+
   render(scene: THREE.Scene, camera: THREE.Camera): void {
     if (this.composer) {
       this.composer.render();

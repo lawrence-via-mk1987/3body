@@ -146,10 +146,10 @@ const SKY_PALETTES: Record<EraPhase, SkyPalette> = {
     fogDensity: 0.00028,
     ambient: 0.5,
     exposure: 0.9,
-    bloom: 0.32,
+    bloom: 0.18,
     darkness: 0,
-    cloudCover: 0.52,
-    cloudBright: 0.88,
+    cloudCover: 0.24,
+    cloudBright: 0.72,
     cloudColor: '#e8eef4',
     galaxy: 0,
   },
@@ -460,6 +460,9 @@ export class OrbitalDirector {
     if (!this.pmrem || !this.envScene) {
       return;
     }
+    if (this.eraState.era === 'stable' && this.eraState.phase === 'stable_golden') {
+      return;
+    }
     this.envTimer += delta;
     if (this.envTimer < 1.5) {
       return;
@@ -559,13 +562,19 @@ export class OrbitalDirector {
       this.sky.setGalaxyStrength(palette.galaxy);
     }
     this.fog.color.set(palette.fog);
-    const fogTarget = stable && phase === 'stable_golden' ? 0 : palette.fogDensity;
-    this.fog.density = THREE.MathUtils.lerp(
-      this.fog.density,
-      fogTarget,
-      stable ? 0.08 : 0.04,
-    );
-    this.sky.setHorizonHazeStrength(stable ? 0.06 : 0.35);
+    const solidStableGround = stable && phase === 'stable_golden';
+    const fogTarget = solidStableGround ? 0 : palette.fogDensity;
+    this.fog.density = solidStableGround
+      ? 0
+      : THREE.MathUtils.lerp(this.fog.density, fogTarget, 0.04);
+    this.scene.fog = solidStableGround ? null : this.fog;
+    this.sky.setHorizonHazeStrength(solidStableGround ? 0.04 : 0.35);
+    if (solidStableGround) {
+      this.scene.environment = null;
+      this.scene.environmentIntensity = 0;
+    } else if (this.envTexture) {
+      this.scene.environment = this.envTexture;
+    }
     const tempBias = THREE.MathUtils.clamp(this.temperature.value / 3, -1, 1);
     // Environment lighting now carries part of the sky bounce, so the hemisphere is softer.
     // Hemisphere + fill are in physical units (divided by π in the BRDF), hence the scaling.
@@ -613,11 +622,12 @@ export class OrbitalDirector {
 
     // Stable Era: the one sun is softer. More sky fill, a dimmer key, a wider penumbra.
     if (stable) {
-      this.ambient.intensity *= 1.02;
-      this.fill.intensity *= 1.05;
-      this.ambient.color.set('#788898');
+      this.ambient.intensity *= 0.82;
+      this.fill.intensity *= 0.92;
+      this.ambient.color.set('#6a7888');
+      this.ambient.groundColor.set('#0c0a08');
       if (phase !== 'tri_solar' && phase !== 'flying_star') {
-        this.scene.environmentIntensity = 0.48;
+        this.scene.environmentIntensity = 0;
       }
     }
     for (const sun of this.suns) {

@@ -1382,8 +1382,9 @@ export class Game {
     }
     const hotPhase = phaseNow === 'scorch' || phaseNow === 'tri_solar' || phaseNow === 'flying_star';
     const cinematicTarget =
-      phaseNow === 'flying_star' ? 0.58 : stableEra ? 0.42 : 0.28;
+      phaseNow === 'flying_star' ? 0.58 : stableEra ? 0.22 : 0.28;
     this.pipeline.setCinematicPost(cinematicTarget, delta);
+    this.pipeline.setSsaoEnabled(!stableEra);
     this.updateEraColorGrade(delta, stableEra, phaseNow);
     const coldPhase = phaseNow === 'deep_cold' || phaseNow === 'eclipse_relief';
     this.pipeline.setHeat(hotPhase ? 1 : 0, delta);
