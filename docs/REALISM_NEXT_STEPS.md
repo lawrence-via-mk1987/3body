@@ -52,9 +52,18 @@ Phases **1–4** of `REALISM_REMAKE_PLAN.md` are shipped in code (procedural lan
 - Update README screenshots (chaos vs stable grove, pit registrar distance)  
 - Remove duplicate prototype builders only when glTF is default  
 
+## FF8-tier visuals & Unity fork
+
+If the prototype still feels too blocky for your target, read **[VISUAL_TARGET_FF8_UNITY_FORK.md](./VISUAL_TARGET_FF8_UNITY_FORK.md)**:
+
+- **Path A:** more glTF/PBR on the current Three.js demo (Pages-friendly)  
+- **Path B:** separate Unity repo (URP/HDRP) for cinematic / photoreal vertical slice  
+
+Planning branch: `cursor/ff8-visual-target-3d2d` (docs only).
+
 ## Not pursuing (unless web budget fails)
 
-- Second engine (Unity/Unreal)  
+- Replacing the web app *in this repo* with a full Unity tree  
 - Full open-world scale-up  
 - Three shadow-casting suns (mobile cost)  
 
