@@ -233,7 +233,7 @@ export class Terrain {
         '#include <map_fragment>',
         `
         float camDist = distance(vWorldPosition, cameraPosition);
-        detailFade = smoothstep(95.0, 18.0, camDist);
+        detailFade = 1.0 - smoothstep(18.0, 95.0, camDist);
         float slope = 1.0 - clamp(vWorldNormal.y, 0.0, 1.0);
         float triMix = smoothstep(0.26, 0.62, slope);
         vec3 triW = triBlendWeights(vWorldNormal);
@@ -248,7 +248,7 @@ export class Terrain {
         vec4 triColor = mix(texTriA, texTriB, 0.35 + macro * 0.25);
         vec4 sampledDiffuseColor = mix(planarColor, triColor, triMix);
         vec3 avgGround = vec3(0.49, 0.35, 0.25) * (0.9 + terrainNoise(vWorldPosition.xz * 0.09 + 3.1) * 0.2);
-        sampledDiffuseColor.rgb = mix(avgGround, sampledDiffuseColor.rgb, 0.18 + detailFade * 0.82);
+        sampledDiffuseColor.rgb = mix(avgGround, sampledDiffuseColor.rgb, 0.42 + detailFade * 0.58);
         // Micro-normal breakup on planar ground (Path A ORM/detail).
         vec3 microN = texture2D(normalMap, vMapUv * 7.5).xyz * 2.0 - 1.0;
         float microW = detailFade * (1.0 - triMix * 0.65);
@@ -279,7 +279,8 @@ export class Terrain {
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.78, 0.84, 0.9), uColdBlend * 0.28);
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.9, 0.94, 0.97),
           uColdBlend * frost * (0.45 + ridge * 0.4));
-        diffuseColor.rgb = mix(diffuseColor.rgb, scorchTint, uHeatBlend * 0.28);
+        diffuseColor.rgb = mix(diffuseColor.rgb, scorchTint, uHeatBlend * 0.18);
+        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.08, 0.92, 0.82), uHeatBlend * (1.0 - detailFade) * 0.12);
         float triPatch = terrainNoise(vWorldPosition.xz * 0.38 + vec2(2.1, 5.4));
         diffuseColor.rgb = mix(
           diffuseColor.rgb,

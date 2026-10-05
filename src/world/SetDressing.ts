@@ -7,6 +7,7 @@ import {
   PIT_LANDMARK,
 } from './landmarks';
 import { seededRandom } from './meshKit';
+import { addContactShadow } from './contactShadow';
 
 /**
  * Instanced rocks, pit banners, and dehydration-row bundles — fewer draw calls than meshKit loops.
@@ -19,6 +20,7 @@ export class SetDressing {
     this.buildScatterRocks(terrain, mats);
     this.buildBanners(terrain, mats);
     this.buildDehydrationBundles(terrain, mats);
+    addContactShadow(this.group, 0.72);
   }
 
   private buildScatterRocks(terrain: Terrain, mats: LandmarkMaterials): void {
@@ -45,7 +47,7 @@ export class SetDressing {
         const z = cluster.cz + Math.sin(a) * r;
         const y = terrain.getHeightAt(x, z);
         const s = 0.18 + rnd() * 0.42;
-        dummy.position.set(x, y + s * 0.35, z);
+        dummy.position.set(x, y + s * 0.22, z);
         dummy.rotation.set(rnd() * 0.4, rnd() * Math.PI, rnd() * 0.35);
         dummy.scale.setScalar(s);
         dummy.updateMatrix();

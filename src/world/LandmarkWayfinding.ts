@@ -115,8 +115,8 @@ export class LandmarkWayfinding {
       const t = (i + 1) / (count + 1);
       const x = THREE.MathUtils.lerp(from.x, to.x, t);
       const z = THREE.MathUtils.lerp(from.z, to.z, t);
-      const y = this.terrain.getHeightAt(x, z) + 0.35;
-      dummy.position.set(x, y, z);
+      const ground = this.terrain.getHeightAt(x, z);
+      dummy.position.set(x, ground + 0.48, z);
       dummy.rotation.y = Math.atan2(to.x - from.x, to.z - from.z);
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
