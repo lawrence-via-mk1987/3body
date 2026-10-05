@@ -22,7 +22,8 @@ const CinematicPostShader = {
     uLutA: { value: null as THREE.Texture | null },
     uLutB: { value: null as THREE.Texture | null },
     uLutMix: { value: 0 },
-    uLutStrength: { value: 0.55 },
+    uLutStrength: { value: 0 },
+    uLutsReady: { value: 0 },
   },
   vertexShader: /* glsl */ `
     varying vec2 vUv;
@@ -40,14 +41,20 @@ const CinematicPostShader = {
     uniform sampler2D uLutB;
     uniform float uLutMix;
     uniform float uLutStrength;
+    uniform float uLutsReady;
     varying vec2 vUv;
     float hash(vec2 p) {
       return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
     }
-    vec3 sampleLut(vec3 color, sampler2D lutTex) {
-      float b = color.b * 15.0;
-      float g = color.g * 15.0;
-      float r = color.r * 15.0;
+    vec3 tonemapForLut(vec3 c) {
+      c = max(c, vec3(0.0));
+      return clamp(c / (c + vec3(1.0)), 0.0, 1.0);
+    }
+
+    vec3 sampleLut(vec3 ldr, sampler2D lutTex) {
+      float b = ldr.b * 15.0;
+      float g = ldr.g * 15.0;
+      float r = ldr.r * 15.0;
       float bFloor = floor(b);
       vec2 uv1 = vec2((r + bFloor * ${LUT_SIZE}.0 + 0.5) / 256.0, (g + 0.5) / ${LUT_SIZE}.0);
       vec2 uv2 = vec2((r + min(bFloor + 1.0, 15.0) * ${LUT_SIZE}.0 + 0.5) / 256.0, (g + 0.5) / ${LUT_SIZE}.0);
@@ -61,10 +68,13 @@ const CinematicPostShader = {
       vec2 c = uv - 0.5;
       float vig = 1.0 - dot(c, c) * 1.35 * uAmount;
       float grain = (hash(uv * (uTime * 60.0 + 1.0)) - 0.5) * 0.035 * uAmount;
-      vec3 col = texture2D(tDiffuse, uv).rgb * uEraTint;
-      if (uLutStrength > 0.01) {
-        vec3 lutCol = mix(sampleLut(col, uLutA), sampleLut(col, uLutB), uLutMix);
-        col = mix(col, lutCol, uLutStrength * uAmount);
+      vec3 hdr = texture2D(tDiffuse, uv).rgb * uEraTint;
+      vec3 col = hdr;
+      if (uLutsReady > 0.5 && uLutStrength > 0.01) {
+        vec3 ldr = tonemapForLut(hdr);
+        vec3 lutCol = mix(sampleLut(ldr, uLutA), sampleLut(ldr, uLutB), uLutMix);
+        vec3 gain = lutCol / max(ldr, vec3(0.02));
+        col = hdr * mix(vec3(1.0), gain, uLutStrength * uAmount);
       }
       col = col * vig + grain;
       gl_FragColor = vec4(col, 1.0);
@@ -117,6 +127,7 @@ export class RenderPipeline {
   private lutStrengthTarget = 0.55;
   private lutAKey = 'era-neutral';
   private lutBKey = 'era-stable';
+  private lutsReady = false;
 
   constructor(
     private readonly renderer: THREE.WebGLRenderer,
@@ -186,12 +197,16 @@ export class RenderPipeline {
         this.eraLuts.set(name, tex);
       }),
     );
+    this.lutsReady = this.eraLuts.size >= 5;
     this.applyLutUniforms();
+    if (this.cinematicPass) {
+      this.cinematicPass.uniforms.uLutsReady.value = this.lutsReady ? 1 : 0;
+    }
   }
 
   /** Cross-fade between two named LUT presets. */
   setEraLutBlend(lutA: string, lutB: string, mix: number, strength: number, delta: number): void {
-    if (!this.cinematicPass) {
+    if (!this.cinematicPass || !this.lutsReady) {
       return;
     }
     this.lutAKey = lutA;

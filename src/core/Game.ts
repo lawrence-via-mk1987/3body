@@ -1218,24 +1218,24 @@ export class Game {
       r = 1.06;
       g = 1.03;
       b = 0.94;
-      this.pipeline.setEraLutBlend('era-neutral', 'era-stable', 1, 0.62, delta);
+      this.pipeline.setEraLutBlend('era-neutral', 'era-stable', 1, 0.38, delta);
     } else if (phase === 'flying_star') {
       r = 1.12;
       g = 0.88;
       b = 0.82;
-      this.pipeline.setEraLutBlend('era-chaos', 'era-flying', 0.7, 0.74, delta);
+      this.pipeline.setEraLutBlend('era-chaos', 'era-flying', 0.7, 0.45, delta);
     } else if (phase === 'scorch' || phase === 'tri_solar' || phase === 'binary_chaos') {
       r = 1.1;
       g = 0.9;
       b = 0.86;
-      this.pipeline.setEraLutBlend('era-neutral', 'era-chaos', 0.88, 0.6, delta);
+      this.pipeline.setEraLutBlend('era-neutral', 'era-chaos', 0.88, 0.4, delta);
     } else if (phase === 'deep_cold' || phase === 'eclipse_relief') {
       r = 0.92;
       g = 0.96;
       b = 1.05;
-      this.pipeline.setEraLutBlend('era-neutral', 'era-cold', 0.92, 0.5, delta);
+      this.pipeline.setEraLutBlend('era-neutral', 'era-cold', 0.92, 0.35, delta);
     } else {
-      this.pipeline.setEraLutBlend('era-neutral', 'era-chaos', 0.32, 0.36, delta);
+      this.pipeline.setEraLutBlend('era-neutral', 'era-chaos', 0.32, 0.22, delta);
     }
     this.pipeline.setEraColorGrade(r, g, b, delta);
   }
