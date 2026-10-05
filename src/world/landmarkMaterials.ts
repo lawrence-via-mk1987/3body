@@ -32,6 +32,8 @@ function applySet(material: THREE.MeshStandardMaterial, set: GroundTextureSet, n
   material.map = set.albedo;
   material.normalMap = set.normal;
   material.roughnessMap = set.roughness;
+  material.aoMap = set.ao;
+  material.aoMapIntensity = 1;
   material.normalScale.set(normalScale, normalScale);
 }
 
