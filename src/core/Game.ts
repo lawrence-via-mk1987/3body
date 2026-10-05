@@ -826,6 +826,7 @@ export class Game {
     this.meta.resetRun();
     this.orbital.reset();
     this.player.resetToSpawn();
+    this.terrain.resetGroundReadability();
     this.stableNarrationPlayed = false;
     await this.beginSession(false);
   }
@@ -1139,6 +1140,7 @@ export class Game {
     this.meta.resetRun();
     this.orbital.reset();
     this.player.resetToSpawn();
+    this.terrain.resetGroundReadability();
     this.logReader.close();
     this.dialoguePanel.close();
     this.pauseMenu.hide();

@@ -108,6 +108,8 @@ export class Terrain {
   private readonly stableSolidMaterial: THREE.MeshBasicMaterial;
   private readonly textures: GroundTextureSet;
   private usingStableSolid = false;
+  /** After first touchdown, keep unlit soil (jumps must not flash back to PBR). */
+  private groundContactLatch = false;
   private readonly uniforms = {
     uColdBlend: { value: 0 },
     uHeatBlend: { value: 0 },
@@ -467,6 +469,14 @@ export class Terrain {
     }
   }
 
+  resetGroundReadability(): void {
+    this.groundContactLatch = false;
+    if (this.usingStableSolid) {
+      this.usingStableSolid = false;
+      this.mesh.material = this.material;
+    }
+  }
+
   setEraVisuals(era: EraKind, phase: EraPhase): void {
     this.targetCold = phase === 'deep_cold' || phase === 'eclipse_relief' ? 1 : 0;
     this.targetHeat = phase === 'scorch' || phase === 'tri_solar' || phase === 'flying_star' ? 1 : 0;
@@ -495,7 +505,10 @@ export class Terrain {
     this.currentTriSolar = THREE.MathUtils.lerp(this.currentTriSolar, this.targetTriSolar, lerpSpeed);
     this.uniforms.uTriSolarBlend.value = this.currentTriSolar;
 
-    const wantSolid = playerGrounded
+    if (playerGrounded) {
+      this.groundContactLatch = true;
+    }
+    const wantSolid = this.groundContactLatch
       || (this.targetStable > 0.5 && this.uniforms.uStableBlend.value > 0.35);
     if (wantSolid !== this.usingStableSolid) {
       this.usingStableSolid = wantSolid;

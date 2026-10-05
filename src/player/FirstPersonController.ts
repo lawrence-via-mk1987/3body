@@ -25,6 +25,7 @@ export class FirstPersonController {
   private readonly forward = new THREE.Vector3();
   private readonly right = new THREE.Vector3();
   private onGround = false;
+  private airTime = 0;
   private movementEnabled = true;
   private touchMode = false;
   private touchEngaged = false;
@@ -173,6 +174,8 @@ export class FirstPersonController {
   setPosition(x: number, y: number, z: number): void {
     this.camera.position.set(x, y, z);
     this.velocity.set(0, 0, 0);
+    this.airTime = y > 8 ? 0.2 : 0;
+    this.onGround = y <= 8;
     this.movementEnabled = true;
   }
 
@@ -247,9 +250,12 @@ export class FirstPersonController {
     if (position.y <= groundHeight) {
       position.y = groundHeight;
       this.velocity.y = 0;
+      this.airTime = 0;
       this.onGround = true;
     } else {
-      this.onGround = false;
+      this.airTime += delta;
+      // Brief coyote time avoids grounded flicker on uneven mesh while moving.
+      this.onGround = this.airTime < 0.12;
     }
   }
 
