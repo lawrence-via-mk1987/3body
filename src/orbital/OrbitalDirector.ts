@@ -139,11 +139,11 @@ const SKY_PALETTES: Record<EraPhase, SkyPalette> = {
     galaxy: 0.35,
   },
   stable_golden: {
-    top: '#4a5a68',
-    horizon: '#c9a86a',
-    bottom: '#4a3828',
-    fog: '#5a4838',
-    fogDensity: 0.00115,
+    top: '#5a7088',
+    horizon: '#9eb8cc',
+    bottom: '#1a120c',
+    fog: '#2a2018',
+    fogDensity: 0.00028,
     ambient: 0.5,
     exposure: 0.9,
     bloom: 0.32,
@@ -546,7 +546,9 @@ export class OrbitalDirector {
   }
 
   private applyAtmosphere(): void {
-    const palette = SKY_PALETTES[this.eraState.phase];
+    const phase = this.eraState.phase;
+    const stable = this.eraState.era === 'stable';
+    const palette = SKY_PALETTES[phase];
     this.sky.setPalette(palette.top, palette.horizon, palette.bottom);
     if (this.presentation === 'world') {
       this.sky.setClouds({
@@ -557,14 +559,13 @@ export class OrbitalDirector {
       this.sky.setGalaxyStrength(palette.galaxy);
     }
     this.fog.color.set(palette.fog);
+    const fogTarget = stable && phase === 'stable_golden' ? 0 : palette.fogDensity;
     this.fog.density = THREE.MathUtils.lerp(
       this.fog.density,
-      palette.fogDensity,
-      0.04,
+      fogTarget,
+      stable ? 0.08 : 0.04,
     );
-
-    const phase = this.eraState.phase;
-    const stable = this.eraState.era === 'stable';
+    this.sky.setHorizonHazeStrength(stable ? 0.06 : 0.35);
     const tempBias = THREE.MathUtils.clamp(this.temperature.value / 3, -1, 1);
     // Environment lighting now carries part of the sky bounce, so the hemisphere is softer.
     // Hemisphere + fill are in physical units (divided by π in the BRDF), hence the scaling.
@@ -573,8 +574,10 @@ export class OrbitalDirector {
       ORBITAL_CONFIG.minAmbientIntensity * envShare,
       (palette.ambient + tempBias * 0.08) * envShare,
     ) * 3.3;
-    this.ambient.color.set(this.eraState.era === 'stable' ? '#b8ae86' : '#8a5a40');
-    this.ambient.groundColor.set(this.temperature.value < 0 ? '#1a2434' : '#2a1c14');
+    this.ambient.color.set(stable ? '#8898a8' : '#8a5a40');
+    this.ambient.groundColor.set(
+      this.temperature.value < 0 ? '#1a2434' : stable ? '#14100c' : '#2a1c14',
+    );
     this.fill.intensity = (this.eraState.era === 'stable'
       ? 0.22
       : 0.12 + Math.max(this.temperature.value, 0) * 0.08) * 2.4;
@@ -610,11 +613,11 @@ export class OrbitalDirector {
 
     // Stable Era: the one sun is softer. More sky fill, a dimmer key, a wider penumbra.
     if (stable) {
-      this.ambient.intensity *= 1.08;
-      this.fill.intensity *= 1.12;
-      this.ambient.color.set('#a89878');
+      this.ambient.intensity *= 1.02;
+      this.fill.intensity *= 1.05;
+      this.ambient.color.set('#788898');
       if (phase !== 'tri_solar' && phase !== 'flying_star') {
-        this.scene.environmentIntensity = 0.58;
+        this.scene.environmentIntensity = 0.48;
       }
     }
     for (const sun of this.suns) {

@@ -229,13 +229,13 @@ export class Terrain {
         }`,
       );
 
-      // Two differently scaled samples hide the tile repeat; far away we fall back to the
-      // average ground colour so the horizon does not shimmer with texture noise.
+      // Keep full albedo at gameplay distances — averaging to avgGround made stable soil
+      // match the golden sky band and read as "no ground".
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <map_fragment>',
         `
         float camDist = distance(vWorldPosition, cameraPosition);
-        detailFade = 1.0 - smoothstep(18.0, 95.0, camDist);
+        detailFade = 1.0 - smoothstep(28.0, 140.0, camDist);
         float slope = 1.0 - clamp(vWorldNormal.y, 0.0, 1.0);
         float triMix = smoothstep(0.26, 0.62, slope);
         vec3 triW = triBlendWeights(vWorldNormal);
@@ -249,9 +249,9 @@ export class Terrain {
         vec4 planarColor = mix(texA, texB, 0.35 + macro * 0.3);
         vec4 triColor = mix(texTriA, texTriB, 0.35 + macro * 0.25);
         vec4 sampledDiffuseColor = mix(planarColor, triColor, triMix);
-        vec3 avgGround = vec3(0.49, 0.35, 0.25) * (0.9 + terrainNoise(vWorldPosition.xz * 0.09 + 3.1) * 0.2);
-        avgGround = mix(avgGround, avgGround * vec3(0.82, 0.74, 0.66), uStableBlend * 0.65);
-        float texMix = 0.72 + detailFade * 0.28 + uStableBlend * detailFade * 0.1;
+        vec3 avgGround = vec3(0.38, 0.28, 0.2) * (0.88 + terrainNoise(vWorldPosition.xz * 0.09 + 3.1) * 0.24);
+        float texMix = mix(0.97, 1.0, detailFade);
+        texMix = max(texMix, 0.99 - uStableBlend * 0.04);
         sampledDiffuseColor.rgb = mix(avgGround, sampledDiffuseColor.rgb, texMix);
         // Micro-normal breakup on planar ground (Path A ORM/detail).
         vec3 microN = texture2D(normalMap, vMapUv * 7.5).xyz * 2.0 - 1.0;
@@ -299,8 +299,15 @@ export class Terrain {
         float groveMask = 1.0 - smoothstep(uGroveRadius * 0.35, uGroveRadius, groveDist);
         diffuseColor.rgb = mix(diffuseColor.rgb, groveTint, uStableBlend * groveMask * 0.55);
         float readableGround = 1.0 - smoothstep(3.0, 55.0, camDist);
-        diffuseColor.rgb *= 1.0 + readableGround * (0.14 + uStableBlend * 0.16);
-        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.04, 0.98, 0.9), uStableBlend * (1.0 - groveMask) * 0.08);
+        diffuseColor.rgb *= 1.0 + readableGround * (0.12 + uStableBlend * 0.1);
+        vec3 viewToFrag = vWorldPosition - cameraPosition;
+        float viewLen = max(length(viewToFrag), 0.001);
+        float horizonView = 1.0 - smoothstep(0.04, 0.22, abs(viewToFrag.y) / viewLen);
+        float horizonSilhouette = horizonView * smoothstep(22.0, 95.0, camDist);
+        diffuseColor.rgb *= 1.0 - horizonSilhouette * (0.38 + uStableBlend * 0.22);
+        float stableSoil = uStableBlend * (1.0 - groveMask * 0.35);
+        diffuseColor.rgb *= mix(vec3(1.0), vec3(0.68, 0.58, 0.48), stableSoil * 0.72);
+        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * (0.82 + macro * 0.36), stableSoil * 0.35);
         // Damp soil around the pool. wet is read again by the roughness chunk.
         wet = (1.0 - smoothstep(2.4, 8.5, groveDist)) * uStableBlend;
         diffuseColor.rgb *= mix(1.0, 0.66, wet);
@@ -355,8 +362,13 @@ export class Terrain {
         }
         roughnessFactor = mix(roughnessFactor, 0.7, uColdBlend * 0.4);`,
       );
+
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <fog_fragment>',
+        '/* terrain: excluded from scene fog for solid ground readability */',
+      );
     };
-    this.material.customProgramCacheKey = () => 'terrain-realism-v7-stable-ground-nofog';
+    this.material.customProgramCacheKey = () => 'terrain-realism-v8-solid-ground';
 
     this.mesh = new THREE.Mesh(this.geometry, this.material);
     this.mesh.receiveShadow = true;

@@ -43,6 +43,8 @@ export class Sky {
   private readonly currentCloudColor = new THREE.Color('#eef2f8');
   private sunScatterScale = 1;
   private godRayStrength = 1;
+  private targetHorizonHaze = 0.35;
+  private horizonHaze = 0.35;
   private time = 0;
 
   constructor() {
@@ -66,6 +68,7 @@ export class Sky {
         uCloudBright: { value: 1 },
         uCloudColor: { value: this.currentCloudColor.clone() },
         uTime: { value: 0 },
+        uHorizonHaze: { value: 0.35 },
       },
       vertexShader: `
         varying vec3 vWorldPosition;
@@ -92,6 +95,7 @@ export class Sky {
         uniform float uCloudBright;
         uniform vec3 uCloudColor;
         uniform float uTime;
+        uniform float uHorizonHaze;
         varying vec3 vWorldPosition;
 
         float hash13(vec3 p) {
@@ -134,7 +138,7 @@ export class Sky {
           color = mix(color, uTopColor, smoothstep(0.38, 1.0, h));
 
           float haze = exp(-abs(dir.y) * 9.0);
-          color += uHorizonColor * haze * 0.35;
+          color += uHorizonColor * haze * uHorizonHaze;
 
           float scatter = uSunScatterScale;
           float rays = uGodRayStrength;
@@ -220,6 +224,11 @@ export class Sky {
     this.godRayStrength = THREE.MathUtils.clamp(value, 0, 1.5);
   }
 
+  /** Extra golden band at the horizon (lower in Stable Era so soil reads against sky). */
+  setHorizonHazeStrength(value: number): void {
+    this.targetHorizonHaze = THREE.MathUtils.clamp(value, 0, 0.55);
+  }
+
   /** Feed the current suns every frame; inactive suns should pass intensity 0. */
   setSuns(suns: readonly SkySunInput[]): void {
     for (let i = 0; i < MAX_SUNS; i += 1) {
@@ -268,6 +277,8 @@ export class Sky {
       0.06,
     );
     u.uTime.value = this.time;
+    this.horizonHaze = THREE.MathUtils.lerp(this.horizonHaze, this.targetHorizonHaze, 0.05);
+    u.uHorizonHaze.value = this.horizonHaze;
   }
 
   dispose(): void {

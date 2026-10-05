@@ -1215,10 +1215,10 @@ export class Game {
     let g = 0.98;
     let b = 0.94;
     if (stableEra) {
-      r = 1.06;
-      g = 1.03;
-      b = 0.94;
-      this.pipeline.setEraLutBlend('era-neutral', 'era-stable', 1, 0.2, delta);
+      r = 0.98;
+      g = 0.99;
+      b = 1.02;
+      this.pipeline.setEraLutBlend('era-neutral', 'era-stable', 0, 0, delta);
     } else if (phase === 'flying_star') {
       r = 1.12;
       g = 0.88;
