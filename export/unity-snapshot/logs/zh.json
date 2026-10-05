@@ -1,0 +1,101 @@
+[
+  {
+    "id": "waystone",
+    "title": "zh",
+    "position": {
+      "x": 8,
+      "z": 22
+    },
+    "interactionRadius": 4,
+    "requiresStableEra": false,
+    "requiresWorldStage": 0
+  },
+  {
+    "id": "observatory",
+    "title": "zh",
+    "position": {
+      "x": 45,
+      "z": -35
+    },
+    "interactionRadius": 5,
+    "requiresStableEra": false,
+    "requiresWorldStage": 0
+  },
+  {
+    "id": "shelter_ruin",
+    "title": "zh",
+    "position": {
+      "x": 20,
+      "z": -15
+    },
+    "interactionRadius": 4.5,
+    "requiresStableEra": false,
+    "requiresWorldStage": 0
+  },
+  {
+    "id": "dehydration_rows",
+    "title": "zh",
+    "position": {
+      "x": -36,
+      "z": 24
+    },
+    "interactionRadius": 5,
+    "requiresStableEra": false,
+    "requiresWorldStage": 0
+  },
+  {
+    "id": "cave_refuge",
+    "title": "zh",
+    "position": {
+      "x": -5,
+      "z": 10
+    },
+    "interactionRadius": 4,
+    "requiresStableEra": false,
+    "requiresWorldStage": 0
+  },
+  {
+    "id": "traveler_stone",
+    "title": "zh",
+    "position": {
+      "x": -16,
+      "z": -6
+    },
+    "interactionRadius": 4,
+    "requiresStableEra": false,
+    "requiresWorldStage": 0
+  },
+  {
+    "id": "grove_hope",
+    "title": "zh",
+    "position": {
+      "x": 28,
+      "z": -32
+    },
+    "interactionRadius": 5,
+    "requiresStableEra": true,
+    "requiresWorldStage": 0
+  },
+  {
+    "id": "final_log",
+    "title": "zh",
+    "position": {
+      "x": 32,
+      "z": -28
+    },
+    "interactionRadius": 4,
+    "requiresStableEra": true,
+    "requiresWorldStage": 0
+  },
+  {
+    "id": "distant_sky",
+    "title": "zh",
+    "position": {
+      "x": 41.5,
+      "z": -31.5
+    },
+    "interactionRadius": 4.5,
+    "requiresStableEra": true,
+    "requiresWorldStage": 5
+  }
+]

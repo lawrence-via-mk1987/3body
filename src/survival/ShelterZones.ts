@@ -9,18 +9,20 @@ export interface ShelterSample {
   label: string | null;
 }
 
-const ROCK_SHELTERS = [
+/** Exported for Unity content snapshot (`npm run export:unity`). */
+export const ROCK_SHELTERS = [
   { x: -18, z: -8, radius: 7, label: 'Rock shadow' },
   { x: 24, z: 12, radius: 6, label: 'Boulder lee' },
-];
+] as const;
 
-const CAVE_BOUNDS = {
+/** Exported for Unity content snapshot (`npm run export:unity`). */
+export const CAVE_BOUNDS = {
   minX: -16,
   maxX: -4,
   minZ: 2,
   maxZ: 16,
   depthBelowSurface: 2.8,
-};
+} as const;
 
 export class ShelterZones {
   constructor(private readonly terrain: Terrain) {}

@@ -1,0 +1,23 @@
+{
+  "cave": {
+    "minX": -16,
+    "maxX": -4,
+    "minZ": 2,
+    "maxZ": 16,
+    "depthBelowSurface": 2.8
+  },
+  "rockShelters": [
+    {
+      "x": -18,
+      "z": -8,
+      "radius": 7,
+      "label": "Rock shadow"
+    },
+    {
+      "x": 24,
+      "z": 12,
+      "radius": 6,
+      "label": "Boulder lee"
+    }
+  ]
+}

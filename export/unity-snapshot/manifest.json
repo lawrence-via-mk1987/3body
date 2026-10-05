@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-05T16:51:38.938Z",
+  "sourceRepo": "lawrence-via-mk1987/3body",
+  "gitSha": "5a0e73b",
+  "webDemoUrl": "https://lawrence-via-mk1987.github.io/3body/",
+  "docs": [
+    "docs/GDD.md",
+    "docs/ORBITAL_SIM.md",
+    "docs/PATH_B_UNITY_PLAN.md",
+    "docs/VISUAL_TARGET_FF8_UNITY_FORK.md"
+  ],
+  "unityImportTarget": "Assets/StreamingAssets/WebReference/"
+}
