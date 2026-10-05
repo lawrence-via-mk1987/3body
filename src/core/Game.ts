@@ -463,7 +463,7 @@ export class Game {
     this.scene.add(this.ruins.group);
     if (!this.pitHeroLoadStarted) {
       this.pitHeroLoadStarted = true;
-      void attachPathAHeroAssets(this.ruins, this.wayfinding, this.terrain);
+      void attachPathAHeroAssets(this.ruins, this.wayfinding, this.settlementNpcs, this.terrain);
     }
     this.scene.add(this.logMarkers.group);
     this.scene.add(this.stableParticles.points);

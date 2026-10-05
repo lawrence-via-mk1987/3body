@@ -77,6 +77,8 @@ export interface GroundTextureSet {
   albedo: THREE.CanvasTexture;
   normal: THREE.CanvasTexture;
   roughness: THREE.CanvasTexture;
+  /** Baked cavity darkening (ORM-style occlusion). */
+  ao: THREE.CanvasTexture;
 }
 
 /** Per-texel description returned by a surface sampler. */
@@ -144,13 +146,40 @@ function bakeSurface(size: number, anisotropy: number, normalStrength: number, s
   }
   normal.ctx.putImageData(normal.img, 0, 0);
 
+  const ao = makeCanvas(size);
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const c = height[y * size + x];
+      let sum = 0;
+      for (let oy = -1; oy <= 1; oy += 1) {
+        for (let ox = -1; ox <= 1; ox += 1) {
+          if (ox === 0 && oy === 0) {
+            continue;
+          }
+          sum += height[((y + oy + size) % size) * size + ((x + ox + size) % size)];
+        }
+      }
+      const avg = sum / 8;
+      const cavity = THREE.MathUtils.clamp((avg - c) * 2.8 + 0.08, 0, 0.85);
+      const aoVal = Math.round((1 - cavity) * 255);
+      const i = (y * size + x) * 4;
+      ao.img.data[i] = aoVal;
+      ao.img.data[i + 1] = aoVal;
+      ao.img.data[i + 2] = aoVal;
+      ao.img.data[i + 3] = 255;
+    }
+  }
+  ao.ctx.putImageData(ao.img, 0, 0);
+
   const albedoTex = new THREE.CanvasTexture(albedo.canvas);
   albedoTex.colorSpace = THREE.SRGBColorSpace;
   const normalTex = new THREE.CanvasTexture(normal.canvas);
   normalTex.colorSpace = THREE.NoColorSpace;
   const roughTex = new THREE.CanvasTexture(rough.canvas);
   roughTex.colorSpace = THREE.NoColorSpace;
-  for (const tex of [albedoTex, normalTex, roughTex]) {
+  const aoTex = new THREE.CanvasTexture(ao.canvas);
+  aoTex.colorSpace = THREE.NoColorSpace;
+  for (const tex of [albedoTex, normalTex, roughTex, aoTex]) {
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.RepeatWrapping;
     tex.anisotropy = anisotropy;
@@ -159,7 +188,7 @@ function bakeSurface(size: number, anisotropy: number, normalStrength: number, s
     tex.magFilter = THREE.LinearFilter;
     tex.needsUpdate = true;
   }
-  return { albedo: albedoTex, normal: normalTex, roughness: roughTex };
+  return { albedo: albedoTex, normal: normalTex, roughness: roughTex, ao: aoTex };
 }
 
 export function createGroundTextures(size: number, anisotropy: number): GroundTextureSet {
@@ -169,7 +198,7 @@ export function createGroundTextures(size: number, anisotropy: number): GroundTe
   const crackDark = new THREE.Color('#2b1c14');
   const stoneCool = new THREE.Color('#7a6a5c');
 
-  return bakeSurface(size, anisotropy, 2.6, (u, v, x, y, out) => {
+  return bakeSurface(size, anisotropy, 3.4, (u, v, x, y, out) => {
     const dust = tileableFbm(u, v, 5, 4);
     const fine = tileableFbm(u + 0.37, v + 0.61, 4, 24);
     const { f1, f2 } = tileableCells(u, v, 14);

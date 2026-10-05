@@ -86,11 +86,13 @@ unity/TrisolarianSurvival/      ← optional stub; or new repo 3body-unity
 
 Goal: **less blocky, more “set piece”** while keeping GitHub Pages and phones.
 
-**Shipped (Path A — milestone 1, `cursor/web-pbr-hero-3d2d`):**
+**Shipped (Path A — milestone 1):** pit / dome / grove rim / registrar glTF, era color grade.
 
-- glTF overlays: **pit rim**, **observatory dome**, **grove pool coping**, **registrar** (`npm run assets:heroes` → `public/assets/*.gltf`, loaded by `pathAHeroAssets.ts`)
-- Desktop **era color grade** on cinematic post (warm stable / red scorch / cool deep cold)
-- Procedural landmarks remain as fallback if a file fails to load
+**Shipped (Path A — milestone 2):**
+
+- glTF **predictor** + **observatory trim** (string courses, door lintel, steps) via `pathAHeroAssets.ts`
+- Terrain **ORM-style** stack: baked **AO map**, triplanar AO/roughness, **detail normal** micro-breakup (`terrain-realism-v6-orm-detail-normal`)
+- Regenerate heroes: `npm run assets:heroes`
 
 Ordered wins (each shippable on `main`):
 

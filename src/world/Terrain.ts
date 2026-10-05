@@ -145,15 +145,17 @@ export class Terrain {
 
     this.textures = createGroundTextures(options.textureSize ?? 1024, options.anisotropy ?? 8);
     const repeat = TERRAIN_SIZE / DETAIL_TILE_METRES;
-    for (const tex of [this.textures.albedo, this.textures.normal, this.textures.roughness]) {
+    for (const tex of [this.textures.albedo, this.textures.normal, this.textures.roughness, this.textures.ao]) {
       tex.repeat.set(repeat, repeat);
     }
 
     this.material = new THREE.MeshStandardMaterial({
       map: this.textures.albedo,
       normalMap: this.textures.normal,
-      normalScale: new THREE.Vector2(0.9, 0.9),
+      normalScale: new THREE.Vector2(1.05, 1.05),
       roughnessMap: this.textures.roughness,
+      aoMap: this.textures.ao,
+      aoMapIntensity: 1.15,
       vertexColors: true,
       roughness: 1,
       metalness: 0.0,
@@ -247,7 +249,17 @@ export class Terrain {
         vec4 sampledDiffuseColor = mix(planarColor, triColor, triMix);
         vec3 avgGround = vec3(0.49, 0.35, 0.25) * (0.9 + terrainNoise(vWorldPosition.xz * 0.09 + 3.1) * 0.2);
         sampledDiffuseColor.rgb = mix(avgGround, sampledDiffuseColor.rgb, 0.18 + detailFade * 0.82);
+        // Micro-normal breakup on planar ground (Path A ORM/detail).
+        vec3 microN = texture2D(normalMap, vMapUv * 7.5).xyz * 2.0 - 1.0;
+        float microW = detailFade * (1.0 - triMix * 0.65);
+        sampledDiffuseColor.rgb *= 1.0 - microW * 0.06 * (1.0 - abs(microN.z));
         sampledDiffuseColor.rgb *= 0.86 + macro * 0.3;
+        #ifdef USE_AOMAP
+        float aoPlanar = texture2D(aoMap, vAoMapUv).r;
+        float aoTri = triSample(aoMap, triW).r;
+        float aoMix = mix(aoPlanar, aoTri, triMix);
+        sampledDiffuseColor.rgb *= mix(1.0, aoMix, detailFade * 0.92);
+        #endif
         diffuseColor *= sampledDiffuseColor;`,
       );
 
@@ -308,8 +320,10 @@ export class Terrain {
           vec3 ty = texture2D(normalMap, vWorldPosition.xz * uTriScale).xyz * 2.0 - 1.0;
           vec3 tz = texture2D(normalMap, vWorldPosition.xy * uTriScale).xyz * 2.0 - 1.0;
           vec3 triN = normalize(tx * wN.x + ty * wN.y + tz * wN.z);
+          vec3 microDetail = texture2D(normalMap, vMapUv * 7.5).xyz * 2.0 - 1.0;
           mapN.xy = mix(mapN.xy, triN.xy, triMixN);
-          mapN.xy *= normalScale * (0.25 + detailFade * 0.75);
+          mapN.xy = mix(mapN.xy, microDetail.xy, detailFade * (1.0 - triMixN * 0.7) * 0.55);
+          mapN.xy *= normalScale * (0.25 + detailFade * 0.85);
         }`,
       );
 
@@ -317,12 +331,24 @@ export class Terrain {
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <roughnessmap_fragment>',
         `#include <roughnessmap_fragment>
-        roughnessFactor = mix(roughnessFactor, 0.55, uStableBlend * groveMask * 0.7);
-        roughnessFactor = mix(roughnessFactor, 0.16, wet);
+        {
+          float roughPlanar = texture2D(roughnessMap, vRoughnessMapUv).r;
+          float roughTri = triSample(roughnessMap, triBlendWeights(vWorldNormal)).r;
+          float slopeR = 1.0 - clamp(vWorldNormal.y, 0.0, 1.0);
+          float triMixR = smoothstep(0.26, 0.62, slopeR);
+          roughnessFactor = mix(roughPlanar, roughTri, triMixR);
+        }
+        {
+          float groveDistR = distance(vWorldPosition.xz, uGroveCenter);
+          float groveMaskR = 1.0 - smoothstep(uGroveRadius * 0.35, uGroveRadius, groveDistR);
+          float wetR = (1.0 - smoothstep(2.4, 8.5, groveDistR)) * uStableBlend;
+          roughnessFactor = mix(roughnessFactor, 0.55, uStableBlend * groveMaskR * 0.7);
+          roughnessFactor = mix(roughnessFactor, 0.16, wetR);
+        }
         roughnessFactor = mix(roughnessFactor, 0.7, uColdBlend * 0.4);`,
       );
     };
-    this.material.customProgramCacheKey = () => 'terrain-realism-v5-solar-lighting';
+    this.material.customProgramCacheKey = () => 'terrain-realism-v6-orm-detail-normal';
 
     this.mesh = new THREE.Mesh(this.geometry, this.material);
     this.mesh.receiveShadow = true;

@@ -5,6 +5,7 @@ import { GROVE_SITE, OBSERVATORY_SITE } from './Terrain';
 import type { Terrain } from './Terrain';
 import type { Ruins } from './Ruins';
 import type { LandmarkWayfinding } from './LandmarkWayfinding';
+import type { SettlementNpcs } from './SettlementNpcs';
 
 const BASE = import.meta.env.BASE_URL;
 
@@ -45,6 +46,7 @@ async function loadHero(name: string): Promise<THREE.Object3D | null> {
 export async function attachPathAHeroAssets(
   ruins: Ruins,
   wayfinding: LandmarkWayfinding,
+  settlementNpcs: SettlementNpcs,
   terrain: Terrain,
 ): Promise<void> {
   const pit = await loadHero('pit-rim-hero.gltf');
@@ -58,12 +60,20 @@ export async function attachPathAHeroAssets(
   }
 
   const dome = await loadHero('observatory-dome-hero.gltf');
+  const trim = await loadHero('observatory-trim-hero.gltf');
   if (dome) {
     dome.name = 'ObservatoryDomeHero';
     const { x, z } = OBSERVATORY_LANDMARK;
     dome.position.set(x, OBSERVATORY_SITE.level + 3.75, z);
     dome.scale.setScalar(1.01);
     ruins.group.add(dome);
+  }
+  if (trim) {
+    trim.name = 'ObservatoryTrimHero';
+    const { x, z } = OBSERVATORY_LANDMARK;
+    trim.position.set(x, OBSERVATORY_SITE.level, z);
+    trim.scale.setScalar(1.01);
+    ruins.group.add(trim);
   }
 
   const groveRim = await loadHero('grove-pool-rim-hero.gltf');
@@ -77,5 +87,11 @@ export async function attachPathAHeroAssets(
   if (registrar) {
     registrar.name = 'RegistrarHeroGltf';
     wayfinding.swapRegistrarMesh(registrar);
+  }
+
+  const predictor = await loadHero('predictor-hero.gltf');
+  if (predictor) {
+    predictor.name = 'PredictorHeroGltf';
+    settlementNpcs.swapPredictorMesh(predictor);
   }
 }

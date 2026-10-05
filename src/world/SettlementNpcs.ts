@@ -15,6 +15,7 @@ export class SettlementNpcs {
   readonly group = new THREE.Group();
   readonly predictorGroup = new THREE.Group();
   readonly groveKeeperGroup = new THREE.Group();
+  private proceduralPredictor: THREE.Object3D | null = null;
 
   constructor(terrain: Terrain) {
     this.buildPredictor(terrain);
@@ -42,6 +43,7 @@ export class SettlementNpcs {
       ring2.rotation.x = 1.1;
       hands.right.add(staff, ring, ring2);
     });
+    this.proceduralPredictor = figure;
     this.predictorGroup.add(figure);
     addContactShadow(this.predictorGroup, 0.62);
     const y = terrain.getHeightAt(LAST_PREDICTOR.x, LAST_PREDICTOR.z);
@@ -103,6 +105,15 @@ export class SettlementNpcs {
       : base + Math.sin(pulseTime * 2) * 0.05;
     applyNpcGlow(group, intensity);
     stepHumanoidIdle(group, pulseTime);
+  }
+
+  swapPredictorMesh(heroRoot: THREE.Object3D): void {
+    if (this.proceduralPredictor) {
+      this.proceduralPredictor.visible = false;
+    }
+    heroRoot.position.set(0, 0, 0);
+    heroRoot.rotation.set(0, 0, 0);
+    this.predictorGroup.add(heroRoot);
   }
 
   isNearPredictor(position: THREE.Vector3): boolean {
